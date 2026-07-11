@@ -133,6 +133,28 @@ def make_raw_cusum_detector(n_train: int, k: float = 0.5) -> ScoreFn:
     return score_fn
 
 
+def make_raw_var_cusum_detector(n_train: int) -> ScoreFn:
+    """Whitening-ladder bottom rung: variance CUSUM on raw Y
+    standardized by frozen training-prefix moments (SPEC addendum §2)."""
+    from lsc.benchmarks.variance import raw_var_cusum_score
+
+    def score_fn(Y: np.ndarray) -> np.ndarray:
+        return raw_var_cusum_score(Y, n_train=n_train)
+
+    return score_fn
+
+
+def make_arima_var_cusum_detector(n_train: int) -> ScoreFn:
+    """Whitening-ladder middle rung: the identical variance statistic
+    on the frozen training-prefix ARIMA model's residuals."""
+    from lsc.benchmarks.variance import arima_var_cusum_score
+
+    def score_fn(Y: np.ndarray) -> np.ndarray:
+        return arima_var_cusum_score(Y, n_train=n_train)
+
+    return score_fn
+
+
 def make_plain_hmm_detector(n_train: int, n_regimes: int = 2) -> ScoreFn:
     def score_fn(Y: np.ndarray) -> np.ndarray:
         return plain_hmm_flip_score(Y, n_train=n_train, n_regimes=n_regimes)

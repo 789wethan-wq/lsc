@@ -1,0 +1,25 @@
+# grid_v4 varbench T sweep — variance ×1.5 at T ∈ {200, 2000}, SNR 0.5
+# (SPEC addendum §3; comparability with the published composite
+# 0.11/0.87/0.99 from grid_v2_T/grid_v1). The T=200 hot-calibration
+# check applies: empirical FARs reported in the calibration table.
+experiment: grid_v4_varbench_T
+out_dir: paper_assets
+n_reps: 500
+far_target: 0.05
+train_frac: 0.25
+
+seeds:
+  calibration: 100000
+  evaluation: 200000
+  far_check: 300000
+  feature_scales: 900000
+
+T_values: [200, 2000]
+
+arenas:
+  ar1_snr0.5: {dgp: AR1StateDGP, phi: 0.95, q: 0.04875, r: 1.0, kalman_spec: ar1}
+
+scenarios:
+  variance_x1.5: {kind: variance, time_frac: 0.5, vol_mult: 1.5}
+
+methods: [raw_var_cusum, arima_var_cusum]

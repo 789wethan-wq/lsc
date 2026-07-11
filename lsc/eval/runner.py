@@ -73,6 +73,12 @@ def build_detector(method: str, arena_cfg: dict, null_dgp, T: int,
         return make_raw_cusum_detector(n_train)
     if method == "arima_cusum":
         return make_arima_cusum_detector(n_train)
+    if method == "raw_var_cusum":
+        from lsc.eval.detectors import make_raw_var_cusum_detector
+        return make_raw_var_cusum_detector(n_train)
+    if method == "arima_var_cusum":
+        from lsc.eval.detectors import make_arima_var_cusum_detector
+        return make_arima_var_cusum_detector(n_train)
     if method == "plain_hmm":
         return make_plain_hmm_detector(n_train)
     raise ValueError(f"unknown method {method}")

@@ -13,10 +13,12 @@ from lsc.dgp import LocalLevelDGP, MarkovSwitchingDGP
 from lsc.diagnostics.features import compute_features
 from lsc.eval.detectors import (
     make_arima_cusum_detector,
+    make_arima_var_cusum_detector,
     make_composite_detector,
     make_innovation_cusum_detector,
     make_plain_hmm_detector,
     make_raw_cusum_detector,
+    make_raw_var_cusum_detector,
     make_state_cusum_detector,
 )
 from lsc.models import HMMModel, KalmanModel, SwitchingModel
@@ -88,6 +90,8 @@ def test_detector_scores_causal(t, ll_Y, ms_Y):
         "lsc_state_cusum": (make_state_cusum_detector(lambda: KalmanModel(), N_TRAIN), ll_Y),
         "raw_cusum": (make_raw_cusum_detector(N_TRAIN), ll_Y),
         "arima_cusum": (make_arima_cusum_detector(N_TRAIN), ll_Y),
+        "raw_var_cusum": (make_raw_var_cusum_detector(N_TRAIN), ll_Y),
+        "arima_var_cusum": (make_arima_var_cusum_detector(N_TRAIN), ll_Y),
         "plain_hmm": (make_plain_hmm_detector(N_TRAIN), ms_Y),
     }
     for name, (fn, Y) in detectors.items():

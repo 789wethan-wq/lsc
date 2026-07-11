@@ -9,9 +9,9 @@
 PY := .venv/bin/python
 ASSETS := paper_assets
 
-.PHONY: all venv test figures recovery exp01 exp02 exp03 exp04 exp05 exp06 grid grid_v2 fred clean
+.PHONY: all venv test figures recovery exp01 exp02 exp03 exp04 exp05 exp06 grid grid_v2 grid_v4 fred paper clean
 
-all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06
+all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06 grid_v4
 	@echo "== repro pack complete (run 'make fred' separately: needs network) =="
 
 venv:
@@ -55,6 +55,13 @@ exp05:
 
 exp06:
 	$(PY) experiments/exp06_theory_check.py 1000
+
+# varbench addendum: whitening-ladder benchmarks (decision rule
+# pre-registered in experiments/CHANGELOG.md before first run)
+grid_v4:
+	$(PY) -m lsc.eval.runner configs/grid_v4_varbench_core.yaml
+	$(PY) -m lsc.eval.runner configs/grid_v4_varbench_T.yaml
+	$(PY) experiments/varbench_ladder.py
 
 fred:
 	$(PY) experiments/m6_fred.py 200

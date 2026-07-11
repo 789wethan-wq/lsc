@@ -44,10 +44,12 @@ from lsc.diagnostics.features import (
     tail_exceedance,
     tail_shortfall,
 )
+from lsc.benchmarks.variance import raw_var_arm_at
 from lsc.eval.detectors import (
     make_composite_detector,
     make_innovation_cusum_detector,
     make_raw_cusum_detector,
+    make_raw_var_cusum_detector,
     make_tail_cusum_detector,
 )
 from lsc.models import KalmanModel
@@ -161,6 +163,7 @@ def run(series: str, n_cal: int, n_train: int | None, n_monitor: int | None,
             "lsc_kalman_cusum": make_innovation_cusum_detector(
                 lambda: KalmanModel("ar1"), NT),
             "raw_cusum": make_raw_cusum_detector(NT),
+            "raw_var_cusum": make_raw_var_cusum_detector(NT),
         }
         for mname, fn in detectors.items():
             det = calibrate(mname, fn, null, T_seg, n_reps=n_cal,
@@ -171,6 +174,8 @@ def run(series: str, n_cal: int, n_train: int | None, n_monitor: int | None,
                     attr = composite_attribution(comp_fn, Y, at)
                 elif mname == "lsc_tail_cusum":
                     attr = tail_attribution(Y, NT, at)
+                elif mname == "raw_var_cusum":
+                    attr = raw_var_arm_at(Y, NT, at)
                 else:
                     attr = ""
                 alarms.append(dict(segment=seg_id, method=mname,
@@ -214,9 +219,11 @@ def run(series: str, n_cal: int, n_train: int | None, n_monitor: int | None,
         ax.axvspan(pd.Timestamp(a + "-01"), pd.Timestamp(b + "-01"),
                    color="red", alpha=0.15)
     colors = {"lsc_composite": "C0", "lsc_tail_cusum": "C1",
-              "lsc_kalman_cusum": "C2", "raw_cusum": "C3"}
+              "lsc_kalman_cusum": "C2", "raw_cusum": "C3",
+              "raw_var_cusum": "C4"}
     offs = {"lsc_composite": 1.0, "lsc_tail_cusum": 0.93,
-            "lsc_kalman_cusum": 0.86, "raw_cusum": 0.79}
+            "lsc_kalman_cusum": 0.86, "raw_cusum": 0.79,
+            "raw_var_cusum": 0.72}
     for method, gr in adf.groupby("method"):
         for d in gr.date:
             ax.plot([d], [ax.get_ylim()[1] * offs[method]], marker="v",

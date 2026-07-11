@@ -1,0 +1,41 @@
+# grid_v4 varbench core — whitening-ladder benchmarks (SPEC addendum §3;
+# decision rule pre-registered in experiments/CHANGELOG.md M0 entry
+# BEFORE this config was run). raw_var_cusum and arima_var_cusum on the
+# published arenas with identical seed blocks, so rows join grid_v1 /
+# grid_v2_misspec / grid_v3c latent-rung rows draw-for-draw.
+#
+# The runner crosses arenas × scenarios fully, so this covers the
+# spec's required cells (variance ×1.5/×3/×⅔ at SNR {0.1,0.5,2.0}; t₅
+# ×1.5; levels 1σ/3σ at SNR 0.5; persistence at SNR {0.5,2.0}) plus
+# the cheap completions of the cross (levels/persistence at the other
+# SNRs, ×⅔/×3 under t₅) — all reported.
+experiment: grid_v4_varbench_core
+out_dir: paper_assets
+n_reps: 500
+far_target: 0.05
+train_frac: 0.25
+
+seeds:
+  calibration: 100000
+  evaluation: 200000
+  far_check: 300000
+  feature_scales: 900000
+
+T_values: [500]
+
+arenas:
+  ar1_snr0.1: {dgp: AR1StateDGP, phi: 0.95, q: 0.00975, r: 1.0, kalman_spec: ar1}
+  ar1_snr0.5: {dgp: AR1StateDGP, phi: 0.95, q: 0.04875, r: 1.0, kalman_spec: ar1}
+  ar1_snr2.0: {dgp: AR1StateDGP, phi: 0.95, q: 0.195,   r: 1.0, kalman_spec: ar1}
+  ar1_t5:     {dgp: AR1StateDGP, phi: 0.95, q: 0.04875, r: 1.0, t_dof: 5, kalman_spec: ar1}
+
+scenarios:
+  variance_x1.5: {kind: variance, time_frac: 0.5, vol_mult: 1.5}
+  variance_x3: {kind: variance, time_frac: 0.5, vol_mult: 3.0}
+  variance_x0.67: {kind: variance, time_frac: 0.5, vol_mult: 0.667}
+  level_1s: {kind: level, time_frac: 0.5, magnitude: 1.0}
+  level_3s: {kind: level, time_frac: 0.5, magnitude: 3.0}
+  persistence_up: {kind: persistence, time_frac: 0.5, new_phi: 0.995}
+  persistence_down: {kind: persistence, time_frac: 0.5, new_phi: 0.80}
+
+methods: [raw_var_cusum, arima_var_cusum]
