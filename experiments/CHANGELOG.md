@@ -372,6 +372,57 @@ instrument; the clip-based features (exp05) and the composite-embedded
 exceedance variant (exp05b) are documented negative results. No
 further tuning after these results.
 
+## 2026-07-11 — M0 (varbench addendum): claim-adoption decision rule PRE-REGISTERED before any grid_v4 cell runs
+
+Registered per `SPEC_addendum_varbench.md` §1, before implementing or
+running the new variance benchmarks. The paper will adopt whichever
+claim the results select; no post-hoc reinterpretation.
+
+**New detectors (whitening ladder, M1).** `raw_var_cusum` — Page CUSUM
+of z_t²−1 with z_t = (Y_t − ȳ_train)/σ̂_train frozen from the training
+prefix; up-arm allowances k = 0.25 and k = 0.05 (mirroring the latent
+variance_pressure / variance_pressure_slow features exactly), down-arm
+(quieting) CUSUM of 1−z_t² with k = 0.05; score = max over the three
+arms; no per-time-point standardization (standalone detector, same
+treatment as lsc_tail_cusum). `arima_var_cusum` — the identical
+statistic on the standardized one-step residuals of the existing ARIMA
+benchmark's training-prefix-fitted, frozen model. Ladder: raw →
+ARIMA-whitened → Kalman-whitened (existing e²-based CUSUMs), same
+statistic, same allowances, same calibration routine, three
+information sets.
+
+**Decision rule.** Let D_raw = raw_var_cusum detection rate at
+variance ×1.5, T = 500, per SNR ∈ {0.1, 0.5, 2.0}; D_comp = the
+composite's published 0.82 / 0.87 / 0.91 (grid_v1, identical seeds);
+FAR target 5%.
+
+- **Outcome A (strong claim):** D_raw within 5 pp of FAR at every SNR
+  → abstract/intro upgrade to "raw-data detectors, including a
+  variance CUSUM given identical calibration, sit at chance."
+- **Outcome B (prewhitening claim):** D_raw within 10 pp of D_comp at
+  every SNR → reframe: the advantage is *prewhitening under
+  autocorrelation*, not latency per se; §5 and §11 rewritten
+  accordingly (the fast-or-never side is untouched). Honest-outcome
+  clause: if the latent state layer is unnecessary for second moments,
+  the paper says so plainly — "for whitening, not for state
+  estimation" — and does not soften it.
+- **Outcome C (mixed):** anything else → report the full ladder, keep
+  the scoped language, add a paragraph explaining the SNR-dependence.
+
+All three outcomes are publishable; which fired will be logged here
+with the numbers.
+
+**Predictions registered alongside (not gating).** (i) Under t₅ noise
+raw_var_cusum's ×1.5 power should collapse like the composite's did
+(0.87 → 0.16) — z² has the same tail sensitivity; if so, the
+exceedance repair story extends to the raw side. (ii) The variance
+detectors should NOT detect level shifts above FAR (disjoint-channels
+table). (iii) Real-data reruns (M3) may weaken the real-data
+uniqueness claim — that is the point of running them; if raw_var_cusum
+catches the same crises, §10's claim becomes about the
+simulation-calibrated subtlety threshold (×1.5 invisibility), not
+real-data uniqueness.
+
 ## 2026-07-11 — real-data extension registered before running (m6x)
 
 All real-data results remain ILLUSTRATIVE (SPEC §4.5/§8); this entry
