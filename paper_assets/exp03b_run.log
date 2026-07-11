@@ -1,0 +1,6 @@
+[    31s] lsc_composite_v2: thr=25.350 FAR=5.200%
+[    46s] persistence_up_0.995   detect=0.03 med_delay=100
+[    61s] persistence_down_0.80  detect=0.01 med_delay=49
+[    76s] abrupt_level_3s        detect=0.49 med_delay=68
+[    91s] variance_x3            detect=0.99 med_delay=19
+[    91s] wrote paper_assets/exp03b_results.*

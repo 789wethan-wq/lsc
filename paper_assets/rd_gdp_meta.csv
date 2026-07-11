@@ -1,0 +1,2 @@
+series,n_train,n_monitor,far,n_segments,n_cal,monitored_obs,months_per_obs
+gdp,60,20,0.05,12,200,240,3

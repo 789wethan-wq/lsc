@@ -1,0 +1,5 @@
+method,threshold,far_target,far_empirical
+lsc_composite,32.528390406406224,0.05,0.048
+lsc_kalman_cusum,22.14512826431865,0.05,0.048
+lsc_state_cusum,525.3112534253603,0.05,0.054
+raw_cusum,103.19232082036218,0.05,0.062

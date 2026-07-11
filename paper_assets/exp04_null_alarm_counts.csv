@@ -1,0 +1,5 @@
+method,mean_null_alarms,max_null_alarms,frac_ge1,frac_ge2
+lsc_composite,0.06,2,0.048,0.012
+lsc_kalman_cusum,0.062,3,0.048,0.012
+lsc_state_cusum,0.054,1,0.054,0.0
+raw_cusum,0.062,1,0.062,0.0

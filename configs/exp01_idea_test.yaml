@@ -1,0 +1,36 @@
+# Experiment 01 — idea test configuration (SPEC §4.4: seeds and
+# replication counts live in config, not code).
+experiment: exp01_idea_test
+T: 500
+n_train: 125
+far_target: 0.05
+break_frac: 0.5
+n_reps: 500
+
+seeds:
+  calibration: 100000   # null draws for threshold calibration
+  evaluation: 200000    # break-scenario draws (shared across methods)
+  far_check: 300000     # fresh null draws for empirical FAR verification
+  feature_scales: 900000  # composite-detector feature-scale estimation
+
+arenas:
+  ar1:                # primary
+    dgp: AR1StateDGP
+    phi: 0.95
+    q: 0.5
+    r: 1.0
+    kalman_spec: ar1
+  local_level:        # secondary hard case (see experiments/CHANGELOG.md)
+    dgp: LocalLevelDGP
+    q: 0.5
+    r: 1.0
+    kalman_spec: llevel
+
+scenarios:
+  abrupt_level_0.5s: {kind: level, magnitude: 0.5}
+  abrupt_level_1s: {kind: level, magnitude: 1.0}
+  abrupt_level_3s: {kind: level, magnitude: 3.0}
+  ramp_1s_hl25: {kind: ramp, magnitude: 1.0, half_life: 25}
+  variance_x3: {kind: variance, vol_mult: 3.0}
+
+methods: [lsc_kalman_cusum, lsc_composite, raw_cusum, plain_hmm]

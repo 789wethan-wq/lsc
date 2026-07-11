@@ -1,0 +1,29 @@
+# exp05 — tail-robust composite (hypotheses pre-registered in
+# experiments/CHANGELOG.md, 2026-07-11 exp05/exp06 entry). Gaussian
+# arena measures the robustness tax; t5 arena measures the repair of
+# the grid_v2_misspec collapse (variance x1.5: 0.87 -> 0.16).
+experiment: grid_v3_robust
+out_dir: paper_assets
+n_reps: 500
+far_target: 0.05
+train_frac: 0.25
+
+seeds:
+  calibration: 100000
+  evaluation: 200000
+  far_check: 300000
+  feature_scales: 900000
+
+T_values: [500]
+
+arenas:
+  ar1_snr0.5: {dgp: AR1StateDGP, phi: 0.95, q: 0.04875, r: 1.0, kalman_spec: ar1}
+  ar1_t5:     {dgp: AR1StateDGP, phi: 0.95, q: 0.04875, r: 1.0, t_dof: 5, kalman_spec: ar1}
+
+scenarios:
+  level_3s: {kind: level, time_frac: 0.5, magnitude: 3.0}
+  variance_x1.5: {kind: variance, time_frac: 0.5, vol_mult: 1.5}
+  variance_x3: {kind: variance, time_frac: 0.5, vol_mult: 3.0}
+  persistence_down: {kind: persistence, time_frac: 0.5, new_phi: 0.80}
+
+methods: [lsc_composite, lsc_composite_robust, raw_cusum]

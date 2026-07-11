@@ -1,0 +1,8 @@
+segment,method,date,feature
+2,lsc_tail_cusum,1974-07-01,exceedance_up
+3,lsc_tail_cusum,1982-01-01,exceedance_up
+6,lsc_composite,1992-04-01,variance_quiet
+6,lsc_tail_cusum,1997-01-01,shortfall_down
+9,lsc_composite,2008-10-01,variance_pressure
+11,lsc_composite,2020-04-01,variance_pressure
+11,lsc_kalman_cusum,2020-04-01,

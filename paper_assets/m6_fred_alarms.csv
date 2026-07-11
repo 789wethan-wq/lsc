@@ -1,0 +1,8 @@
+segment,method,date
+2,lsc_composite,1969-08-01
+6,lsc_composite,1990-12-01
+10,lsc_composite,2008-09-01
+10,lsc_kalman_cusum,2008-09-01
+10,raw_cusum,2008-12-01
+12,lsc_composite,2020-04-01
+12,lsc_kalman_cusum,2020-04-01

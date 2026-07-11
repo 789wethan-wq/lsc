@@ -1,0 +1,10 @@
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[    31s] lsc_composite_v2: thr=32.528 FAR=4.800%
+[    46s] persistence_up_0.995   detect=0.04 med_delay=99
+[    61s] persistence_down_0.80  detect=0.01 med_delay=105
+[    75s] abrupt_level_3s        detect=0.53 med_delay=67
+[    90s] variance_x3            detect=0.99 med_delay=26
+[    90s] wrote paper_assets/exp03b_results.*

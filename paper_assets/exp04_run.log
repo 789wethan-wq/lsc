@@ -1,0 +1,21 @@
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:125: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[    45s] calibrated lsc_composite: thr=32.528 FAR=4.800% null-alarms/path=0.060
+[    69s] calibrated lsc_kalman_cusum: thr=22.145 FAR=4.800% null-alarms/path=0.062
+[    93s] calibrated lsc_state_cusum: thr=525.311 FAR=5.400% null-alarms/path=0.054
+[    94s] calibrated raw_cusum: thr=103.192 FAR=6.200% null-alarms/path=0.062
+[   109s] level_up_down lsc_composite: F1=0.25 recall=0.20 precision=0.83
+[   117s] level_up_down lsc_kalman_cusum: F1=0.28 recall=0.21 precision=0.83
+[   125s] level_up_down lsc_state_cusum: F1=0.10 recall=0.07 precision=0.41
+[   125s] level_up_down raw_cusum: F1=0.49 recall=0.37 precision=0.80
+[   140s] level_then_var lsc_composite: F1=0.63 recall=0.48 precision=0.93
+[   147s] level_then_var lsc_kalman_cusum: F1=0.39 recall=0.31 precision=0.75
+[   155s] level_then_var lsc_state_cusum: F1=0.35 recall=0.26 precision=0.61
+[   156s] level_then_var raw_cusum: F1=0.54 recall=0.41 precision=0.81
+[   171s] var_up_down lsc_composite: F1=0.66 recall=0.50 precision=0.99
+[   180s] var_up_down lsc_kalman_cusum: F1=0.07 recall=0.06 precision=0.62
+[   188s] var_up_down lsc_state_cusum: F1=0.02 recall=0.01 precision=0.61
+[   189s] var_up_down raw_cusum: F1=0.03 recall=0.02 precision=0.73
+[   189s] wrote paper_assets/exp04_*

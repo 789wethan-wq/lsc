@@ -1,0 +1,9 @@
+arena,method,threshold,far_target,far_empirical
+ar1,lsc_kalman_cusum,15.514204415569052,0.05,0.042
+ar1,lsc_composite,14.285812712032218,0.05,0.042
+ar1,raw_cusum,279.5766479493051,0.05,0.078
+ar1,plain_hmm,26.595122329756723,0.05,0.036
+local_level,lsc_kalman_cusum,10.076901570120562,0.05,0.052
+local_level,lsc_composite,9.931260720944714,0.05,0.052
+local_level,raw_cusum,2090.549643014459,0.05,0.066
+local_level,plain_hmm,27.63102111592755,0.05,0.332

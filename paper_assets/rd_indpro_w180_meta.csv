@@ -1,0 +1,2 @@
+series,n_train,n_monitor,far,n_segments,n_cal,monitored_obs,months_per_obs
+indpro,180,36,0.05,21,200,756,1

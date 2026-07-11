@@ -1,0 +1,15 @@
+\begin{tabular}{lllrrrr}
+\toprule
+model & dgp & param & truth & mean_est & mc_se & within_2se \\
+\midrule
+kalman_llevel & local_level(q=0.5,r=1.0) & sigma2.level (q) & 0.5000 & 0.4990 & 0.0032 & True \\
+kalman_llevel & local_level(q=0.5,r=1.0) & sigma2.irregular (r) & 1.0000 & 1.0025 & 0.0037 & True \\
+kalman_llevel & local_level(q=0.1,r=1.0) & sigma2.level (q) & 0.1000 & 0.0999 & 0.0009 & True \\
+kalman_llevel & local_level(q=0.1,r=1.0) & sigma2.irregular (r) & 1.0000 & 1.0025 & 0.0028 & True \\
+hmm_2 & markov_switching(0/3,p=.97) & mu0 & 0.0000 & 0.0016 & 0.0023 & True \\
+hmm_2 & markov_switching(0/3,p=.97) & mu1 & 3.0000 & 3.0004 & 0.0024 & True \\
+hmm_2 & markov_switching(0/3,p=.97) & sig0 & 1.0000 & 1.0021 & 0.0017 & True \\
+hmm_2 & markov_switching(0/3,p=.97) & sig1 & 1.0000 & 0.9995 & 0.0018 & True \\
+hmm_2 & markov_switching(0/3,p=.97) & p00 & 0.9700 & 0.9696 & 0.0004 & True \\
+\bottomrule
+\end{tabular}

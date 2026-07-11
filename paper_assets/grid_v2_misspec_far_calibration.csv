@@ -1,0 +1,9 @@
+T,arena,method,threshold,far_target,far_empirical
+500,ar1_t5,lsc_composite,28.400477759052617,0.05,0.062
+500,ar1_t5,lsc_kalman_cusum,21.355821633408265,0.05,0.048
+500,ar1_t5,lsc_state_cusum,550.6909542601383,0.05,0.062
+500,ar1_t5,raw_cusum,111.49918270806106,0.05,0.058
+500,ar1_drift,lsc_composite,18.99268675191285,0.05,0.08
+500,ar1_drift,lsc_kalman_cusum,13.018268655182416,0.05,0.07
+500,ar1_drift,lsc_state_cusum,2234.4049610485336,0.05,0.032
+500,ar1_drift,raw_cusum,676.8565801614906,0.05,0.078

@@ -1,0 +1,57 @@
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:125: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[     18s] T=200 ar1_snr0.5 lsc_composite: thr=20.927 FAR=9.400%
+[     29s] T=200 ar1_snr0.5 lsc_kalman_cusum: thr=27.667 FAR=8.800%
+[     41s] T=200 ar1_snr0.5 lsc_state_cusum: thr=798.253 FAR=5.800%
+[     41s] T=200 ar1_snr0.5 raw_cusum: thr=87.874 FAR=5.600%
+[     50s] T=200 ar1_snr0.5 level_3s lsc_composite: detect=0.57
+[     55s] T=200 ar1_snr0.5 level_3s lsc_kalman_cusum: detect=0.56
+[     61s] T=200 ar1_snr0.5 level_3s lsc_state_cusum: detect=0.11
+[     61s] T=200 ar1_snr0.5 level_3s raw_cusum: detect=0.80
+[     69s] T=200 ar1_snr0.5 variance_x1.5 lsc_composite: detect=0.11
+[     75s] T=200 ar1_snr0.5 variance_x1.5 lsc_kalman_cusum: detect=0.06
+[     81s] T=200 ar1_snr0.5 variance_x1.5 lsc_state_cusum: detect=0.03
+[     81s] T=200 ar1_snr0.5 variance_x1.5 raw_cusum: detect=0.05
+[     90s] T=200 ar1_snr0.5 variance_x3 lsc_composite: detect=1.00
+[     96s] T=200 ar1_snr0.5 variance_x3 lsc_kalman_cusum: detect=0.17
+[    102s] T=200 ar1_snr0.5 variance_x3 lsc_state_cusum: detect=0.03
+[    102s] T=200 ar1_snr0.5 variance_x3 raw_cusum: detect=0.08
+[    110s] T=200 ar1_snr0.5 persistence_up lsc_composite: detect=0.09
+[    116s] T=200 ar1_snr0.5 persistence_up lsc_kalman_cusum: detect=0.08
+[    122s] T=200 ar1_snr0.5 persistence_up lsc_state_cusum: detect=0.03
+[    122s] T=200 ar1_snr0.5 persistence_up raw_cusum: detect=0.11
+[    130s] T=200 ar1_snr0.5 persistence_down lsc_composite: detect=0.01
+[    136s] T=200 ar1_snr0.5 persistence_down lsc_kalman_cusum: detect=0.01
+[    142s] T=200 ar1_snr0.5 persistence_down lsc_state_cusum: detect=0.02
+[    142s] T=200 ar1_snr0.5 persistence_down raw_cusum: detect=0.03
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:125: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[    246s] T=2000 ar1_snr0.5 lsc_composite: thr=16.044 FAR=4.600%
+[    285s] T=2000 ar1_snr0.5 lsc_kalman_cusum: thr=11.613 FAR=4.600%
+[    321s] T=2000 ar1_snr0.5 lsc_state_cusum: thr=440.356 FAR=5.200%
+[    324s] T=2000 ar1_snr0.5 raw_cusum: thr=116.285 FAR=2.400%
+[    370s] T=2000 ar1_snr0.5 level_3s lsc_composite: detect=0.98
+[    389s] T=2000 ar1_snr0.5 level_3s lsc_kalman_cusum: detect=0.87
+[    407s] T=2000 ar1_snr0.5 level_3s lsc_state_cusum: detect=1.00
+[    409s] T=2000 ar1_snr0.5 level_3s raw_cusum: detect=0.99
+[    455s] T=2000 ar1_snr0.5 variance_x1.5 lsc_composite: detect=0.99
+[    522s] T=2000 ar1_snr0.5 variance_x1.5 lsc_kalman_cusum: detect=0.17
+[    541s] T=2000 ar1_snr0.5 variance_x1.5 lsc_state_cusum: detect=0.06
+[    542s] T=2000 ar1_snr0.5 variance_x1.5 raw_cusum: detect=0.04
+[    718s] T=2000 ar1_snr0.5 variance_x3 lsc_composite: detect=0.99
+[    737s] T=2000 ar1_snr0.5 variance_x3 lsc_kalman_cusum: detect=0.98
+[    754s] T=2000 ar1_snr0.5 variance_x3 lsc_state_cusum: detect=0.07
+[    756s] T=2000 ar1_snr0.5 variance_x3 raw_cusum: detect=0.09
+[    826s] T=2000 ar1_snr0.5 persistence_up lsc_composite: detect=0.11
+[    904s] T=2000 ar1_snr0.5 persistence_up lsc_kalman_cusum: detect=0.06
+[    922s] T=2000 ar1_snr0.5 persistence_up lsc_state_cusum: detect=0.28
+[    923s] T=2000 ar1_snr0.5 persistence_up raw_cusum: detect=0.35
+[    976s] T=2000 ar1_snr0.5 persistence_down lsc_composite: detect=0.17
+[   1009s] T=2000 ar1_snr0.5 persistence_down lsc_kalman_cusum: detect=0.02
+[   1027s] T=2000 ar1_snr0.5 persistence_down lsc_state_cusum: detect=0.03
+[   1028s] T=2000 ar1_snr0.5 persistence_down raw_cusum: detect=0.00
+[   1029s] wrote paper_assets/grid_v2_T_*

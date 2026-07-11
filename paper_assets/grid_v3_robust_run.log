@@ -1,0 +1,47 @@
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:125: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[     31s] T=500 ar1_snr0.5 lsc_composite: thr=32.528 FAR=4.800%
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:125: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[     63s] T=500 ar1_snr0.5 lsc_composite_robust: thr=30.091 FAR=4.600%
+[     63s] T=500 ar1_snr0.5 raw_cusum: thr=103.192 FAR=6.200%
+[     78s] T=500 ar1_snr0.5 level_3s lsc_composite: detect=0.53
+[     92s] T=500 ar1_snr0.5 level_3s lsc_composite_robust: detect=0.54
+[     93s] T=500 ar1_snr0.5 level_3s raw_cusum: detect=0.99
+[    107s] T=500 ar1_snr0.5 variance_x1.5 lsc_composite: detect=0.87
+[    122s] T=500 ar1_snr0.5 variance_x1.5 lsc_composite_robust: detect=0.06
+[    122s] T=500 ar1_snr0.5 variance_x1.5 raw_cusum: detect=0.05
+[    137s] T=500 ar1_snr0.5 variance_x3 lsc_composite: detect=0.99
+[    151s] T=500 ar1_snr0.5 variance_x3 lsc_composite_robust: detect=0.82
+[    152s] T=500 ar1_snr0.5 variance_x3 raw_cusum: detect=0.08
+[    167s] T=500 ar1_snr0.5 persistence_down lsc_composite: detect=0.01
+[    181s] T=500 ar1_snr0.5 persistence_down lsc_composite_robust: detect=0.01
+[    182s] T=500 ar1_snr0.5 persistence_down raw_cusum: detect=0.02
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:125: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[    213s] T=500 ar1_t5 lsc_composite: thr=28.400 FAR=6.200%
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:125: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[    243s] T=500 ar1_t5 lsc_composite_robust: thr=28.279 FAR=5.400%
+[    244s] T=500 ar1_t5 raw_cusum: thr=111.499 FAR=5.800%
+[    259s] T=500 ar1_t5 level_3s lsc_composite: detect=0.51
+[    274s] T=500 ar1_t5 level_3s lsc_composite_robust: detect=0.51
+[    274s] T=500 ar1_t5 level_3s raw_cusum: detect=0.99
+[    290s] T=500 ar1_t5 variance_x1.5 lsc_composite: detect=0.16
+[    305s] T=500 ar1_t5 variance_x1.5 lsc_composite_robust: detect=0.03
+[    306s] T=500 ar1_t5 variance_x1.5 raw_cusum: detect=0.05
+[    320s] T=500 ar1_t5 variance_x3 lsc_composite: detect=0.97
+[    335s] T=500 ar1_t5 variance_x3 lsc_composite_robust: detect=0.46
+[    335s] T=500 ar1_t5 variance_x3 raw_cusum: detect=0.07
+[    350s] T=500 ar1_t5 persistence_down lsc_composite: detect=0.01
+[    365s] T=500 ar1_t5 persistence_down lsc_composite_robust: detect=0.01
+[    365s] T=500 ar1_t5 persistence_down raw_cusum: detect=0.02
+[    366s] wrote paper_assets/grid_v3_robust_*

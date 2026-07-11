@@ -1,0 +1,72 @@
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+loaded INDPRO growth: 941 months (1948-01 .. 2026-05)
+[    6s] segment 0 (1958-01 monitored)
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[   12s] segment 1 (1963-01 monitored)
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[   18s] segment 2 (1968-01 monitored)
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[   27s] segment 3 (1973-01 monitored)
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[   33s] segment 4 (1978-01 monitored)
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[   39s] segment 5 (1983-01 monitored)
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[   45s] segment 6 (1988-01 monitored)
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[   53s] segment 7 (1993-01 monitored)
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[   64s] segment 8 (1998-01 monitored)
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[   73s] segment 9 (2003-01 monitored)
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[   83s] segment 10 (2008-01 monitored)
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[   90s] segment 11 (2013-01 monitored)
+/Users/ethanwuang/Desktop/state space model/lsc/lsc/diagnostics/alarms.py:97: RuntimeWarning: All-NaN slice encountered
+  center = np.nanmedian(stacked, axis=0)
+/Users/ethanwuang/Desktop/state space model/lsc/.venv/lib/python3.14/site-packages/numpy/lib/_nanfunctions_impl.py:1593: RuntimeWarning: All-NaN slice encountered
+  return fnb._ureduce(a,
+[   98s] segment 12 (2018-01 monitored)
+method     lsc_composite  lsc_kalman_cusum  raw_cusum
+nber_peak                                            
+1990-07              5.0               NaN        NaN
+2007-12              9.0               9.0       12.0
+2020-02              2.0               2.0        NaN
+wrote paper_assets/m6_fred_*

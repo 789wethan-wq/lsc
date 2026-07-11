@@ -1,0 +1,9 @@
+method,event,first_alarm,delay_months
+lsc_composite,1979-10,1980-02,4.0
+lsc_composite,2008-12,none,
+lsc_tail_cusum,1979-10,1981-02,16.0
+lsc_tail_cusum,2008-12,none,
+lsc_kalman_cusum,1979-10,1980-02,4.0
+lsc_kalman_cusum,2008-12,none,
+raw_cusum,1979-10,1980-02,4.0
+raw_cusum,2008-12,none,

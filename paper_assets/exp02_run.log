@@ -1,0 +1,49 @@
+[    21s] snr=0.1 lsc_state_cusum: thr=491.792 FAR=4.800%
+[    40s] snr=0.1 lsc_kalman_cusum: thr=17.372 FAR=3.400%
+[    68s] snr=0.1 lsc_composite: thr=29.510 FAR=5.000%
+[    69s] snr=0.1 raw_cusum: thr=27.490 FAR=4.000%
+[    78s] snr=0.1 abrupt_level_1s  lsc_state_cusum    detect=0.04 med_delay=125
+[    87s] snr=0.1 abrupt_level_1s  lsc_kalman_cusum   detect=0.13 med_delay=145
+[   101s] snr=0.1 abrupt_level_1s  lsc_composite      detect=0.08 med_delay=145
+[   102s] snr=0.1 abrupt_level_1s  raw_cusum          detect=0.20 med_delay=133
+[   111s] snr=0.1 abrupt_level_3s  lsc_state_cusum    detect=0.19 med_delay=178
+[   120s] snr=0.1 abrupt_level_3s  lsc_kalman_cusum   detect=0.65 med_delay=50
+[   134s] snr=0.1 abrupt_level_3s  lsc_composite      detect=0.76 med_delay=96
+[   134s] snr=0.1 abrupt_level_3s  raw_cusum          detect=0.97 med_delay=58
+[   143s] snr=0.1 ramp_3s_hl25     lsc_state_cusum    detect=0.19 med_delay=182
+[   152s] snr=0.1 ramp_3s_hl25     lsc_kalman_cusum   detect=0.63 med_delay=75
+[   166s] snr=0.1 ramp_3s_hl25     lsc_composite      detect=0.74 med_delay=116
+[   166s] snr=0.1 ramp_3s_hl25     raw_cusum          detect=0.93 med_delay=83
+[   183s] snr=0.5 lsc_state_cusum: thr=525.311 FAR=5.400%
+[   198s] snr=0.5 lsc_kalman_cusum: thr=22.145 FAR=4.800%
+[   224s] snr=0.5 lsc_composite: thr=25.350 FAR=5.200%
+[   224s] snr=0.5 raw_cusum: thr=103.192 FAR=6.200%
+[   232s] snr=0.5 abrupt_level_1s  lsc_state_cusum    detect=0.10 med_delay=178
+[   240s] snr=0.5 abrupt_level_1s  lsc_kalman_cusum   detect=0.11 med_delay=98
+[   252s] snr=0.5 abrupt_level_1s  lsc_composite      detect=0.10 med_delay=115
+[   252s] snr=0.5 abrupt_level_1s  raw_cusum          detect=0.30 med_delay=155
+[   260s] snr=0.5 abrupt_level_3s  lsc_state_cusum    detect=0.75 med_delay=162
+[   268s] snr=0.5 abrupt_level_3s  lsc_kalman_cusum   detect=0.55 med_delay=53
+[   280s] snr=0.5 abrupt_level_3s  lsc_composite      detect=0.49 med_delay=68
+[   281s] snr=0.5 abrupt_level_3s  raw_cusum          detect=0.99 med_delay=75
+[   288s] snr=0.5 ramp_3s_hl25     lsc_state_cusum    detect=0.70 med_delay=166
+[   296s] snr=0.5 ramp_3s_hl25     lsc_kalman_cusum   detect=0.46 med_delay=87
+[   308s] snr=0.5 ramp_3s_hl25     lsc_composite      detect=0.45 med_delay=98
+[   308s] snr=0.5 ramp_3s_hl25     raw_cusum          detect=0.98 med_delay=90
+[   322s] snr=2.0 lsc_state_cusum: thr=439.850 FAR=7.800%
+[   335s] snr=2.0 lsc_kalman_cusum: thr=15.366 FAR=4.800%
+[   358s] snr=2.0 lsc_composite: thr=17.068 FAR=5.200%
+[   358s] snr=2.0 raw_cusum: thr=213.887 FAR=8.200%
+[   365s] snr=2.0 abrupt_level_1s  lsc_state_cusum    detect=0.18 med_delay=182
+[   371s] snr=2.0 abrupt_level_1s  lsc_kalman_cusum   detect=0.12 med_delay=100
+[   382s] snr=2.0 abrupt_level_1s  lsc_composite      detect=0.11 med_delay=134
+[   383s] snr=2.0 abrupt_level_1s  raw_cusum          detect=0.29 med_delay=166
+[   389s] snr=2.0 abrupt_level_3s  lsc_state_cusum    detect=0.94 med_delay=132
+[   396s] snr=2.0 abrupt_level_3s  lsc_kalman_cusum   detect=0.67 med_delay=24
+[   407s] snr=2.0 abrupt_level_3s  lsc_composite      detect=0.67 med_delay=38
+[   407s] snr=2.0 abrupt_level_3s  raw_cusum          detect=0.99 med_delay=91
+[   414s] snr=2.0 ramp_3s_hl25     lsc_state_cusum    detect=0.90 med_delay=138
+[   420s] snr=2.0 ramp_3s_hl25     lsc_kalman_cusum   detect=0.54 med_delay=76
+[   431s] snr=2.0 ramp_3s_hl25     lsc_composite      detect=0.56 med_delay=90
+[   431s] snr=2.0 ramp_3s_hl25     raw_cusum          detect=0.98 med_delay=101
+[   431s] wrote paper_assets/exp02_results.*

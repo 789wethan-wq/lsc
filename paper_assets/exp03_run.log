@@ -1,0 +1,16 @@
+[    26s] lsc_composite: thr=25.350 FAR=5.200%
+[    42s] lsc_kalman_cusum: thr=22.145 FAR=4.800%
+[    57s] lsc_state_cusum: thr=525.311 FAR=5.400%
+[    58s] raw_cusum: thr=103.192 FAR=6.200%
+[   110s] arima_cusum: thr=33.490 FAR=6.400%
+[   122s] persistence_up_0.995   lsc_composite      detect=0.03 med_delay=100
+[   130s] persistence_up_0.995   lsc_kalman_cusum   detect=0.04 med_delay=102
+[   138s] persistence_up_0.995   lsc_state_cusum    detect=0.07 med_delay=146
+[   138s] persistence_up_0.995   raw_cusum          detect=0.16 med_delay=134
+[   163s] persistence_up_0.995   arima_cusum        detect=0.05 med_delay=97
+[   176s] persistence_down_0.80  lsc_composite      detect=0.01 med_delay=49
+[   185s] persistence_down_0.80  lsc_kalman_cusum   detect=0.01 med_delay=68
+[   193s] persistence_down_0.80  lsc_state_cusum    detect=0.03 med_delay=136
+[   193s] persistence_down_0.80  raw_cusum          detect=0.02 med_delay=179
+[   220s] persistence_down_0.80  arima_cusum        detect=0.01 med_delay=35
+[   220s] wrote paper_assets/exp03_results.*

@@ -1,0 +1,34 @@
+# M5 grid v2b — misspecification arenas (SPEC §6 misspec flags;
+# hypotheses pre-registered in experiments/CHANGELOG.md, 2026-07-11).
+# The Kalman AR(1) model is misspecified for both arenas; calibration
+# uses the matched (equally misspecified) null so FAR stays honest —
+# the question is power and ranking.
+#   ar1_t5:    Student-t(5) observation noise, variance still r.
+#   ar1_drift: nonlinear tanh state drift (drift_coef 0.1 -> mildly
+#              bimodal state, fixed points near +-2.7 stationary sd).
+experiment: grid_v2_misspec
+out_dir: paper_assets
+n_reps: 500
+far_target: 0.05
+train_frac: 0.25
+
+seeds:
+  calibration: 100000
+  evaluation: 200000
+  far_check: 300000
+  feature_scales: 900000
+
+T_values: [500]
+
+arenas:
+  ar1_t5:    {dgp: AR1StateDGP, phi: 0.95, q: 0.04875, r: 1.0, t_dof: 5, kalman_spec: ar1}
+  ar1_drift: {dgp: AR1StateDGP, phi: 0.95, q: 0.04875, r: 1.0, drift_coef: 0.1, kalman_spec: ar1}
+
+scenarios:
+  level_1s: {kind: level, time_frac: 0.5, magnitude: 1.0}
+  level_3s: {kind: level, time_frac: 0.5, magnitude: 3.0}
+  variance_x1.5: {kind: variance, time_frac: 0.5, vol_mult: 1.5}
+  variance_x3: {kind: variance, time_frac: 0.5, vol_mult: 3.0}
+  persistence_down: {kind: persistence, time_frac: 0.5, new_phi: 0.80}
+
+methods: [lsc_composite, lsc_kalman_cusum, lsc_state_cusum, raw_cusum]

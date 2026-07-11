@@ -1,0 +1,37 @@
+# M5 grid v1 — representative slice of the SPEC §6 grid.
+# Full cross (T × SNR × break × magnitude × #breaks × misspec) is
+# combinatorially large; v1 covers the dimensions the exp01–exp03
+# findings identified as load-bearing: SNR sweep at T=500 across all
+# break types/magnitudes, plus a T sweep at SNR 0.5. ARIMA and
+# plain-HMM omitted (dominated in exp01; runtime) — parity documented.
+experiment: grid_v1
+out_dir: paper_assets
+n_reps: 500
+far_target: 0.05
+train_frac: 0.25
+
+seeds:
+  calibration: 100000
+  evaluation: 200000
+  far_check: 300000
+  feature_scales: 900000
+
+T_values: [500]
+
+arenas:
+  ar1_snr0.1: {dgp: AR1StateDGP, phi: 0.95, q: 0.00975, r: 1.0, kalman_spec: ar1}
+  ar1_snr0.5: {dgp: AR1StateDGP, phi: 0.95, q: 0.04875, r: 1.0, kalman_spec: ar1}
+  ar1_snr2.0: {dgp: AR1StateDGP, phi: 0.95, q: 0.195,   r: 1.0, kalman_spec: ar1}
+
+scenarios:
+  level_0.5s: {kind: level, time_frac: 0.5, magnitude: 0.5}
+  level_1s: {kind: level, time_frac: 0.5, magnitude: 1.0}
+  level_3s: {kind: level, time_frac: 0.5, magnitude: 3.0}
+  ramp_3s_hl5: {kind: ramp, time_frac: 0.5, magnitude: 3.0, half_life: 5}
+  ramp_3s_hl25: {kind: ramp, time_frac: 0.5, magnitude: 3.0, half_life: 25}
+  variance_x3: {kind: variance, time_frac: 0.5, vol_mult: 3.0}
+  variance_x1.5: {kind: variance, time_frac: 0.5, vol_mult: 1.5}
+  persistence_up: {kind: persistence, time_frac: 0.5, new_phi: 0.995}
+  persistence_down: {kind: persistence, time_frac: 0.5, new_phi: 0.80}
+
+methods: [lsc_composite, lsc_kalman_cusum, lsc_state_cusum, raw_cusum]

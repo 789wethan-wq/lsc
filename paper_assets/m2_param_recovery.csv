@@ -1,0 +1,10 @@
+model,dgp,param,truth,mean_est,mc_se,within_2se
+kalman_llevel,"local_level(q=0.5,r=1.0)",sigma2.level (q),0.5,0.49900282462429757,0.0031530786184247647,True
+kalman_llevel,"local_level(q=0.5,r=1.0)",sigma2.irregular (r),1.0,1.0024513337487095,0.0037084937071066196,True
+kalman_llevel,"local_level(q=0.1,r=1.0)",sigma2.level (q),0.1,0.09987758352116981,0.000858305514917781,True
+kalman_llevel,"local_level(q=0.1,r=1.0)",sigma2.irregular (r),1.0,1.0025410671208952,0.002779302441778863,True
+hmm_2,"markov_switching(0/3,p=.97)",mu0,0.0,0.0015950263917879953,0.0023035228911910685,True
+hmm_2,"markov_switching(0/3,p=.97)",mu1,3.0,3.000380106397913,0.0024300814261545866,True
+hmm_2,"markov_switching(0/3,p=.97)",sig0,1.0,1.0021088271050547,0.001662998821144501,True
+hmm_2,"markov_switching(0/3,p=.97)",sig1,1.0,0.999461627575186,0.0018104882202658512,True
+hmm_2,"markov_switching(0/3,p=.97)",p00,0.97,0.9696264297011976,0.00039083807346326495,True
