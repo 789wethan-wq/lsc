@@ -1,4 +1,16 @@
 method,event,first_alarm,delay_months
+raw_var_cusum,1948-11,none,
+raw_var_cusum,1953-07,none,
+raw_var_cusum,1957-08,none,
+raw_var_cusum,1960-04,none,
+raw_var_cusum,1969-12,none,
+raw_var_cusum,1973-11,none,
+raw_var_cusum,1980-01,none,
+raw_var_cusum,1981-07,none,
+raw_var_cusum,1990-07,none,
+raw_var_cusum,2001-03,none,
+raw_var_cusum,2007-12,2008-09,9.0
+raw_var_cusum,2020-02,none,
 lsc_composite,1948-11,none,
 lsc_composite,1953-07,none,
 lsc_composite,1957-08,none,

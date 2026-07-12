@@ -457,3 +457,62 @@ registers the design, not power hypotheses. Components:
    ("composite alarmed 2008-09") counts as robust only if the
    real-time alarm month matches within ±1 month; otherwise the paper
    claim is downgraded to revised-data-only.
+
+## 2026-07-12 — varbench outcome: **Outcome C fired** (M4 resolution)
+
+The pre-registered decision rule (M0 entry above) is now resolved
+against the completed grid_v4_varbench run (500 reps, identical seed
+blocks, empirical FARs 4.2–6.8%).
+
+**Numbers (raw_var_cusum, variance ×1.5, T = 500).** D_raw = 0.996 /
+0.560 / 0.102 at SNR 0.1 / 0.5 / 2.0; empirical FAR ≈ 6%; the composite
+D_comp = 0.82 / 0.87 / 0.91.
+
+- **Outcome A** (D_raw within 5 pp of FAR at *every* SNR) — FALSIFIED:
+  0.996 and 0.560 are far above FAR (only the SNR-2.0 cell, 0.102 vs
+  6.0%, is near chance).
+- **Outcome B** (D_raw within 10 pp of D_comp at *every* SNR) —
+  FALSIFIED: off by 18 / 31 / 81 pp.
+- **Outcome C (mixed) — FIRED.** The raw variance CUSUM is strongly
+  SNR-dependent: it *beats* the composite when observation noise
+  dominates (0.996 at SNR 0.1) and collapses to chance as the latent
+  signal grows (0.102 at SNR 2.0). Mechanism: as SNR rises the latent
+  state's variance dominates Var(Y), so a ×1.5 change in the shrinking
+  noise component is masked by state-driven autocorrelation.
+
+**Sharpening sub-finding (whitening rung).** The middle rung
+`arima_var_cusum` on the same ×1.5 break is essentially flat across SNR
+(0.90 / 0.94 / 0.87) and tracks the composite step for step —
+prewhitening recovers the full second-moment advantage, and the latent
+*state estimate* adds little the ARIMA residuals do not. Reported per
+the honest-outcome clause (SPEC §8): for second moments the edge is
+"whitening, not state estimation." Under t₅ the composite collapses
+(×1.5: 0.16) while the raw (0.43) and ARIMA (0.74) variance rungs hold —
+the plain z²/e² max-over-arms statistic keeps the tail signal the
+per-time composite standardization discards.
+
+**Real-data resolution (M3).** raw_var_cusum was added to the INDPRO /
+GDP / GS10 monitoring and (because it alarmed on revised INDPRO at
+2008-09) to the ALFRED vintage protocol. It catches every headline
+crisis — GFC (INDPRO 2008-09, GDP 2009Q2), COVID (GDP 2020Q2), Volcker
+(GS10 1980-02) — and its real-time vintage timing is *identical* to the
+composite for both GFC (2008-12 vintage, data month 2008-09) and COVID
+(2020-04 vintage, 2020-03). So the real-data *uniqueness* claim is
+downgraded per the M0 spirit: the crises are not uniquely detected by
+the latent layer. What survives is (i) the composite's clean association
+profile — significant, low-stray (INDPRO p = 0.007 vs raw_var p = 0.56,
+which strays on quieting alarms and washes out; GS10 raw_var 9 alarms /
+8 stray) — and (ii) the simulation-calibrated ×1.5 subtlety threshold at
+high SNR, where only the whitened rungs see the break. The 180-month
+training window breaks *both* variance detectors (composite and raw_var
+each 14 alarms), isolating the sensitivity to the second-moment
+statistic rather than the composite machinery.
+
+**Paper patch (M4).** PAPER_DRAFT.md updated: abstract and §1
+contribution 2 reframed to the prewhitening finding; §5 rewritten as the
+whitening ladder with the raw/ARIMA/latent table and a T-sweep note;
+§8.2 gains the t₅ raw/ARIMA rungs; §9 gains raw_var_cusum rows, the
+apples-to-apples vintage comparison, and the downgraded uniqueness
+language; §10 recipe becomes "whiten, then run the variance CUSUM." All
+editorial `[EDIT]` brackets resolved; propositions numbered; test count
+77 → 84.

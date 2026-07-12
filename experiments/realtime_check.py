@@ -35,6 +35,7 @@ from lsc.diagnostics.alarms import calibrate
 from lsc.eval.detectors import (
     make_composite_detector,
     make_raw_cusum_detector,
+    make_raw_var_cusum_detector,
     make_tail_cusum_detector,
 )
 from lsc.models import KalmanModel
@@ -105,6 +106,7 @@ def episode_check(name: str, peak: str, decisions, n_cal: int,
             "lsc_tail_cusum": make_tail_cusum_detector(
                 lambda: KalmanModel("ar1"), N_TRAIN),
             "raw_cusum": make_raw_cusum_detector(N_TRAIN),
+            "raw_var_cusum": make_raw_var_cusum_detector(N_TRAIN),
         }
         for mname, fn in detectors.items():
             if mname in first_alarm:
@@ -120,9 +122,10 @@ def episode_check(name: str, peak: str, decisions, n_cal: int,
                     vintage=vday)
         print(f"[{time.time()-t0:5.0f}s] {name} decision {m}: "
               f"alarmed so far: {sorted(first_alarm)}", flush=True)
-        if len(first_alarm) == 3:
+        if len(first_alarm) == 4:
             break
-    for mname in ("lsc_composite", "lsc_tail_cusum", "raw_cusum"):
+    for mname in ("lsc_composite", "lsc_tail_cusum", "raw_cusum",
+                  "raw_var_cusum"):
         if mname not in first_alarm:
             first_alarm[mname] = dict(episode=name, method=mname,
                                       decision_month="none",
