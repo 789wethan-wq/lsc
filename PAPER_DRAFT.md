@@ -29,7 +29,7 @@ shortfall CUSUM, detect variance *quieting* that level-oriented methods
 miss. A real-data application
 (industrial production, GDP, Treasury yields) reproduces the profile:
 every alarm attributes to a second-moment feature, association with NBER
-reference dates is significant (permutation p = 0.008), and real-time
+reference dates is significant (permutation p = 0.007), and real-time
 (ALFRED vintage) analysis confirms the COVID timing while honestly
 downgrading the 2008 timing claim.
 
@@ -263,8 +263,13 @@ level. Purpose-built quietness features (CUSUM of 1−e², rolling
 innovation autocorrelation) rescue detection only where the information
 exists: 0.33 at SNR 2.0 (the only above-FAR persistence detection
 anywhere in the grid) and 0.17 at T = 2000. Scale-quieting (×⅔) is
-detectable — but only by the exceedance detector (§8.3): 0.41/0.33, all
-other methods at chance.
+detectable — but, outside the noise-dominated regime, only by the
+exceedance detector (§8.3): at SNR 0.5 it reaches 0.41/0.33 (Gaussian/t₅)
+while every other method sits at chance. The one exception is the same
+low-SNR window that lifts the raw rung on the up-breaks (§5): at SNR 0.1
+the raw variance CUSUM catches the quieting too (0.32), because when
+observation noise dominates a scale change is directly visible in raw z²
+regardless of its sign.
 
 ## 7. Multiple breaks: everyone is one-shot
 
@@ -340,7 +345,7 @@ feature that crossed.
 and 2020-04 (both variance_pressure), 1990-12 (variance_quiet), 1969-08
 (variance_quiet; within the false-alarm budget and reported as such).
 Hits 3/9 NBER peaks within 12 months, 1 stray vs 0.7 expected;
-permutation p = 0.008 (innovation CUSUM p = 0.018; raw CUSUM 1 hit,
+permutation p = 0.007 (innovation CUSUM p = 0.018; raw CUSUM 1 hit,
 p = 0.15). The **raw variance CUSUM** — the bottom rung of the ladder,
 added here to test real-data uniqueness — does catch the GFC (2008-09,
 up-arm, the same month as the composite) but embeds it among four stray
@@ -481,6 +486,6 @@ increments.
 | Persistence-down, best anywhere | 0.33 (SNR 2.0) | grid_v1 |
 | Multi-break: raw second-event recall | 0.00 | exp04 |
 | Composite level→var second event | 0.60 (F1 0.63) | exp04 |
-| INDPRO permutation p (composite) | 0.008 | rd_eval |
+| INDPRO permutation p (composite) | 0.007 | rd_eval |
 | GFC real-time | data month 2008-09, known 2008-12 | rd_realtime |
 | COVID real-time | data 2020-03, ~2 mo before NBER | rd_realtime |
