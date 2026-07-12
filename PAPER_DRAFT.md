@@ -448,6 +448,20 @@ three falsified ones and the two failed robust-feature designs) are in
 configuration constitute the replication package, to be posted publicly on
 acceptance and available from the author on request in the interim.
 
+## Appendix B. Theory derivations
+
+Full derivations of Proposition 1 (the geometric decay of the
+standardized innovation mean to μ∞ and the resulting fast-or-never
+alarm bound) and Proposition 2 (the Albert–Wald delay of the raw-Y CUSUM
+under a sustained standardized drift) are in `experiments/THEORY.md`,
+with the numerical verification in `experiments/exp06_theory_check.py`
+(1000 replications). The steady-state Kalman gain K and innovation
+variance F are the fixed-point solutions of the scalar Riccati recursion
+for the AR(1) state model of §2; μ∞, ρ, and the bound follow by taking
+the post-break innovation as a deterministic geometric transient plus
+mean-zero noise and applying a one-sided Hoeffding bound to the CUSUM
+increments.
+
 ## Appendix C. Summary of key quantities
 
 | Claim | Number | Source |

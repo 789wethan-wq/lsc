@@ -66,6 +66,11 @@ grid_v4:
 fred:
 	$(PY) experiments/m6_fred.py 200
 
+# SSRN working-paper PDF (M5): pandoc + tectonic build of the patched
+# draft -> paper_assets/lsc_wp.pdf. Requires tectonic on PATH.
+paper:
+	$(PY) experiments/build_paper.py
+
 # m6x real-data extension: uses pinned snapshots in data/ (no network
 # needed except realtime, which reads/caches ALFRED vintages)
 realdata:
