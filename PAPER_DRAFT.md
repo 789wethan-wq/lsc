@@ -314,10 +314,21 @@ telling honestly).** (i) Huberizing e² (clip at 2.5·MAD) — falsified,
 worse everywhere, even Gaussian (×1.5: 0.87 → 0.06): the variance signal
 lives in the tail the clip removes. (ii) An exceedance-indicator CUSUM
 (count of |e| above its training 90th percentile; bounded summand under
-any distribution) — the raw statistic separates near-perfectly, but dies
-inside the composite: a max-over-features composite rewards
-break-to-null-IQR ratio, and bounded increments cannot reach the ratios
-unbounded features set the threshold with. (iii) The same statistic as a
+any distribution) — the raw statistic separates the null and break
+classes near-perfectly. Dropped into the composite in place of the
+e²-pressure features (the "robust2" variant), and standardized
+per-time-point as in §8.4, it is *diluted, not dead*: it reaches 0.58 at
+×1.5 (SNR 0.5, Gaussian) and 0.21 at ×1.5 under t₅ — where it even edges
+the e²-based composite's heavy-tail collapse (0.16, §8.2) — and ≈0.97 at
+×3 under t₅. But it trails the standalone detector of (iii) at the subtle
+break, because a max-over-≈10-features composite spreads the calibrated
+5% false-alarm budget across all features: the exceedance feature's per-t
+standardized score climbs past z ≈ 19 on a ×1.5 break, so bounded
+increments *do* reach discriminating ratios (an earlier pooled-scale
+build, before the §8.4 fix, wrongly suggested otherwise), yet the shared
+threshold still costs it power relative to calibrating the statistic
+alone. The remedy is *exposure*, not a different feature. (iii) The same
+statistic as a
 *standalone* calibrated detector (up-arm k = 0.05, down-arm k = 0.02; k
 chosen on non-evaluation seeds, procedure logged): variance ×1.5 at 0.87
 Gaussian / 0.75 t₅ (repairing 0.16), ×3 at ~1.0 with ~37-obs delay under
@@ -442,9 +453,11 @@ Four points summarize what the harness bought us.
 `make all` regenerates every table and figure from pinned seeds
 (Python 3.14, statsmodels/hmmlearn; `make fred` / `make realdata` /
 `make realtime` for the data applications, snapshots under `data/`).
-84 tests include bit-identical no-lookahead checks for every feature and
+91 tests include bit-identical no-lookahead checks for every feature and
 detector (including the raw and ARIMA variance rungs and a training-freeze
-check), DGP ground-truth checks, and calibration-parity checks. All
+check), DGP ground-truth checks, calibration-parity checks, and composite
+golden-score regression guards (which pin the per-time-point-standardized
+output so a stale artifact cannot recur). All
 post-hoc design changes and pre-registered hypotheses (including the
 three falsified ones and the two failed robust-feature designs) are in
 `experiments/CHANGELOG.md`; full experiment narratives in

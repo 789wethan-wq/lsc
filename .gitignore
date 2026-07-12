@@ -5,3 +5,4 @@ __pycache__/
 .pytest_cache/
 paper_assets/*_run.log
 paper_assets/*_rerun.log
+paper_assets/*.log

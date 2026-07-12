@@ -1,13 +1,13 @@
 arena,method,threshold,far_target,far_empirical
 ar1,lsc_kalman_cusum,15.514204415569052,0.05,0.042
 ar1,lsc_state_cusum,412.71592334118054,0.05,0.086
-ar1,lsc_composite,16.83089974338487,0.05,0.042
+ar1,lsc_composite,22.165489166864127,0.05,0.042
 ar1,raw_cusum,279.5766479493051,0.05,0.078
 ar1,arima_cusum,27.090587904220396,0.05,0.04
 ar1,plain_hmm,26.595122329756723,0.05,0.036
 local_level,lsc_kalman_cusum,10.076901570120562,0.05,0.052
 local_level,lsc_state_cusum,2545.763946956786,0.05,0.072
-local_level,lsc_composite,11.487349926491829,0.05,0.068
+local_level,lsc_composite,16.404634370187956,0.05,0.048
 local_level,raw_cusum,2090.549643014459,0.05,0.066
 local_level,arima_cusum,11.697504797878413,0.05,0.052
 local_level,plain_hmm,27.63102111592755,0.05,0.332

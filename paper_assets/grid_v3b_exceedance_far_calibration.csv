@@ -1,7 +1,7 @@
 T,arena,method,threshold,far_target,far_empirical
 500,ar1_snr0.5,lsc_composite,32.528390406406224,0.05,0.048
-500,ar1_snr0.5,lsc_composite_robust2,30.09088941124554,0.05,0.046
+500,ar1_snr0.5,lsc_composite_robust2,30.546930444000424,0.05,0.046
 500,ar1_snr0.5,raw_cusum,103.19232082036218,0.05,0.062
 500,ar1_t5,lsc_composite,28.400477759052617,0.05,0.062
-500,ar1_t5,lsc_composite_robust2,28.278556633110288,0.05,0.054
+500,ar1_t5,lsc_composite_robust2,28.278556633110288,0.05,0.056
 500,ar1_t5,raw_cusum,111.49918270806106,0.05,0.058
