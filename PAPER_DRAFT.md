@@ -14,16 +14,29 @@ detection rates at every signal-to-noise ratio, while the latent-innovation
 CUSUM is "fast or never" — a phenomenon we formalize (the post-break
 innovation mean decays geometrically to δ(1−φ)/((1−φ(1−K))√F); when this
 is below the CUSUM allowance, post-transient detection has an
-exponentially small bound) and verify numerically. For second-moment and
-dynamics changes the ordering reverses — though a whitening ladder (the
-same variance CUSUM on raw data, ARIMA residuals, and Kalman innovations)
-shows the edge is *prewhitening under autocorrelation*, not the latent
-state estimate itself: a raw-data variance CUSUM given identical
-calibration detects the subtle (×1.5) break only when observation noise
-dominates (0.996 at SNR 0.1) and falls to chance as the latent signal
-grows (0.560, 0.102 at SNR 0.5, 2.0), whereas the same statistic on
-prewhitened residuals detects it at every SNR (ARIMA 0.90/0.94/0.87,
-tracking the latent composite's 0.82/0.87/0.91). The diagnostics further
+exponentially small bound) and verify numerically — sweeping the state
+persistence φ, we find the asymptotic drift μ∞ sorts detection
+(Spearman 0.94) and the innovation CUSUM *escapes* the fast-or-never
+regime at low φ, so the negative result is a boundary condition of
+persistent states (the empirically relevant case), not a universal law.
+For second-moment changes the story is a **two-channel** one. On
+observation-noise breaks a whitening ladder shows the edge over raw data
+is *prewhitening under autocorrelation*, not the latent state estimate:
+the ARIMA-residual and Kalman-innovation rungs are provably the *same
+filter* (the observable is exactly ARMA(1,1), so the two whitened rungs
+coincide up to estimation error, ρ̄ = 0.99), and both detect the subtle
+(×1.5) break at every SNR (ARIMA 0.90/0.94/0.87) while a raw-data
+variance CUSUM detects it only when observation noise dominates (0.996 at
+SNR 0.1) and falls to chance as the latent signal grows (0.56, 0.10 at
+SNR 0.5, 2.0). But this advantage is specific to the observation-noise
+channel: on state-innovation (shock-variance) breaks — the channel that
+describes the Great Moderation and crisis-volatility events the
+application targets — the ordering *inverts*, and a raw variance CUSUM
+matches or beats the whitened rungs at every SNR (×1.5: raw
+0.09/0.21/0.23 vs ARIMA 0.03/0.10/0.16). Prewhitening reveals a break in
+the white component and *removes* the signal of a break in the state,
+which is why on real crises a raw variance CUSUM's timing is
+indistinguishable from the state-aware composite's. The diagnostics further
 survive heavy tails via an exceedance-indicator variant and, via a
 shortfall CUSUM, detect variance *quieting* that level-oriented methods
 miss. A real-data application
@@ -59,13 +72,20 @@ answerable. Our contributions are as follows.
   tested bit-identically (perturbing future observations leaves all
   scores at earlier times unchanged, exactly).
 - Contribution 2 (negative + positive results): the intuition is wrong
-  for first moments at every SNR — and we can prove why (fast-or-never
-  theorem). For second moments it is right, but a whitening ladder (raw /
-  ARIMA / Kalman, same variance CUSUM) localizes *why*: the advantage
-  over raw data is prewhitening under autocorrelation — decisive at high
-  SNR, where the latent signal masks the observation-noise change and the
-  raw detector sits at chance — and the latent state estimate itself adds
-  little once the observations are whitened (ARIMA residuals suffice).
+  for first moments at high persistence — and we can prove why
+  (fast-or-never theorem), then bound the claim by sweeping φ (μ∞ sorts
+  detection, and the innovation CUSUM escapes the regime at low φ). For
+  second moments the answer is a two-rung, two-channel decomposition. The
+  ladder collapses to *two* rungs because the ARIMA and Kalman rungs are
+  the same filter — the observable is exactly ARMA(1,1), an equivalence
+  we state as theory and confirm to machine precision — so "prewhitening"
+  and "state estimation" are not separable here; the state layer adds
+  nothing the ARIMA residuals do not. And the prewhitening advantage is
+  *channel-specific*: it holds for observation-noise breaks (decisive at
+  high SNR, where the latent signal masks the noise change and raw sits at
+  chance) but *inverts* for state-innovation breaks, where the raw
+  variance CUSUM matches or beats the whitened rungs — the channel that
+  matters for the volatility-regime events of the application.
 - Contribution 3 (method): a tail-robust exceedance-indicator CUSUM that
   preserves the second-moment advantage under heavy-tailed noise, reached
   by rejecting two documented alternatives — a falsified clipped variant
@@ -78,24 +98,46 @@ answerable. Our contributions are as follows.
   were falsified; every post-hoc change is logged (CHANGELOG) and the
   failures are reported as findings.
 
-**Related work.** The paper sits at the intersection of four literatures.
-Sequential change detection descends from Page's (1954) CUSUM and the
-quickest-detection tradition (Lorden 1971; Moustakides 1986); we use the
-CUSUM as the common statistic across information sets rather than proposing
-a new stopping rule. Regime-switching models (Hamilton 1989; Kim–Nelson
-1999) offer a state-aware alternative whose regime probabilities we include
-as a benchmark and find saturate under calibration on nonstationary data.
-The empirical target of the second-moment results is the Great Moderation
-volatility decline (McConnell–Perez-Quiros 2000; Stock–Watson 2002), which
-motivates the variance and quieting scenarios. Finally, offline changepoint
-methods (PELT, Killick et al. 2012; and the wider changepoint literature)
-solve a retrospective segmentation problem; our monitoring is strictly
-causal and calibrated to a false-alarm rate, so the comparison is to online
-detectors on matched nulls. What is new here is not any single detector but
-the calibrated-parity harness that makes latent-state and raw-data
-detectors directly comparable, and the whitening ladder that decomposes the
-latent layer's second-moment advantage into a prewhitening component and a
-(negligible) state-estimation component.
+**Related work.** The paper sits at the intersection of several
+literatures. Sequential change detection descends from Page's (1954)
+CUSUM and the quickest-detection tradition (Lorden 1971; Moustakides
+1986); we use the CUSUM as the common statistic across information sets
+rather than proposing a new stopping rule. The idea of monitoring a
+*state-space* model through its innovations is not ours: it is the core
+of the innovation-based change-detection literature — the generalized
+likelihood ratio test on Kalman innovations (Willsky & Jones 1976) and
+the systematic treatment of CUSUM/GLR schemes on innovation sequences in
+Basseville & Nikiforov (1993). That literature also supplies the
+evaluation currency we adopt: the average run length (ARL), with methods
+compared at a matched in-control ARL₀ — the statistical-process-control
+convention (Page 1954; Montgomery). Our contribution on this axis is
+*not* the innovation CUSUM or ARL-matching per se, both of which are
+standard in SPC and quickest detection; it is that this matched-error
+protocol is essentially *absent* from the applied latent-state
+econometrics literature, and that transplanting it there — calibrating
+every information set to a common false-alarm rate — is precisely what
+produces the negative results (raw data wins on levels; the state
+estimate adds nothing over ARIMA whitening on variances). In econometrics,
+sequential monitoring of structural change is the CUSUM-of-recursive-
+residuals line and its modern monitoring form (Brown, Durbin & Evans
+1975; Chu, Stinchcombe & White 1996), which watch *observable* regression
+residuals; our object is a *latent* state, and the residuals we monitor
+are a filter's innovations. Regime-switching models (Hamilton 1989;
+Kim–Nelson 1999) offer a state-aware alternative whose regime
+probabilities we include as a benchmark and find saturate under
+calibration on nonstationary data. The empirical target of the
+second-moment results is the Great Moderation volatility decline
+(McConnell–Perez-Quiros 2000; Stock–Watson 2002); as we show, that and
+the crisis-volatility events are *state-innovation* (shock-variance)
+breaks, the channel on which raw and prewhitened detectors are
+interchangeable. Finally, offline changepoint methods (PELT, Killick et
+al. 2012) solve a retrospective segmentation problem; our monitoring is
+strictly causal and calibrated to a false-alarm rate. What is new here is
+not any single detector but the calibrated-parity harness that makes
+latent-state and raw-data detectors directly comparable, and a
+reduced-form result (the exact ARMA(1,1) equivalence of the ARIMA and
+Kalman rungs) that dissolves the "does filtering help?" question for
+second moments into a prewhitening question with a known answer.
 
 ## 2. Framework and evaluation protocol
 
@@ -125,15 +167,41 @@ and feature-scale seeds are disjoint by construction.
 
 **Metrics.** Detection rate, pre-break false alarms, censored delay; for
 multi-break: event-level precision/recall/F1 with one-to-one greedy
-matching in a 100-observation window.
+matching in a 100-observation window. To connect the protocol to the
+statistical-process-control and quickest-detection literatures we also
+report the two average-run-length quantities those fields are built
+around (`paper_assets/arl_table.csv`). The in-control **ARL₀** is the
+mean observations between false alarms implied by the calibrated
+per-observation false-alarm hazard: with monitored window length L = 375
+(T = 500, 25% training) and empirical window-FAR α, the hazard is
+p = 1 − (1−α)^{1/L} and ARL₀ = 1/p ≈ L/α; our 5% window target
+corresponds to ARL₀ ≈ 7300 observations, and the empirical detectors sit
+at 5900–7600 (raw CUSUM calibrates slightly hot). The out-of-control
+**ARL₁** is the post-break detection delay (mean delay conditional on
+detection, reported beside the detection rate since misses are censored):
+e.g. at 3σ level, SNR 0.5, ARL₁ ≈ 77–86 observations. Calibrating a
+common ARL₀ is exactly the ARL-matching convention of SPC (Basseville &
+Nikiforov 1993); we express it as a window-FAR because our horizon is
+finite.
 
 ## 3. Simulation design
 
 Arenas: AR(1) latent state (φ = 0.95) at spec-SNR (stationary state
-variance / observation variance) ∈ {0.1, 0.5, 2.0}; a local-level
-(random-walk state) arena is retained as a documented degenerate case
-(§8.4). Breaks at mid-sample: level shifts (0.5, 1, 3 σ_ref), logistic
-ramps, observation-noise scale changes (×1.5, ×3, and ×⅔ quieting), and
+variance / observation variance) ∈ {0.1, 0.5, 2.0}, with a persistence
+sweep φ ∈ {0.5, 0.8, 0.95, 0.99} (SNR held fixed by q = SNR·(1−φ²)) used
+to map the fast-or-never boundary (§4); and a local-level (random-walk
+state) arena, analyzed in §8.4, where — as we now demonstrate rather than
+assert — level detection is degenerate for every method and variance
+detection becomes possible only after whitening. Breaks at mid-sample
+come in **two variance channels** whose distinction is central to §5.
+An *observation-noise* (r) break scales the white-noise component's
+standard deviation (×1.5, ×3, ×⅔ quieting); a *state-innovation* (q)
+break scales the state shock's standard deviation by the same factors —
+the identical SD convention, so "×1.5" means SD×1.5 in both channels.
+The two are structurally different: an r-break changes only the marginal
+variance of Y, whereas a q-break changes both the marginal variance and
+the autocorrelation structure (it shifts the reduced-form ARMA(1,1) MA
+parameter). Also: level shifts (0.5, 1, 3 σ_ref), logistic ramps, and
 pure persistence changes (φ → 0.995 or 0.80 with the stationary variance
 held fixed). T = 500 baseline with a T ∈ {200, 2000} sweep;
 misspecification arenas with t₅ observation noise and a nonlinear tanh
@@ -181,6 +249,43 @@ observed raw medians 58/75/91 (≈15–20% conservative) and explain the
 partial 1σ detection (0.30) without any fitting: Δ = 0.577 barely exceeds
 k, so the Wald delay (1334) dwarfs the 250-observation horizon.
 
+**The persistence boundary (φ sweep).** Proposition 1's regime is not
+unconditional — μ∞ = δ(1−φ)/((1−φ(1−K))√F) is *increasing in* (1−φ), so
+the fast-or-never trap should loosen as the state becomes less
+persistent. Sweeping φ ∈ {0.5, 0.8, 0.95, 0.99} at fixed SNR (Figure
+`grid_v6_muinf_scatter.png`) confirms it and turns the theory into a
+falsifiable ordering: μ∞ sorts the innovation-CUSUM detection rate across
+all cells (Spearman 0.94), fast-regime cells (μ∞ ≥ k = 0.5) detect
+0.83–1.00 while never-regime cells (μ∞ < 0.5) detect 0.07–0.67, and at
+3σ the detector escapes the trap at low persistence (0.98/0.97 at
+φ = 0.5/0.8) but is caught at high persistence (0.65/0.30 at
+φ = 0.95/0.99) — while the raw CUSUM detects at 0.96–1.00 for *every* φ,
+so the φ-dependence is specific to the filtered detector. The negative
+first-moment result is therefore a boundary condition of *persistent*
+latent states — which is the empirically relevant case (trend output, a
+natural rate, a volatility level are near-unit-root), and the case the
+rest of the paper studies at φ = 0.95. The one off-trend cell — φ = 0.99,
+low SNR, where detection (0.63) exceeds what μ∞ (0.21) predicts — is
+honest evidence of the transient's own contribution: at near-unit-root φ
+the adaptation transient is so long that its accumulated mass fires the
+CUSUM even when the asymptotic drift is negligible (the "fast" branch,
+strengthened by a long transient). μ∞ governs the post-transient tail;
+total detection adds the transient mass.
+
+**Assumptions and estimation error.** Propositions 1–2 assume the
+steady-state filter with *known* parameters. Two facts keep this from
+being a limitation in practice. First, the filter reaches its steady
+state within the 125-observation training prefix, well before monitoring
+begins (the innovation autocorrelation is flat by then). Second, the
+error from estimating (φ, q, r) rather than knowing them is second-order:
+in the M1 equivalence check (§5, `experiments/exp07`) the ARIMA and
+Kalman standardized-innovation series computed with *estimated*
+parameters correlate at ρ̄ = 0.99 with each other and, computed with
+*true* parameters, at ρ = 1.000 to a max discrepancy of ≈10⁻⁹ — so the
+entire estimated-vs-true gap is the small residual that leaves the
+median correlation at 0.99. The theory describes the estimated filter to
+within that gap.
+
 ## 5. Second moments: a whitening ladder
 
 Is the latent layer's second-moment advantage about the *state estimate*,
@@ -199,43 +304,94 @@ routine on the same matched-null seed blocks:
 - **latent** — the composite's e²-based variance features on the Kalman
   innovations (state-aware).
 
-**The ladder (detection rate at T = 500, 5% calibrated FAR; MC SEs ≤ 0.02
-in `paper_assets/ladder_table.csv`).**
+**The ladder has three rungs but only two are distinct.** For the AR(1)
++ noise DGP the observable Y has an *exact* ARMA(1,1) reduced form:
+differencing by (1 − φL) leaves an MA(1), whose invertible root gives an
+MA parameter θ and innovation variance σ_ε² satisfying two identities we
+verify to machine precision (Appendix B; `lsc.theory
+.arma11_representation`) — σ_ε² = F, the Kalman innovation variance, and
+θ = ρ = φ(1 − K), the Proposition-1 decay rate. So the steady-state
+Kalman innovations *are* the ARMA(1,1) innovations: the ARIMA and latent
+rungs are the same filter, not two competitors. We confirm this
+numerically (`experiments/exp07_arma_equivalence.py`, ≥200 null paths):
+with true parameters the two standardized-innovation series agree to a
+median correlation of 1.000 (max discrepancy ≈ 10⁻⁹), and with each rung
+fit on the training prefix — the actual operating condition — they still
+correlate at ρ̄ = 0.99, the small wedge being pure estimation error
+(forcing the ARIMA order to the true (1,0,1) tightens it to 0.9995).
+(AIC, incidentally, rarely selects (1,0,1): near the unit root at φ = 0.95
+it prefers (1,0,0) or a differencing (0,1,1); this is a benign near-unit-
+root artifact — those orders approximate the ARMA(1,1) closely enough to
+preserve ρ̄ ≥ 0.95 — reported in full in Appendix B.) The practical
+consequence: the ladder is really **raw vs. whitened**, and "does the
+*state estimate* help beyond ARIMA whitening?" has the answer *no, by
+construction*. What remains is the genuinely empirical question — when
+does whitening help at all? — which turns out to depend on *which
+variance channel* breaks.
 
-| break | rung | SNR 0.1 | SNR 0.5 | SNR 2.0 |
-|---|---|---|---|---|
-| variance ×1.5 | raw | **1.00** | 0.56 | **0.10** |
-|               | ARIMA | 0.90 | 0.94 | 0.87 |
-|               | latent | 0.82 | 0.87 | 0.91 |
-| variance ×3   | raw | 1.00 | 1.00 | 0.85 |
-|               | ARIMA | 0.98 | 1.00 | 1.00 |
-|               | latent | 0.99 | 0.99 | 0.98 |
+**The ladder, both channels (detection rate at T = 500, 5% calibrated
+FAR; MC SEs ≤ 0.02 in `paper_assets/ladder_table.csv`, `break_channel`
+column).**
 
-**Reading the ladder.** The subtle ×1.5 break is the discriminating case.
-The *raw* rung is strongly SNR-dependent — it falls monotonically from
-0.996 (SNR 0.1) through 0.560 (SNR 0.5) to 0.102 (SNR 2.0, within 5 pp of
-the 6.0% empirical FAR, i.e. chance). The mechanism is transparent: as
-SNR rises the latent state's variance dominates the marginal variance of
-Y, so a ×1.5 change in the (now-small) observation-noise component is a
-shrinking fraction of total variance and is masked by state-driven
-autocorrelation. This overturns the scoped claim — earlier framed against
-"level-oriented detectors standard in this literature" — that a raw-data
-variance detector must sit at chance: it does not, *when observation
-noise dominates*. But prewhitening removes exactly the autocorrelation
-that masks the break: the *ARIMA* rung is essentially flat across SNR
-(0.90 / 0.94 / 0.87) and tracks the *latent* rung (0.82 / 0.87 / 0.91)
-step for step — the state estimate adds little the ARIMA residuals do not
-already provide. The advantage over raw is therefore *prewhitening under
-autocorrelation*, not latency or state estimation per se (the recipe in
-§10 is revised accordingly, and the fast-or-never first-moment result of
-§4 is untouched — that concerns the state CUSUM, not the variance CUSUM).
-At the coarser ×3 break every rung is at or near ceiling; the ladder only
-separates in the subtle regime. This is the pre-registered **Outcome C**
-of the decision rule logged in `experiments/CHANGELOG.md` (Outcomes A and
-B, which required the raw rung to be uniformly at chance or uniformly
-within 10 pp of the composite, are both falsified by the SNR dependence).
+| channel | break | rung | SNR 0.1 | SNR 0.5 | SNR 2.0 |
+|---|---|---|---|---|---|
+| **r** (obs-noise) | ×1.5 | raw | **1.00** | 0.56 | **0.10** |
+|                   |      | ARIMA | 0.90 | 0.94 | 0.87 |
+|                   |      | latent | 0.82 | 0.87 | 0.91 |
+|                   | ×3   | raw | 1.00 | 1.00 | 0.85 |
+|                   |      | ARIMA | 0.98 | 1.00 | 1.00 |
+|                   |      | latent | 0.99 | 0.99 | 0.98 |
+| **q** (state-innov) | ×1.5 | raw | **0.09** | 0.21 | **0.23** |
+|                     |      | ARIMA | 0.03 | 0.10 | 0.16 |
+|                     |      | latent | 0.06 | 0.11 | 0.23 |
+|                     | ×3   | raw | 0.72 | 0.96 | 0.96 |
+|                     |      | ARIMA | 0.26 | 0.79 | 1.00 |
+|                     |      | latent | 0.44 | 0.76 | 0.98 |
+
+**Reading the ladder: the ordering inverts across channels.** The subtle
+×1.5 break is the discriminating case, and it tells opposite stories in
+the two channels.
+
+*Observation-noise (r) breaks — prewhitening wins.* The *raw* rung is
+strongly SNR-dependent, falling monotonically from 0.996 (SNR 0.1)
+through 0.560 to 0.102 (SNR 2.0, within 5 pp of the 6.0% empirical FAR,
+i.e. chance). The mechanism is transparent: as SNR rises the latent
+state's variance dominates the marginal variance of Y, so a ×1.5 change
+in the (now-small) observation-noise component is a shrinking fraction of
+total variance, masked by state-driven autocorrelation. Prewhitening
+removes exactly that autocorrelation: the *ARIMA* rung is flat across SNR
+(0.90 / 0.94 / 0.87) and tracks the *latent* rung step for step (0.82 /
+0.87 / 0.91) — as it must, since the equivalence above makes them the
+same filter. On this channel the advantage over raw is *prewhitening under
+autocorrelation*, decisive where the latent signal masks the noise change.
+
+*State-innovation (q) breaks — raw wins, and the SNR-dependence flips.*
+Here the raw rung's dependence on SNR *reverses sign* — it *rises* with
+SNR (0.09 → 0.21 → 0.23 at ×1.5) — and the raw rung matches or beats the
+whitened rungs at every SNR (×1.5 ARIMA 0.03 / 0.10 / 0.16; ×3 raw 0.72 /
+0.96 / 0.96 vs ARIMA 0.26 / 0.79 / 1.00, the whitened rung catching up
+only at the ×3 high-SNR ceiling). The mechanism is the mirror image: a
+q-break inflates the *state's own* variance, which dominates the marginal
+variance of Y at high SNR, so a raw z² statistic sees it directly —
+whereas prewhitening *strips out* the state-carried signal along with the
+autocorrelation. Prewhitening reveals a break in the white component and
+removes a break in the state. Quieting (×⅔, i.e. reduced q) is
+undetectable by every rung (≤ 0.07, at FAR): a low-q state contributes
+too little to Y to register its own reduction.
+
+This resolves the pre-registered decision rule (`experiments/CHANGELOG.md`)
+as **Outcome B2**: the "prewhitening beats raw" result is *specific to
+the observation-noise channel*. It matters because the events the
+application targets — the Great Moderation, crisis volatility — are
+state-innovation (shock-variance) breaks, not observation-noise breaks;
+on that channel a raw variance CUSUM is at least as good as any amount of
+whitening. This is not a weakness to hide but the explanation for a
+real-data fact (§9): the raw variance CUSUM's crisis timing is
+*indistinguishable* from the state-aware composite's, exactly as the q-
+channel predicts. (The earlier r-channel-only framing recorded a
+provisional "Outcome C"; the q channel is what disambiguates it.)
 Attribution: the z²/e² variance-pressure arms drive the alarms at every
-rung; on real data the same features drive every crisis alarm (§9).
+rung.
 
 **Runway (T sweep, ×1.5, SNR 0.5).** The subtle-break detection scales
 with sample length for every rung: at T = 200 all three are weak (raw
@@ -337,14 +493,39 @@ both distributions, and the first successful quieting detection (×⅔:
 0.41/0.33). Both headline rates fell 3–5pp short of the pre-registered
 bars — reported as such.
 
-**8.4 Protocol lessons (each cost us a wrong result before it was
-fixed).** Random-walk-state arenas are degenerate for level-break
-ranking; plain-HMM regime probabilities saturate and cannot be
-FAR-calibrated on nonstationary data; probability-scale scores need
-log-odds; EM needs persistent-initialization restarts; composite features
-must be standardized per-time-point, not pooled; order-statistic
-thresholds have Beta(n+1−k, k) noise regardless of distribution, so
-heavy-tailed detectors need larger calibration budgets.
+**8.4 The local-level (random-walk state) arena: degenerate for levels,
+whitening-mandatory for variances.** The canonical latent-state model in
+economics is the local level (random-walk state); we ran the level and
+variance ladder cells there rather than dismiss it
+(`configs/grid_v7_llevel.yaml`, Figure `grid_v7_llevel_degeneracy.png`),
+and it splits cleanly. *Level* detection is degenerate for **every**
+method: at 3σ all five detectors sit at the 5% FAR (raw CUSUM 0.07–0.10,
+Kalman-innovation 0.04–0.15, raw/ARIMA variance and composite ≤ 0.07). A
+level break in a random-walk state is absorbed by a well-specified filter
+as one large ordinary innovation — no sustained signal — and the raw-Y
+CUSUM has no fixed baseline: its calibrated threshold is 1500–2400
+(versus O(10–100) in the AR(1) arena) and it still calibrates hot. There
+is no common null against which to rank level detectors, which is why we
+study the identifiable AR(1) arena in the body. But *variance* detection
+is **not** degenerate — it merely requires whitening. On a ×1.5
+observation-noise break the raw z² CUSUM is at chance (0.06 at every SNR;
+threshold ≈ 10⁴, meaningless on a nonstationary series) while the
+ARIMA-differencing rung detects (0.71 / 0.84 / 0.58) and the Kalman
+composite detects (0.97 / 0.89 / 0.68); at ×3 the whitened rungs reach
+0.97–1.00 while raw stays at chance. This is the exact complement of §5's
+r-channel AR(1) result — where a raw variance CUSUM could *win* when
+observation noise dominates — and it sharpens the paper's thesis:
+prewhitening is not merely helpful but *mandatory* once the observable is
+nonstationary, because the raw statistic has no stationary baseline to
+calibrate against.
+
+**Protocol lessons (each cost us a wrong result before it was fixed).**
+plain-HMM regime probabilities saturate and cannot be FAR-calibrated on
+nonstationary data; probability-scale scores need log-odds; EM needs
+persistent-initialization restarts; composite features must be
+standardized per-time-point, not pooled; order-statistic thresholds have
+Beta(n+1−k, k) noise regardless of distribution, so heavy-tailed
+detectors need larger calibration budgets.
 
 ## 9. Real data (illustrative)
 
@@ -421,23 +602,31 @@ Four points summarize what the harness bought us.
 
 - The latent-state diagnostics layer is not a better level-shift
   detector; it is a *different instrument*, reading second moments and
-  dynamics that raw-data detectors miss once the latent signal masks
-  them. The whitening ladder (§5) sharpens the claim: the second-moment
-  advantage over raw data is *prewhitening under autocorrelation*, which
-  ARIMA residuals capture as well as the Kalman state — the state layer's
-  distinctive contribution is dynamics (persistence, quieting) and the
-  fast-or-never speed edge on levels, not variance detection per se. The
-  division of labor is now both measured (grids), laddered (raw / ARIMA /
-  latent), and derived (fast-or-never).
-- Practical recipe: run raw CUSUM for levels; for scale changes, *whiten
-  first* (ARIMA residuals or Kalman innovations) and run the variance
-  CUSUM — prewhitening, not the latent state estimate, is what buys
-  detection when the series is autocorrelated and the latent signal is
-  strong, while a raw variance CUSUM suffices only when observation noise
-  dominates (low SNR). Use the exceedance-indicator variant under
-  distributional uncertainty (heavy tails), and the composite for
-  breadth. Calibrate everything on matched nulls at a common FAR and
-  report empirical FARs.
+  dynamics. But the whitening ladder (§5) sharpens the claim past the
+  point where "the state estimate" survives as an ingredient: on this DGP
+  the Kalman innovations *are* the ARMA(1,1) innovations (an exact
+  reduced-form equivalence, verified to machine precision), so whatever
+  second-moment power the latent layer has is prewhitening, full stop —
+  ARIMA residuals capture it identically. What the state framing still
+  buys is dynamics features (persistence, quieting) and the fast-or-never
+  speed edge on levels. The division of labor is now measured (grids),
+  reduced (raw vs. whitened, the two whitened rungs proven identical), and
+  derived (fast-or-never with its φ boundary).
+- Practical recipe, now channel-aware. Run raw CUSUM for levels. For
+  scale changes the right move depends on *which variance moves*, and one
+  usually does not know: (i) if the break is in the observation
+  (measurement) noise, *whiten first* (ARIMA residuals suffice; the
+  Kalman state adds nothing) — prewhitening is decisive when the series is
+  autocorrelated and the latent signal is strong, and a raw variance
+  CUSUM works only when observation noise dominates; (ii) if the break is
+  in the state's own shock variance — the Great-Moderation / crisis-
+  volatility case — a raw variance CUSUM is at least as good as whitening
+  at every SNR, and whitening can *hurt*. Because the practitioner rarely
+  knows the channel, running *both* a raw and a whitened variance CUSUM
+  (cheap, and they agree on the q channel) is the robust default. Use the
+  exceedance-indicator variant under heavy tails and the composite for
+  breadth. Calibrate everything on matched nulls at a common FAR (a common
+  ARL₀) and report empirical FARs.
 - The calibrated-parity protocol itself is a contribution: it exposed
   every failure mode above, and it is what makes the negative results
   informative rather than anecdotal.
@@ -453,12 +642,18 @@ Four points summarize what the harness bought us.
 
 `make all` regenerates every table and figure from pinned seeds
 (Python 3.14, statsmodels/hmmlearn; `make fred` / `make realdata` /
-`make realtime` for the data applications, snapshots under `data/`).
-91 tests include bit-identical no-lookahead checks for every feature and
-detector (including the raw and ARIMA variance rungs and a training-freeze
-check), DGP ground-truth checks, calibration-parity checks, and composite
-golden-score regression guards (which pin the per-time-point-standardized
-output so a stale artifact cannot recur). All
+`make realtime` for the data applications, snapshots under `data/`). The
+referee-hardening round adds five reproducible artifacts to the pack:
+`exp07` (ARMA equivalence, M1), `grid_v5` (the q-break channel, M2),
+`grid_v6` (the φ sweep, M3), `grid_v7` (the local-level arena, M4), and
+`arl` (ARL₀/ARL₁ table, M5); all are pinned-seed and join the existing
+grids draw-for-draw. 95 tests include bit-identical no-lookahead checks
+for every feature and detector (including the raw and ARIMA variance
+rungs and a training-freeze check), DGP ground-truth checks (now
+including the state-innovation break's SD scaling and null-match),
+the ARMA(1,1)/Riccati identity and Kalman-equivalence guards, calibration-
+parity checks, and composite golden-score regression guards (which pin the
+per-time-point-standardized output so a stale artifact cannot recur). All
 post-hoc design changes and pre-registered hypotheses (including the
 three falsified ones and the two rejected robust-feature designs — one
 falsified, one diluted, §8.3) are in `experiments/CHANGELOG.md`; full experiment narratives in
@@ -481,6 +676,28 @@ the post-break innovation as a deterministic geometric transient plus
 mean-zero noise and applying a one-sided Hoeffding bound to the CUSUM
 increments.
 
+**ARMA(1,1) equivalence of the whitened rungs (§5).** Applying the AR
+operator to the observable, (1 − φL)Y_t = w_t + v_t − φv_{t−1} =: u_t,
+which is an MA(1) with autocovariances γ_u(0) = q + r(1 + φ²), γ_u(1) =
+−φr, γ_u(h) = 0 (h ≥ 2). Matching u_t to (1 − θL)ε_t (variance σ_ε²)
+gives the invertible root θ = (m − √(m²−4))/2 with m = (q + r(1+φ²))/(φr),
+and σ_ε² = φr/θ. Two identities close the loop with Proposition 1: σ_ε² =
+F and θ = ρ = φ(1 − K). The second follows from the innovation recursion
+ν_t = Y_t − φY_{t−1} + φ(1−K)ν_{t−1} (substitute Ŝ_{t−1} = φŜ_{t−2} +
+Kν_{t−1} into ν_t = Y_t − φŜ_{t−1}), which is the ARMA(1,1) innovation
+recursion once θ = φ(1−K). Hence the steady-state Kalman innovations and
+the ARMA(1,1) innovations are the same series; the state layer is not a
+distinct information set from ARIMA whitening on this DGP. Both identities
+hold to < 10⁻¹² (`lsc.theory.arma11_representation`,
+`test_arma11_riccati_identities`), and the numerical equivalence on null
+paths — with true and with estimated parameters — is in
+`experiments/exp07_arma_equivalence.py` (§5). A near-unit-root caveat: AIC
+over the benchmark order grid rarely selects the exact (1,0,1) at φ = 0.95
+(it prefers (1,0,0) at low SNR, the differencing (0,1,1) at higher SNR),
+but these approximate the ARMA(1,1) closely enough that the median
+innovation correlation with the Kalman filter stays at 0.99; forcing
+(1,0,1) restores 0.9995.
+
 ## Appendix C. Summary of key quantities
 
 | Claim | Number | Source |
@@ -493,7 +710,15 @@ increments.
 | Ladder ×1.5: raw rung, T=500 | 1.00 / 0.56 / 0.10 (SNR 0.1/0.5/2.0) | grid_v4_varbench |
 | Ladder ×1.5: ARIMA rung, T=500 | 0.90 / 0.94 / 0.87 (SNR 0.1/0.5/2.0) | grid_v4_varbench |
 | Ladder ×1.5 t₅ (raw/ARIMA/composite), SNR 0.5 | 0.43 / 0.74 / 0.16 | grid_v4_varbench, grid_v2_misspec |
-| Decision-rule outcome fired | C (raw rung SNR-dependent) | CHANGELOG |
+| ARMA≡Kalman innovation ρ̄ (estimated / true params) | 0.99 / 1.000 (max\|Δ\|≈10⁻⁹) | exp07 (M1) |
+| **q**-break ×1.5: raw rung, T=500 | 0.09 / 0.21 / 0.23 (SNR 0.1/0.5/2.0) | grid_v5_qbreak (M2) |
+| **q**-break ×1.5: ARIMA rung, T=500 | 0.03 / 0.10 / 0.16 (SNR 0.1/0.5/2.0) | grid_v5_qbreak (M2) |
+| Decision-rule outcome fired | r-channel provisional C, resolved **B2** (q inverts) | CHANGELOG (M2) |
+| φ sweep: μ∞ sorts innovation-CUSUM detection | Spearman 0.94 | grid_v6_phisweep (M3) |
+| Innovation CUSUM 3σ escape at low φ (φ=0.5 / 0.99) | 0.98–1.00 / 0.30–0.63 | grid_v6_phisweep (M3) |
+| Local-level 3σ level detect (all methods) | ≤ 0.15 (≈ FAR) | grid_v7_llevel (M4) |
+| Local-level ×1.5 variance (raw / ARIMA rung) | 0.06 / 0.58–0.84 | grid_v7_llevel (M4) |
+| ARL₀ at 5% window-FAR (L=375) | ≈ 7300 obs | arl_table (M5) |
 | Variance ×1.5 across T = 200/500/2000 | 0.11 / 0.87 / 0.99 | grid_v2_T |
 | t₅ collapse and repair (×1.5) | 0.16 → 0.75 (tail_cusum) | grid_v2_misspec, grid_v3c |
 | Quieting ×⅔ (only tail_cusum) | 0.41 / 0.33 | grid_v3c |

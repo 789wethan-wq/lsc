@@ -36,7 +36,9 @@ MATH_SUBS = [
     ("∈", r"$\in$"),
     ("→", r"$\rightarrow$"),
     ("≤", r"$\le$"),
+    ("≥", r"$\ge$"),
     ("≈", r"$\approx$"),
+    ("≡", r"$\equiv$"),
 ]
 
 
