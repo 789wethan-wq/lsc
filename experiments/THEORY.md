@@ -55,6 +55,70 @@ factor includes the gain correction). The transient carries total
 excess mass Σ_j (μ_{t₀+j} − μ_∞) = φ a_∞ /((1−ρ)√F), which is what a
 "fast" detection consumes.
 
+## ARMA(1,1) equivalence of the whitening rungs (M1)
+
+The two whitened rungs of the ladder — the ARIMA benchmark and the
+Kalman filter — are the **same filter** on this DGP, not two competing
+estimators. The observable Y has an exact ARMA(1,1) reduced form.
+Applying the AR operator to Y,
+
+    (1 − φL) Y_t = (1 − φL) S_t + (1 − φL) v_t = w_t + v_t − φ v_{t−1} =: u_t,
+
+and u_t is an MA(1): its autocovariances are
+
+    γ_u(0) = q + r(1 + φ²),   γ_u(1) = −φ r,   γ_u(h) = 0 (h ≥ 2).
+
+Matching u_t to (1 − θL) ε_t with ε_t white (variance σ_ε²) gives
+(1+θ²)σ_ε² = γ_u(0) and −θσ_ε² = γ_u(1); the invertible root is
+
+    θ = (m − √(m²−4)) / 2,   m = (q + r(1+φ²)) / (φ r),   σ_ε² = φ r / θ.
+
+Equivalently, the marginal autocovariances of Y are γ_Y(0) = q/(1−φ²)
++ r, γ_Y(1) = φ q/(1−φ²), and γ_Y(h) = φ^{h−1} γ_Y(1) for h ≥ 1 — the
+AR(1)-decaying tail that fixes the same (θ, σ_ε²).
+
+**Two identities tie the reduced form to Proposition 1 and the Riccati
+fixed point** (both verified to machine precision, `test_theory
+.test_arma11_riccati_identities`; helper `lsc.theory
+.arma11_representation`):
+
+    σ_ε² = F          (the ARMA innovation variance IS the Riccati F)
+    θ    = ρ = φ(1−K) (the MA parameter IS the innovation-mean decay rate).
+
+The second identity is immediate from the innovation recursion: writing
+ν_t = Y_t − φŜ_{t−1} for the (unstandardized) Kalman innovation and
+Ŝ_{t−1} = φŜ_{t−2} + Kν_{t−1}, substitution gives ν_t = Y_t − φY_{t−1}
++ φ(1−K)ν_{t−1} — a recursion in Y and its own lag with the state
+eliminated, identical to the ARMA(1,1) innovation ε_t obeying
+ε_t = Y_t − φY_{t−1} + θ ε_{t−1} once θ = φ(1−K). Since also σ_ε² = F, the standardized series coincide: **at
+steady state with correct parameters the Kalman one-step innovations and
+the ARMA(1,1) innovations are the same linear innovations of the same
+Gaussian process.** The state-space layer buys nothing over ARMA
+whitening for second-moment monitoring on this DGP.
+
+**Numerical confirmation (exp07, ≥200 null paths, T=500).** With TRUE
+parameters the two series agree to machine precision (median Pearson
+ρ = 1.000000, max|Δ| ≈ 10⁻⁹ across SNR ∈ {0.1, 0.5, 2.0} — the
+statsmodels ARMA filter vs. the hand-written steady-state Kalman
+recursion, entirely independent code paths). With ESTIMATED parameters
+(each rung fit on the training prefix, the ladder's real operating
+condition) ρ̄ = 0.991 (≥ 0.95): the small wedge is pure estimation
+error, and forcing the ARIMA order to the true (1,0,1) tightens it to
+ρ̄ = 0.9995. **Decision A1 (pre-registered) fires: the rungs are
+equivalent; §5 collapses to a two-rung ladder (raw vs. whitened).**
+
+*Order-selection caveat (the M1 finding).* AIC over the benchmark grid
+almost never selects the theoretically-exact (1,0,1): at φ = 0.95 it
+prefers (1,0,0) at SNR 0.1 (37% of paths) and the differencing order
+(0,1,1) at SNR 0.5 / 2.0 (64% / 71%). This is a near-unit-root artifact,
+not a bug — at φ = 0.95 an IMA(1,1) and an AR(1) both approximate the
+ARMA(1,1) closely enough to preserve ρ̄ ≥ 0.95, and the AIC-selected
+rung is a legitimate whitener. The scope note is that the equivalence is
+strongest near a unit root; at small φ (the M3 sweep) the reduced form
+is genuinely ARMA(1,1) and mis-differencing would degrade it, so the
+ladder's ARIMA rung is reported as-built (AIC-selected), with the
+forced-(1,0,1) result given alongside.
+
 ## Proposition 2 (never-detect bound)
 
 Suppose μ_t ≤ μ̃ < k for all t ≥ t₁ ≥ t₀ (post-transient), and let

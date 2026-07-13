@@ -31,6 +31,37 @@ def riccati_steady_state(phi: float, q: float, r: float
     return float(P), float(K), float(P + r)
 
 
+def arma11_representation(phi: float, q: float, r: float
+                          ) -> tuple[float, float]:
+    """Exact ARMA(1,1) reduced form of the observable Y for
+    S_t = phi S_{t-1} + w_t (var q), Y_t = S_t + v_t (var r).
+
+    Differencing by the AR operator gives an MA(1):
+        (1 - phi L) Y_t = w_t + v_t - phi v_{t-1} =: u_t,
+    with autocovariances gamma_u(0) = q + r(1 + phi^2),
+    gamma_u(1) = -phi r, and gamma_u(h) = 0 for h >= 2. Matching to
+    (1 - theta L) eps_t (var sigma_eps^2) via
+        (1 + theta^2) sigma_eps^2 = gamma_u(0),
+        -theta sigma_eps^2       = gamma_u(1),
+    the invertible root is
+
+        theta = (m - sqrt(m^2 - 4)) / 2,   m = (q + r(1+phi^2)) / (phi r),
+        sigma_eps^2 = phi r / theta.
+
+    Two identities hold at the steady state and are the content of
+    Proposition 1's connection to the reduced form (verified to machine
+    precision in test_theory / exp07):
+      * sigma_eps^2 == F, the Riccati innovation variance (P + r);
+      * theta == rho == phi (1 - K), the innovation-mean decay rate.
+    The ARMA(1,1) innovations eps_t and the steady-state Kalman
+    innovations are therefore the same linear innovations of the same
+    Gaussian process. Returns (theta, sigma_eps^2)."""
+    m = (q + r * (1.0 + phi**2)) / (phi * r)
+    theta = 0.5 * (m - np.sqrt(m * m - 4.0))
+    sigma_eps2 = phi * r / theta
+    return float(theta), float(sigma_eps2)
+
+
 def innovation_mean_path(delta: float, phi: float, K: float, F: float,
                          n_post: int) -> np.ndarray:
     """Standardized innovation mean mu_t for t = t0 .. t0+n_post-1

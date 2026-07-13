@@ -626,3 +626,48 @@ meaningful.
 
 All M1/M2 outcomes are publishable. The fired branch is logged with
 numbers when M1/M2 resolve.
+
+## 2026-07-13 — M1 [GATE] RESOLVED: **A1 fires** — the ARIMA and Kalman rungs are the same filter
+
+`experiments/exp07_arma_equivalence.py` (≥200 null paths, T=500, SNR ∈
+{0.1, 0.5, 2.0}); theory + machine-precision cross-checks in
+`experiments/THEORY.md` (§"ARMA(1,1) equivalence") and
+`lsc.theory.arma11_representation`; regression guards
+`test_arma11_riccati_identities` + `test_arma_kalman_equivalence`.
+
+**Structural theory (machine precision).** The observable Y has an exact
+ARMA(1,1) reduced form with AR parameter φ, MA parameter θ, innovation
+variance σ_ε². Two identities hold to < 1e-12: σ_ε² = F (the Riccati
+innovation variance of Proposition 1) and θ = ρ = φ(1−K) (the
+innovation-mean decay rate). Hence the steady-state Kalman innovations
+and the ARMA(1,1) innovations are the same linear innovations of the
+same Gaussian process.
+
+**Empirical (deliverable `paper_assets/arma_equivalence.csv`).**
+- TRUE parameters: median Pearson ρ = 1.000000 at every SNR; max|Δ|
+  between the (independent) statsmodels ARMA filter and the hand-written
+  steady-state Kalman recursion ≈ 1e-9 (1.5e-7 at SNR 0.1). Near-exact,
+  as predicted — the wedge is entirely estimation error.
+- ESTIMATED parameters (ladder's real operating condition): ρ̄ = 0.9914
+  (medians 0.9947 / 0.9914 / 0.9880 at SNR 0.1 / 0.5 / 2.0), ≥ 0.95 ⇒
+  **A1**. Forcing the ARIMA order to the true (1,0,1) tightens this to
+  ρ̄ = 0.9995 (0.9992 / 0.9995 / 0.9996), so AIC order-selection is the
+  sole material wedge.
+
+**Order-selection finding (SPEC M1 asked for this explicitly).** AIC over
+the benchmark grid selects the true (1,0,1) on only 16.5% / 9% / 5.5% of
+paths; it prefers (1,0,0) at SNR 0.1 (36.5%) and the differencing order
+(0,1,1) at SNR 0.5 / 2.0 (63.5% / 71%). This is a near-unit-root artifact
+(φ = 0.95), NOT a code bug: at φ≈1 both IMA(1,1) and AR(1) approximate
+the ARMA(1,1) closely enough to keep ρ̄ ≥ 0.95, and the AIC-selected
+model is a legitimate whitener. Not changing the published varbench
+ARIMA rung (AIC selection is the benchmark's design and the change would
+ripple into grid_v4); reported as-built, with the forced-(1,0,1) column
+alongside and a scope note that mis-differencing would bite at small φ
+(picked up in M3).
+
+**Paper action (M6).** §5 reframed as a **two-rung ladder** (raw vs.
+whitened); ARMA(1,1) equivalence stated as theory (Appendix B), grid as
+numerical confirmation; §10 recipe sharpened to "ARMA whitening
+suffices; the state-space layer is not required for second-moment
+monitoring." GATE PASSED — proceeding to M2.

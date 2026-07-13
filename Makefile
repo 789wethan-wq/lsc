@@ -11,7 +11,7 @@ ASSETS := paper_assets
 
 .PHONY: all venv test figures recovery exp01 exp02 exp03 exp04 exp05 exp06 grid grid_v2 grid_v4 fred paper clean
 
-all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06 grid_v4
+all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06 grid_v4 exp07
 	@echo "== repro pack complete (run 'make fred' separately: needs network) =="
 
 venv:
@@ -55,6 +55,11 @@ exp05:
 
 exp06:
 	$(PY) experiments/exp06_theory_check.py 1000
+
+# M1 (R1): ARMA(1,1) equivalence gate — ARIMA vs Kalman innovation
+# correlation on null paths (decision rule pre-registered in CHANGELOG)
+exp07:
+	$(PY) experiments/exp07_arma_equivalence.py 200
 
 # varbench addendum: whitening-ladder benchmarks (decision rule
 # pre-registered in experiments/CHANGELOG.md before first run)

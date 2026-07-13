@@ -4,6 +4,7 @@ import numpy as np
 
 from lsc.dgp import AR1StateDGP, BreakSpec
 from lsc.theory import (
+    arma11_representation,
     innovation_mean_path,
     mu_infinity,
     never_detect_bound,
@@ -53,6 +54,50 @@ def test_innovation_mean_path_matches_filter_mc():
     # MC se per time point ~ 1/sqrt(300) ~ 0.058
     assert np.max(np.abs(emp - mu)) < 4 * 0.058
     assert abs(emp[-50:].mean() - mu[-50:].mean()) < 0.03
+
+
+def test_arma11_riccati_identities():
+    """The ARMA(1,1) reduced form of Y matches the Riccati/Proposition-1
+    quantities to machine precision (M1): sigma_eps^2 == F and
+    theta == rho == phi(1-K), for every (phi, q, r)."""
+    for phi, q, r in [(0.95, 0.04875, 1.0), (0.95, 0.00975, 1.0),
+                      (0.95, 0.195, 1.0), (0.5, 0.1, 1.0),
+                      (0.8, 0.1, 1.0), (0.99, 0.1, 1.0)]:
+        _, K, F = riccati_steady_state(phi, q, r)
+        theta, sigma2 = arma11_representation(phi, q, r)
+        assert abs(sigma2 - F) < 1e-12
+        assert abs(theta - phi * (1.0 - K)) < 1e-12
+        assert 0.0 < theta < 1.0  # invertible root
+
+
+def test_arma_kalman_equivalence():
+    """M1 gate regression guard: with TRUE parameters the ARMA(1,1)
+    innovations (statsmodels ARMA filter) and the steady-state Kalman
+    innovations are the same series (rho_bar >= 0.95, in fact ~1). The
+    two are entirely independent code paths."""
+    import warnings
+
+    from statsmodels.tsa.arima.model import ARIMA
+
+    m0 = 125
+    for phi, q, r in [(0.95, 0.00975, 1.0), (0.95, 0.04875, 1.0),
+                      (0.95, 0.195, 1.0)]:
+        theta, sigma2 = arma11_representation(phi, q, r)
+        dgp = AR1StateDGP(phi=phi, q=q, r=r)
+        rhos, deltas = [], []
+        for i in range(30):
+            Y = dgp.sample(500, seed=100_000 + i).Y
+            e_kal = steady_state_innovations(Y, phi, q, r)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                res = ARIMA(Y, order=(1, 0, 1), trend="n").filter(
+                    [phi, -theta, sigma2])
+            e_ari = np.asarray(res.standardized_forecasts_error).ravel()
+            rhos.append(np.corrcoef(e_kal[m0:], e_ari[m0:])[0, 1])
+            deltas.append(np.max(np.abs(e_kal[m0:] - e_ari[m0:])))
+        assert np.median(rhos) >= 0.95      # gate threshold (A1)
+        assert np.median(rhos) > 0.999      # actually near-exact
+        assert np.max(deltas) < 1e-5        # machine precision up to startup
 
 
 def test_bound_and_wald_shapes():
