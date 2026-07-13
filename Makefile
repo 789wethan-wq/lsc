@@ -11,7 +11,7 @@ ASSETS := paper_assets
 
 .PHONY: all venv test figures recovery exp01 exp02 exp03 exp04 exp05 exp06 grid grid_v2 grid_v4 fred paper clean
 
-all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06 grid_v4 exp07 grid_v5
+all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06 grid_v4 exp07 grid_v5 grid_v6
 	@echo "== repro pack complete (run 'make fred' separately: needs network) =="
 
 venv:
@@ -67,6 +67,12 @@ exp07:
 grid_v5:
 	$(PY) -m lsc.eval.runner configs/grid_v5_qbreak.yaml
 	$(PY) experiments/qbreak_ladder.py
+
+# M3 (R1): phi sweep — mu_inf vs innovation-CUSUM detection (fast-or-never
+# boundary). Headline theory-verification figure.
+grid_v6:
+	$(PY) -m lsc.eval.runner configs/grid_v6_phisweep.yaml
+	$(PY) experiments/phisweep_analyze.py
 
 # varbench addendum: whitening-ladder benchmarks (decision rule
 # pre-registered in experiments/CHANGELOG.md before first run)

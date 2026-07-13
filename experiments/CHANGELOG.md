@@ -725,3 +725,41 @@ low-q state contributes too little to Y to register its own reduction.
 Under t₅ the q-break ×3 ranking holds with raw most robust (raw 0.93,
 ARIMA 0.66, composite 0.48, tail 0.79). All numbers in
 `paper_assets/grid_v5_qbreak_results.parquet` + `ladder_table.csv`.
+
+## 2026-07-13 — M3: φ sweep confirms μ∞ sorts detection — with a boundary condition
+
+`configs/grid_v6_phisweep.yaml` (level 1σ/3σ × φ∈{0.5,0.8,0.95,0.99} ×
+SNR∈{0.1,0.5,2.0}, T=500, 500 reps; SNR held fixed across φ by q =
+SNR·(1−φ²)); analysis `experiments/phisweep_analyze.py`. Deliverables
+`paper_assets/grid_v6_phisweep_muinf.csv`, `grid_v6_muinf_scatter.png`
+(headline theory-verification figure).
+
+**μ∞ sorts detection: Spearman(μ∞, innovation-CUSUM detect) = 0.942**
+across all 24 cells. Because μ∞ = δ(1−φ)/((1−φ(1−K))√F) is increasing in
+(1−φ), the innovation CUSUM ESCAPES the fast-or-never regime at low φ:
+3σ detection is 0.98/1.00 at φ=0.5 and 0.93/0.97 at φ=0.8 (μ∞ ≥ 0.69,
+FAST) but collapses to 0.65/0.55 at φ=0.95 and 0.63/0.30 at φ=0.99
+(μ∞ ≤ 0.48, "never"). Fast-regime cells (μ∞ ≥ k=0.5) detect 0.83–1.00;
+never-regime cells (μ∞ < 0.5) detect 0.07–0.67. The crossover sits
+between φ=0.8 and φ=0.95, exactly at the predicted k=0.5 boundary.
+
+**Boundary condition for the paper.** Proposition 1's fast-or-never is
+therefore not an unqualified claim: filtering fails for LEVEL detection
+only when the state is PERSISTENT (φ ≳ 0.9) — which is the empirically
+relevant case (φ=0.95 is the paper's baseline). At low persistence the
+innovation CUSUM is competitive with raw. raw_cusum, by contrast, detects
+3σ levels at 0.96–1.00 across ALL φ (φ-robust, slow-but-sure), so the
+φ-dependence is specific to the filtered detector — a direct corroboration
+of the mechanism.
+
+**Honest caveat (the one off-trend cell).** At the near-unit-root corner
+φ=0.99, SNR 0.1, 3σ, detection is 0.63 despite μ∞=0.21 (deep "never") —
+above the μ∞ trend. Mechanism: at φ→1 the adaptation transient (decay
+rate ρ=φ(1−K)) is so long that its accumulated mass triggers the CUSUM
+during the transient even though the asymptotic drift is negligible —
+i.e. the "fast" branch of fast-or-never is itself stronger when the
+transient is long. So μ∞ sorts the ASYMPTOTIC regime cleanly (Spearman
+0.94) but finite-sample detection at very high φ also carries a transient
+contribution; reported as such, not smoothed over. Proposition 1 holds;
+the caveat is that total detection = transient mass + post-transient
+tail, and μ∞ governs only the second.
