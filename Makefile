@@ -11,7 +11,7 @@ ASSETS := paper_assets
 
 .PHONY: all venv test figures recovery exp01 exp02 exp03 exp04 exp05 exp06 grid grid_v2 grid_v4 fred paper clean
 
-all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06 grid_v4 exp07 grid_v5 grid_v6
+all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06 grid_v4 exp07 grid_v5 grid_v6 grid_v7 arl
 	@echo "== repro pack complete (run 'make fred' separately: needs network) =="
 
 venv:
@@ -73,6 +73,16 @@ grid_v5:
 grid_v6:
 	$(PY) -m lsc.eval.runner configs/grid_v6_phisweep.yaml
 	$(PY) experiments/phisweep_analyze.py
+
+# M4 (R1): local-level (RW-state) arena — level degeneracy + variance
+# whitening-mandatory demonstration (replaces the old one-clause dismissal)
+grid_v7:
+	$(PY) -m lsc.eval.runner configs/grid_v7_llevel.yaml
+	$(PY) experiments/llevel_analyze.py
+
+# M5 (R1): ARL0/ARL1 vocabulary from existing FAR tables + parquets
+arl:
+	$(PY) experiments/arl_report.py
 
 # varbench addendum: whitening-ladder benchmarks (decision rule
 # pre-registered in experiments/CHANGELOG.md before first run)

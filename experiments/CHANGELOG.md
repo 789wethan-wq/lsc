@@ -763,3 +763,40 @@ transient is long. So μ∞ sorts the ASYMPTOTIC regime cleanly (Spearman
 contribution; reported as such, not smoothed over. Proposition 1 holds;
 the caveat is that total detection = transient mass + post-transient
 tail, and μ∞ governs only the second.
+
+## 2026-07-13 — M4: local-level (RW-state) arena — DEMONSTRATED, not dismissed
+
+`configs/grid_v7_llevel.yaml` (LocalLevelDGP, SNR=q/r ∈ {0.1,0.5,2.0},
+level 1σ/3σ + variance ×1.5/×3, T=500, 500 reps); analysis
+`experiments/llevel_analyze.py` → `grid_v7_llevel_summary.csv`,
+`grid_v7_llevel_degeneracy.png`. The old §3 one-clause dismissal of the
+arena is replaced by two demonstrated facts.
+
+**(1) LEVEL detection is degenerate for EVERY method.** At 3σ all five
+methods sit at the 5% FAR (raw_cusum 0.07–0.10, Kalman-innov 0.04–0.15,
+raw_var 0.06–0.10, ARIMA-var 0.04–0.07, composite 0.07). A level break in
+a random-walk state is absorbed by a well-specified filter as one large
+ordinary innovation (no sustained signal), and the raw-Y CUSUM has no
+fixed baseline — its calibrated threshold is 1533 / 2091 / 2372 (vs
+O(10–100) in the AR(1) arena) and it still calibrates hot (FAR 7.8% at
+SNR 0.1). No common null exists to rank against; the arena cannot rank
+level detectors. The 2026-07-10 dismissal was CORRECT, now with evidence.
+
+**(2) VARIANCE detection is NOT degenerate — but whitening becomes
+MANDATORY.** On the ×1.5 variance break the raw z² CUSUM is at chance
+(0.06 at every SNR; threshold 10374 / 17463 / 22297 — astronomically
+large because z² on a nonstationary RW has no meaningful scale), while
+the ARIMA-differencing rung detects (0.71 / 0.84 / 0.58) and the Kalman
+composite detects (0.97 / 0.89 / 0.68). At ×3: raw_var stays at chance
+(0.06–0.08) while ARIMA-var 0.97–1.00 and composite 0.98–0.99. This is
+the exact COMPLEMENT of the AR(1) r-break result (M2): there a raw
+variance CUSUM could win when observation noise dominates; here, where Y
+is nonstationary, prewhitening is not merely helpful but required — the
+raw statistic has no stationary baseline to calibrate against. It
+reinforces, rather than contradicts, the paper's central prewhitening
+message. FARs 4.8–7.8% (raw_cusum hot at low SNR, as noted).
+
+**Paper action (M6).** §3 dismissal replaced by a short subsection (or
+§8.4 expansion) stating (1) and (2) with the degeneracy figure; the
+arena now carries a positive finding (whitening-mandatory-under-
+nonstationarity), not a hand-wave.
