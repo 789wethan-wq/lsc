@@ -67,8 +67,9 @@ answerable. Our contributions are as follows.
   raw detector sits at chance — and the latent state estimate itself adds
   little once the observations are whitened (ARIMA residuals suffice).
 - Contribution 3 (method): a tail-robust exceedance-indicator CUSUM that
-  preserves the second-moment advantage under heavy-tailed noise, found
-  via two documented failed designs.
+  preserves the second-moment advantage under heavy-tailed noise, reached
+  by rejecting two documented alternatives — a falsified clipped variant
+  and an in-composite variant diluted below its standalone form (§8.3).
 - Contribution 4 (application discipline): attribution, permutation
   tests, sensitivity, pinned data snapshots, and real-time vintages for
   the real-data claims — including a self-correction on the headline GFC
@@ -459,8 +460,8 @@ check), DGP ground-truth checks, calibration-parity checks, and composite
 golden-score regression guards (which pin the per-time-point-standardized
 output so a stale artifact cannot recur). All
 post-hoc design changes and pre-registered hypotheses (including the
-three falsified ones and the two failed robust-feature designs) are in
-`experiments/CHANGELOG.md`; full experiment narratives in
+three falsified ones and the two rejected robust-feature designs — one
+falsified, one diluted, §8.3) are in `experiments/CHANGELOG.md`; full experiment narratives in
 `experiments/FINDINGS.md`; theory derivations in `experiments/THEORY.md`
 (Appendix B). The complete source, pinned data snapshots, and seed
 configuration constitute the replication package, to be posted publicly on
