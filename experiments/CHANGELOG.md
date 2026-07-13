@@ -567,3 +567,62 @@ old "bounded increments can't reach the ratios" mechanism was an artifact
 of the pre-§8.4 pooled-scale build. The standalone recommendation (iii)
 stands — now justified by FAR-budget dilution across ~10 features, not by
 the composite crushing the feature.
+
+## 2026-07-13 — M0 (R1 referee-hardening): M1/M2 decision rules PRE-REGISTERED before any R1 artifact
+
+Registered per `SPEC_latent_state_change.md` R1 round §M0, before
+generating any R1 artifact (no exp07 file, no grid_v5 config, no
+grid_v5/v6 parquet exists at commit time — verified: `git status` clean,
+`ls experiments/exp07* configs/grid_v5* configs/grid_v6*` empty). The
+paper adopts whichever branch the results select; no post-hoc
+reinterpretation.
+
+**M1 rule — ARMA(1,1) equivalence [GATE].** Let ρ̄ = median Pearson
+correlation between the ARIMA standardized-residual series and the
+Kalman standardized-innovation series over the post-burn-in monitoring
+region, across null (no-break) paths, at each SNR ∈ {0.1, 0.5, 2.0},
+T = 500, ≥200 paths.
+
+- **A1 — Equivalent (expected): ρ̄ ≥ 0.95.** The two rungs are the same
+  filter up to estimation error. §5 is reframed as a two-rung ladder
+  (raw vs. whitened) with the ARMA(1,1) reduced-form equivalence stated
+  as theory and the grid reported as numerical confirmation. Practical
+  recipe (§10) sharpens to "ARMA whitening suffices; the state-space
+  layer is not required for second-moment monitoring."
+- **A2 — Not equivalent: ρ̄ < 0.95. STOP.** For an AR(1)+white-noise
+  DGP the steady-state Kalman innovations and the ARMA(1,1) innovations
+  are the same linear innovations of the same Gaussian process; a large
+  gap implies an estimator bug (candidate causes: ARIMA order
+  misselection — especially AIC choosing a differencing order —
+  non-frozen parameters, standardization mismatch, burn-in
+  contamination). Diagnose the estimator before running anything else.
+  Do NOT proceed to M2–M4.
+
+Regression guard: `test_arma_kalman_equivalence` asserts ρ̄ ≥ 0.95 with
+TRUE (not estimated) parameters, where agreement should be near-exact.
+
+**M2 rule — q-break (state-innovation variance) ladder.** Let R_q =
+ladder detection rates (raw / ARIMA-whitened / Kalman-whitened) for a
+state-innovation-variance break, and R_r = the published
+observation-noise (r) results at ×1.5, T = 500: raw 1.00 / 0.56 / 0.10,
+whitened ≈ 0.90 / 0.94 / 0.87 across SNR 0.1 / 0.5 / 2.0. Convention:
+the q-break scales the state-innovation **SD** by the same `vol_mult`
+the r-break scales the observation-noise SD by (verified: the existing
+`variance` break multiplies obs-noise std, per `obs_noise_scale_path`
+and the `BreakSpec` docstring), so "×1.5" means SD×1.5 in BOTH channels
+— the only setting under which the two-channel comparison is
+meaningful.
+
+- **B1 — Ordering survives:** raw remains strongly SNR-dependent and
+  whitened remains approximately flat → the §5 claim generalizes; report
+  both break channels; paper materially stronger.
+- **B2 — Ordering inverts or flattens:** the "prewhitening beats raw"
+  result is specific to white-component (r) breaks → §5's claim is
+  scoped to r-breaks, and the paper MUST say so, because every
+  real-data motivating event (Great Moderation, crisis volatility) is a
+  q-break. §9–§10 framing revised accordingly (honest-outcome clause).
+- **B3 — Mixed / SNR-dependent in a new way:** report the full
+  two-channel ladder and characterize.
+
+All M1/M2 outcomes are publishable. The fired branch is logged with
+numbers when M1/M2 resolve.
