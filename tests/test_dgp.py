@@ -82,6 +82,39 @@ def test_variance_break_scales_noise():
     assert 2.0 < post / pre < 4.0  # noisy estimate of 3.0
 
 
+def test_state_var_break_scales_state_innovation_sd():
+    """q-break scales the state-innovation SD by vol_mult (the same SD
+    convention the r-break uses on obs noise), and shifts Y's
+    autocorrelation — the structural q/r distinction (M2)."""
+    T = 6000
+    phi = 0.9
+    spec = BreakSpec("state_var", 0.5, vol_mult=1.5)
+    dgp = AR1StateDGP(phi=phi, q=0.2, r=0.0, breaks=[spec])
+    s = dgp.sample(T, seed=13)
+    w = s.S_true[1:] - phi * s.S_true[:-1]        # state innovation (r=0)
+    pre, post = w[100:2900].std(), w[3100:].std()
+    assert 1.35 < post / pre < 1.65               # SD x1.5, noisy estimate
+    # r-break with the SAME vol_mult scales obs-noise SD by the same factor
+    rspec = BreakSpec("variance", 0.5, vol_mult=1.5)
+    rdgp = LocalLevelDGP(q=0.0, r=0.2, breaks=[rspec])
+    rs = rdgp.sample(T, seed=13)
+    resid = rs.Y - rs.S_true
+    assert 1.35 < resid[3100:].std() / resid[100:2900].std() < 1.65
+
+
+def test_state_var_null_matched_and_reproducible():
+    dgp = AR1StateDGP(phi=0.95, q=0.05, r=1.0,
+                      breaks=[BreakSpec("state_var", 0.5, vol_mult=3.0)])
+    assert dgp.null_version().breaks == []
+    a = dgp.sample(500, seed=7).Y
+    b = dgp.sample(500, seed=7).Y
+    assert np.array_equal(a, b)
+    # a no-break DGP is bit-identical whether or not it carries the code path
+    null = AR1StateDGP(phi=0.95, q=0.05, r=1.0)
+    assert np.array_equal(null.sample(500, seed=7).Y,
+                          dgp.null_version().sample(500, seed=7).Y)
+
+
 def test_ramp_is_gradual_and_reaches_target():
     T = 1000
     spec = BreakSpec("ramp", 0.5, magnitude=1.0, half_life=25)

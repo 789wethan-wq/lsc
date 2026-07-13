@@ -1,0 +1,42 @@
+# grid_v5 q-break — state-innovation-variance (q) break channel, the
+# second break channel of the whitening ladder (SPEC R1 §M2; decision
+# rule B1/B2/B3 pre-registered in experiments/CHANGELOG.md M0 2026-07-13
+# BEFORE this config was run).
+#
+# The q-break scales the state-innovation SD by vol_mult, the SAME SD
+# convention the r-break ('variance' kind) uses on the obs-noise SD, so
+# "x1.5" means SD x1.5 in BOTH channels (the only setting under which the
+# r-vs-q comparison is meaningful). Identical seed blocks to grid_v4 /
+# grid_v1, so q-break rows join the published r-break rows draw-for-draw.
+#
+# Ladder rungs: raw_var_cusum (raw) / arima_var_cusum (whitened) /
+# lsc_composite (Kalman/latent) + lsc_tail_cusum (robust standalone, for
+# the t5 cell). Runner crosses arenas x scenarios fully; the spec's
+# required cells (q x1.5/x3/x2/3 at SNR {0.1,0.5,2.0}; t5 x1.5 SNR 0.5)
+# are all covered, plus the cheap completions of the cross.
+experiment: grid_v5_qbreak
+out_dir: paper_assets
+n_reps: 500
+far_target: 0.05
+train_frac: 0.25
+
+seeds:
+  calibration: 100000
+  evaluation: 200000
+  far_check: 300000
+  feature_scales: 900000
+
+T_values: [500]
+
+arenas:
+  ar1_snr0.1: {dgp: AR1StateDGP, phi: 0.95, q: 0.00975, r: 1.0, kalman_spec: ar1}
+  ar1_snr0.5: {dgp: AR1StateDGP, phi: 0.95, q: 0.04875, r: 1.0, kalman_spec: ar1}
+  ar1_snr2.0: {dgp: AR1StateDGP, phi: 0.95, q: 0.195,   r: 1.0, kalman_spec: ar1}
+  ar1_t5:     {dgp: AR1StateDGP, phi: 0.95, q: 0.04875, r: 1.0, t_dof: 5, kalman_spec: ar1}
+
+scenarios:
+  qvar_x1.5: {kind: state_var, time_frac: 0.5, vol_mult: 1.5}
+  qvar_x3: {kind: state_var, time_frac: 0.5, vol_mult: 3.0}
+  qvar_x0.67: {kind: state_var, time_frac: 0.5, vol_mult: 0.667}
+
+methods: [raw_var_cusum, arima_var_cusum, lsc_composite, lsc_tail_cusum]

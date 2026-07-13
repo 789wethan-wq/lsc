@@ -17,8 +17,22 @@ class BreakSpec:
 
     kind:
         'level'    — additive shift of the latent state from the break on
-        'variance' — observation-noise std multiplied by ``vol_mult`` from
-                     the break on
+        'variance' — observation-noise (r) std multiplied by ``vol_mult``
+                     from the break on (a white-component break: changes
+                     the marginal variance of Y but not its
+                     autocorrelation structure)
+        'state_var' — state-innovation (q) std multiplied by ``vol_mult``
+                     from the break on; supported by AR1StateDGP and
+                     LocalLevelDGP. Scales the *SD* of the state shock by
+                     the SAME ``vol_mult`` the 'variance' kind scales the
+                     obs-noise SD, so "×1.5" means SD×1.5 in BOTH
+                     channels (the only convention under which the
+                     two-channel r-vs-q comparison is meaningful; see
+                     CHANGELOG M0 2026-07-13). Unlike an r-break, a
+                     q-break changes both the marginal variance AND the
+                     autocorrelation structure of Y (the ARMA(1,1) MA
+                     parameter θ shifts), because the state's own
+                     variance is what carries the persistence.
         'ramp'     — gradual logistic level shift centered at the break
                      time with the given half-life (obs until the shift
                      reaches half its final size)
@@ -29,7 +43,8 @@ class BreakSpec:
                      marginal mean and variance of Y are preserved)
     time_frac: break location as a fraction of T (0 < time_frac < 1)
     magnitude: size in units of the DGP's sigma_ref (level/ramp kinds)
-    vol_mult:  multiplicative factor on observation noise std (variance kind)
+    vol_mult:  multiplicative factor on the noise std — observation noise
+               (variance kind) or state-innovation noise (state_var kind)
     half_life: ramp half-life in observations (ramp kind)
     """
 
@@ -41,7 +56,8 @@ class BreakSpec:
     new_phi: float = 0.995
 
     def __post_init__(self) -> None:
-        if self.kind not in ("level", "variance", "ramp", "persistence"):
+        if self.kind not in ("level", "variance", "state_var", "ramp",
+                             "persistence"):
             raise ValueError(f"unknown break kind: {self.kind}")
         if not 0.0 < self.time_frac < 1.0:
             raise ValueError("time_frac must be in (0, 1)")
@@ -70,6 +86,17 @@ def obs_noise_scale_path(T: int, specs: list[BreakSpec]) -> np.ndarray:
     scale = np.ones(T)
     for spec in specs:
         if spec.kind == "variance":
+            scale[spec.time(T):] *= spec.vol_mult
+    return scale
+
+
+def state_noise_scale_path(T: int, specs: list[BreakSpec]) -> np.ndarray:
+    """Multiplicative state-innovation std path from state_var (q)
+    breaks — the exact structural mirror of ``obs_noise_scale_path`` for
+    the state shock, so the two channels use one SD convention."""
+    scale = np.ones(T)
+    for spec in specs:
+        if spec.kind == "state_var":
             scale[spec.time(T):] *= spec.vol_mult
     return scale
 

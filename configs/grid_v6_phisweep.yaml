@@ -1,0 +1,48 @@
+# grid_v6 phi sweep — the fast-or-never boundary (SPEC R1 §M3).
+#
+# Proposition 1's regime depends on phi through the asymptotic
+# innovation drift mu_inf = delta(1-phi)/((1-phi(1-K)) sqrt(F)), which
+# is INCREASING in (1-phi): at low phi the innovation CUSUM should
+# escape the fast-or-never regime and detect level shifts. The published
+# grid only ever used phi=0.95; this sweeps phi in {0.5,0.8,0.95,0.99}.
+#
+# SNR is held fixed across phi by setting q = SNR*(1-phi^2), so the
+# stationary state variance q/(1-phi^2) = SNR*r is constant and a "1
+# sigma" shift (magnitude in units of sigma_ref = sqrt(SNR*r)) is the
+# same physical size at every phi — isolating persistence.
+#
+# Method: lsc_kalman_cusum (the innovation CUSUM the theory describes).
+# Analysis + mu_inf-vs-detection scatter: experiments/phisweep_analyze.py.
+experiment: grid_v6_phisweep
+out_dir: paper_assets
+n_reps: 500
+far_target: 0.05
+train_frac: 0.25
+
+seeds:
+  calibration: 100000
+  evaluation: 200000
+  far_check: 300000
+  feature_scales: 900000
+
+T_values: [500]
+
+arenas:
+  ar1_phi0.5_snr0.1:  {dgp: AR1StateDGP, phi: 0.5,  q: 0.075,   r: 1.0, kalman_spec: ar1}
+  ar1_phi0.8_snr0.1:  {dgp: AR1StateDGP, phi: 0.8,  q: 0.036,   r: 1.0, kalman_spec: ar1}
+  ar1_phi0.95_snr0.1: {dgp: AR1StateDGP, phi: 0.95, q: 0.00975, r: 1.0, kalman_spec: ar1}
+  ar1_phi0.99_snr0.1: {dgp: AR1StateDGP, phi: 0.99, q: 0.00199, r: 1.0, kalman_spec: ar1}
+  ar1_phi0.5_snr0.5:  {dgp: AR1StateDGP, phi: 0.5,  q: 0.375,   r: 1.0, kalman_spec: ar1}
+  ar1_phi0.8_snr0.5:  {dgp: AR1StateDGP, phi: 0.8,  q: 0.18,    r: 1.0, kalman_spec: ar1}
+  ar1_phi0.95_snr0.5: {dgp: AR1StateDGP, phi: 0.95, q: 0.04875, r: 1.0, kalman_spec: ar1}
+  ar1_phi0.99_snr0.5: {dgp: AR1StateDGP, phi: 0.99, q: 0.00995, r: 1.0, kalman_spec: ar1}
+  ar1_phi0.5_snr2.0:  {dgp: AR1StateDGP, phi: 0.5,  q: 1.5,     r: 1.0, kalman_spec: ar1}
+  ar1_phi0.8_snr2.0:  {dgp: AR1StateDGP, phi: 0.8,  q: 0.72,    r: 1.0, kalman_spec: ar1}
+  ar1_phi0.95_snr2.0: {dgp: AR1StateDGP, phi: 0.95, q: 0.195,   r: 1.0, kalman_spec: ar1}
+  ar1_phi0.99_snr2.0: {dgp: AR1StateDGP, phi: 0.99, q: 0.0398,  r: 1.0, kalman_spec: ar1}
+
+scenarios:
+  level_1s: {kind: level, time_frac: 0.5, magnitude: 1.0}
+  level_3s: {kind: level, time_frac: 0.5, magnitude: 3.0}
+
+methods: [lsc_kalman_cusum, raw_cusum]

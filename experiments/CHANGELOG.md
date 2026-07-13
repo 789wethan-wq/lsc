@@ -671,3 +671,57 @@ whitened); ARMA(1,1) equivalence stated as theory (Appendix B), grid as
 numerical confirmation; §10 recipe sharpened to "ARMA whitening
 suffices; the state-space layer is not required for second-moment
 monitoring." GATE PASSED — proceeding to M2.
+
+## 2026-07-13 — M2 RESOLVED: **B2 fires** — prewhitening's advantage is specific to observation-noise (r) breaks
+
+`configs/grid_v5_qbreak.yaml` (state-innovation q-break, SD-scaled to
+match the r-break convention; 500 reps, T=500, identical seed blocks);
+new DGP kind `state_var` in `lsc/dgp/breaks.py` +
+`state_noise_scale_path`, wired into AR1StateDGP and LocalLevelDGP
+(tests `test_state_var_break_scales_state_innovation_sd`,
+`test_state_var_null_matched_and_reproducible`). Assembler
+`experiments/qbreak_ladder.py` → two-channel `ladder_table.csv`
+(`break_channel` r|q). q-break FARs 3.6–6.8% (calibrated).
+
+**The ladder ordering INVERTS across channels** (detect rate at the
+discriminating ×1.5 break, T=500, SNR 0.1/0.5/2.0):
+
+| chan | rung  | 0.1  | 0.5  | 2.0  |
+|------|-------|------|------|------|
+| r    | raw   | 1.00 | 0.56 | 0.10 |  (falls with SNR)
+| r    | ARIMA | 0.90 | 0.94 | 0.87 |  (flat — WINS at high SNR)
+| q    | raw   | 0.09 | 0.21 | 0.23 |  (RISES with SNR — WINS everywhere)
+| q    | ARIMA | 0.03 | 0.10 | 0.16 |  (below raw at every SNR)
+
+For q-breaks the raw variance CUSUM ≥ the whitened rung at every SNR
+(and the composite): ×1.5 raw beats ARIMA 0.09/0.21/0.23 vs
+0.03/0.10/0.16; ×3 raw 0.72/0.96/0.96 vs ARIMA 0.26/0.79/1.00 (ARIMA
+only catches up at the ×3 SNR-2.0 ceiling). And the raw rung's
+SNR-dependence FLIPS sign: r-break raw falls 1.00→0.10, q-break raw
+rises 0.09→0.23.
+
+**Mechanism (clean and symmetric).** An r-break lives in the WHITE
+component of Y; state autocorrelation masks it in raw z², and whitening
+removes exactly that autocorrelation → whitening wins, and raw fades as
+SNR rises and the white component shrinks. A q-break lives in the STATE
+(autocorrelated) component; it inflates the marginal variance of Y — which
+dominates at high SNR — so raw z² sees it directly, while whitening
+strips out the state-carried signal → raw wins, and raw strengthens as
+SNR rises. A q-break also shifts the ARMA(1,1) MA parameter θ (verified:
+θ 0.793→0.710 at ×1.5, SNR 0.5), changing the autocorrelation structure,
+whereas an r-break changes only the marginal variance.
+
+**Decision: B2** (pre-registered). "Prewhitening beats raw" is specific
+to observation-noise breaks. **Honest-outcome clause invoked**: §5 and
+§10 are scoped to r-breaks; the paper states plainly that for the
+state-innovation (q) breaks that motivate the empirical section — Great
+Moderation, crisis volatility are q-like shifts — a raw variance CUSUM is
+at least as good as whitening at every SNR. This also *explains* the §9
+real-data result (raw_var_cusum's crisis timing is identical to the
+composite's): real crises are q-channel breaks, exactly where B2 says raw
+matches whitened. Abstract revised (B2 changes the headline). Quieting
+(×⅔ i.e. q reduced) is undetectable by every rung (≤0.07, at FAR) — a
+low-q state contributes too little to Y to register its own reduction.
+Under t₅ the q-break ×3 ranking holds with raw most robust (raw 0.93,
+ARIMA 0.66, composite 0.48, tail 0.79). All numbers in
+`paper_assets/grid_v5_qbreak_results.parquet` + `ladder_table.csv`.

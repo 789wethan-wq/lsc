@@ -14,7 +14,13 @@ from dataclasses import dataclass, field, replace
 import numpy as np
 
 from .base import DGP, DGPSample
-from .breaks import BreakSpec, break_times, combined_level_path, obs_noise_scale_path
+from .breaks import (
+    BreakSpec,
+    break_times,
+    combined_level_path,
+    obs_noise_scale_path,
+    state_noise_scale_path,
+)
 
 
 @dataclass
@@ -46,7 +52,7 @@ class LocalLevelDGP(DGP):
 
     def sample(self, T: int, seed: int) -> DGPSample:
         rng = self.rng(seed)
-        w = rng.normal(0.0, np.sqrt(self.q), T)
+        w = rng.normal(0.0, np.sqrt(self.q), T) * state_noise_scale_path(T, self.breaks)
         v = self._obs_noise(rng, T)
         S = np.cumsum(w)
         S += combined_level_path(T, self.breaks, self.sigma_ref)
@@ -129,11 +135,12 @@ class AR1StateDGP(DGP):
             v = rng.standard_t(nu, T) * np.sqrt(self.r * (nu - 2) / nu)
         shift = combined_level_path(T, self.breaks, self.sigma_ref)
         phi_t, q_t = self._phi_q_paths(T)
+        q_scale = state_noise_scale_path(T, self.breaks)  # SD multiplier (q-break)
         S = np.empty(T)
         prev = rng.normal(0.0, self.sigma_ref)  # start at stationarity
         for t in range(T):
             prev = (phi_t[t] * prev + self.drift_coef * np.tanh(prev)
-                    + np.sqrt(q_t[t]) * w[t])
+                    + np.sqrt(q_t[t]) * q_scale[t] * w[t])
             S[t] = prev + shift[t]
         v *= obs_noise_scale_path(T, self.breaks)
         Y = S + v

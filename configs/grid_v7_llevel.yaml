@@ -1,0 +1,44 @@
+# grid_v7 local-level arena — justify-or-run the RW-state case (SPEC R1
+# §M4). §3 previously dismissed the local-level (random-walk state)
+# arena in one clause; this runs the level and variance ladder cells
+# there so the dismissal is replaced by evidence.
+#
+# Prediction (to be confirmed): a level break is ABSORBED by a
+# well-specified RW filter (the state can jump freely, so the break is
+# an ordinary large w_t) -> innovation CUSUM has no sustained signal;
+# and raw-Y CUSUM is meaningless on a nonstationary Y (no fixed
+# baseline, calibrated threshold ~1e3). So LEVEL detection is degenerate
+# for every method. A VARIANCE break, by contrast, changes the innovation
+# scale and IS detectable -- but only by rungs that whiten the RW
+# (ARIMA differencing, Kalman); raw z^2 is dominated by the random-walk
+# excursion, not the variance change. The degeneracy is thus specific to
+# LEVEL detection, and whitening is REQUIRED (not merely helpful) when Y
+# is nonstationary -- the complement of the AR(1) finding.
+#
+# SNR here is q/r (there is no stationary state variance for a RW).
+experiment: grid_v7_llevel
+out_dir: paper_assets
+n_reps: 500
+far_target: 0.05
+train_frac: 0.25
+
+seeds:
+  calibration: 100000
+  evaluation: 200000
+  far_check: 300000
+  feature_scales: 900000
+
+T_values: [500]
+
+arenas:
+  ll_snr0.1: {dgp: LocalLevelDGP, q: 0.1, r: 1.0, kalman_spec: llevel}
+  ll_snr0.5: {dgp: LocalLevelDGP, q: 0.5, r: 1.0, kalman_spec: llevel}
+  ll_snr2.0: {dgp: LocalLevelDGP, q: 2.0, r: 1.0, kalman_spec: llevel}
+
+scenarios:
+  level_1s: {kind: level, time_frac: 0.5, magnitude: 1.0}
+  level_3s: {kind: level, time_frac: 0.5, magnitude: 3.0}
+  variance_x1.5: {kind: variance, time_frac: 0.5, vol_mult: 1.5}
+  variance_x3: {kind: variance, time_frac: 0.5, vol_mult: 3.0}
+
+methods: [raw_cusum, lsc_kalman_cusum, raw_var_cusum, arima_var_cusum, lsc_composite]
