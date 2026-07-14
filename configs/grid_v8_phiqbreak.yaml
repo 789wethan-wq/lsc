@@ -1,0 +1,41 @@
+# grid_v8 phi x q-break cross-grid — the amplification test (SPEC R1 §M7;
+# decision rule pre-registered in experiments/CHANGELOG.md 2026-07-13
+# BEFORE this config was run).
+#
+# Holds the shock variance q and obs variance r FIXED and sweeps phi, so
+# the state's stationary variance q/(1-phi^2) and the induced SNR(phi) =
+# (q/r)/(1-phi^2) rise as the 1/(1-phi^2) amplification factor. Anchor
+# q=0.04875, r=1.0 => phi=0.95 gives SNR 0.5 (the body arena). Tests
+# whether the raw rung's advantage on q-breaks tracks that amplification
+# and vanishes as phi->0. Identical seed blocks to grid_v5 (M2), so cells
+# are draw-for-draw comparable to the fixed-phi SNR sweep.
+#
+# Induced SNR by phi: 0.1->0.049  0.5->0.065  0.7->0.096  0.85->0.176
+#                     0.95->0.500  0.99->2.450
+experiment: grid_v8_phiqbreak
+out_dir: paper_assets
+n_reps: 500
+far_target: 0.05
+train_frac: 0.25
+
+seeds:
+  calibration: 100000
+  evaluation: 200000
+  far_check: 300000
+  feature_scales: 900000
+
+T_values: [500]
+
+arenas:
+  ar1_phi0.1:  {dgp: AR1StateDGP, phi: 0.1,  q: 0.04875, r: 1.0, kalman_spec: ar1}
+  ar1_phi0.5:  {dgp: AR1StateDGP, phi: 0.5,  q: 0.04875, r: 1.0, kalman_spec: ar1}
+  ar1_phi0.7:  {dgp: AR1StateDGP, phi: 0.7,  q: 0.04875, r: 1.0, kalman_spec: ar1}
+  ar1_phi0.85: {dgp: AR1StateDGP, phi: 0.85, q: 0.04875, r: 1.0, kalman_spec: ar1}
+  ar1_phi0.95: {dgp: AR1StateDGP, phi: 0.95, q: 0.04875, r: 1.0, kalman_spec: ar1}
+  ar1_phi0.99: {dgp: AR1StateDGP, phi: 0.99, q: 0.04875, r: 1.0, kalman_spec: ar1}
+
+scenarios:
+  qvar_x1.5: {kind: state_var, time_frac: 0.5, vol_mult: 1.5}
+  qvar_x3: {kind: state_var, time_frac: 0.5, vol_mult: 3.0}
+
+methods: [raw_var_cusum, arima_var_cusum, lsc_composite]

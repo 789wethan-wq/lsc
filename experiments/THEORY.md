@@ -119,6 +119,39 @@ is genuinely ARMA(1,1) and mis-differencing would degrade it, so the
 ladder's ARIMA rung is reported as-built (AIC-selected), with the
 forced-(1,0,1) result given alongside.
 
+## Corollary (Proposition 1 in reduced form — filter-agnostic fast-or-never)
+
+Because the ARMA(1,1) innovations *are* the steady-state Kalman
+innovations (previous section), Proposition 1 is not a statement about
+the Kalman filter specifically — it is a statement about the *whitening
+filter* of the observable, however implemented. Restated in reduced-form
+notation: let ε_t be the innovations of the ARMA(1,1) representation
+(1 − φL)Y_t = (1 − θL)ε_t, with MA parameter θ and innovation variance
+σ_ε². After a level shift δ in the state at t₀ (equivalently, a step of
+size δ(1 − φ) in the mean of the differenced series, since the shift
+enters Y as δ·1{t ≥ t₀} and (1 − φL) maps it to δ(1 − φ) for t > t₀), the
+standardized innovation mean follows
+
+    μ_{t₀+j} = (δ − φ a_{j−1}) / √σ_ε²,   a_j = θ a_{j−1} + K δ,   a_{−1}=0,
+
+i.e. *the identical geometric transient, with the decay rate equal to the
+MA parameter θ* (using θ = ρ = φ(1 − K) and σ_ε² = F), converging to the
+same
+
+    μ_∞ = δ(1 − φ) / ((1 − θ)√σ_ε²).
+
+The fast-or-never bound of Proposition 2 then applies verbatim to ε_t.
+Two consequences. (1) The negative first-moment result transfers to *any*
+correctly-specified ARMA(1,1) whitening — an ARIMA(1,0,1) residual CUSUM
+inherits the same fast-or-never behavior as the innovation CUSUM, because
+they whiten to the same series; there is nothing Kalman-specific about it.
+(2) The decay rate is *observable* from the reduced form — it is the MA
+root θ, which an analyst can read off a fitted ARMA(1,1) without ever
+writing down a state space. Since θ = φ(1 − K) → 1 as φ → 1 (K bounded),
+the transient lengthens and μ_∞ → 0 near the unit root: the fast-or-never
+trap is a large-θ (persistent) phenomenon, exactly what the φ sweep (M3)
+confirms.
+
 ## Proposition 2 (never-detect bound)
 
 Suppose μ_t ≤ μ̃ < k for all t ≥ t₁ ≥ t₀ (post-transient), and let

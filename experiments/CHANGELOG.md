@@ -792,6 +792,62 @@ se. **Falsifiers:** Δ(φ) non-monotone; Δ(0.1) materially > 0; Δ present
 without autocorrelation; Δ inconsistent with the M2 SNR-sweep at matched
 SNR. Outcome logged with numbers when resolved; all outcomes publishable.
 
+## 2026-07-13 — M7 RESOLVED: prediction CONFIRMED IN PART, FALSIFIED IN PART (honest mixed)
+
+`configs/grid_v8_phiqbreak.yaml` (fixed q=0.04875, r=1; φ ∈ {0.1, 0.5,
+0.7, 0.85, 0.95, 0.99}; induced SNR 0.049→2.45); analysis
+`experiments/phiqbreak_analyze.py` → `grid_v8_phiqbreak_summary.csv`,
+`grid_v8_phiq_amplification.png`. Raw advantage Δ(φ) = detect(raw_var) −
+detect(arima_var):
+
+| φ (SNR)     | amp 1/(1−φ²) | Δ ×1.5 | Δ ×3 |
+|-------------|--------------|--------|------|
+| 0.10 (0.05) | 1.01         | 0.00   | 0.34 |
+| 0.50 (0.07) | 1.33         | 0.02   | 0.53 |
+| 0.70 (0.10) | 1.96         | 0.04   | 0.53 |
+| 0.85 (0.18) | 3.60         | 0.10   | 0.20 |
+| 0.95 (0.50) | 10.3         | 0.11   | 0.17 |
+| 0.99 (2.45) | 50.3         | 0.07   | 0.30 |
+
+**CONFIRMED (subtle ×1.5 break):** (i) Δ → 0 as φ → 0 (Δ = 0.000 at
+φ = 0.1: on a white observable, whitening is a no-op and raw ≈ whitened).
+(ii) Δ rises with the amplification (Spearman(amp, Δ) = 0.83). (iii)
+Secondary consistency check PASSES cleanly: the φ-swept Δ equals the M2
+SNR-swept Δ (grid_v5, fixed φ = 0.95) at the *same induced SNR* — 0.11 vs
+0.11 at SNR 0.5, 0.07 vs 0.07 at SNR ≈ 2 — so the effect genuinely
+operates through the amplified SNR, i.e. the φ-sweep and the SNR-sweep are
+one experiment. The state-variance amplification IS the mechanism for the
+subtle break.
+
+**FALSIFIED (strong form):** (a) Δ is NOT monotone to φ = 1: for ×1.5 it
+peaks at φ = 0.95 (0.11) and DIPS at φ = 0.99 (0.07), because at the
+near-unit-root the raw detector's own baseline degrades (calibrated
+threshold 1829 at φ = 0.99 vs 275 at φ = 0.95 — the same nonstationarity
+penalty as the M4 local-level arena), an opposing effect the simple
+1/(1−φ²) law omits. (b) For the coarse ×3 break the prediction fails
+outright: Δ is large at every φ including φ = 0.1 (0.34) and
+Spearman(amp, Δ) = −0.60 (negative). Raw z² detects a gross q-break
+regardless of amplification, while ARIMA whitening attenuates it at all φ.
+
+**Mechanism correction (order check, 80 prefixes/φ).** The ×3 low-φ
+ARIMA underperformance is NOT over-differencing: at φ = 0.1/0.5 AIC picks
+the *stationary* AR(1) (1,0,0) on 53/51 of 80 prefixes (differencing
+(0,1,1) only dominates at φ = 0.99, 58/80). So the ARIMA rung's deficit
+is the whitening ITSELF removing the state-shock variance signal that raw
+z² retains — the core B2 mechanism — present at all φ, not an
+order-selection artifact. This strengthens B2: prewhitening strips the
+state-carried signal for q-breaks of any size; the 1/(1−φ²) amplification
+only modulates *how visible* the residual raw advantage is on the subtle,
+detectability-marginal break, and recedes at the unit root where raw's
+baseline breaks down.
+
+**Net.** The user's amplification prediction holds for the regime it
+describes (subtle breaks, φ away from 1) and is the confirmed driver
+there; it is not a universal monotone law (coarse breaks, and the
+near-unit-root boundary, break it). Reported as such in §5. Abstract
+carries the robust claim (raw ≥ whitened on q-breaks at every SNR)
+without the over-strong tracking clause.
+
 ## 2026-07-13 — M4: local-level (RW-state) arena — DEMONSTRATED, not dismissed
 
 `configs/grid_v7_llevel.yaml` (LocalLevelDGP, SNR=q/r ∈ {0.1,0.5,2.0},

@@ -11,7 +11,7 @@ ASSETS := paper_assets
 
 .PHONY: all venv test figures recovery exp01 exp02 exp03 exp04 exp05 exp06 grid grid_v2 grid_v4 fred paper clean
 
-all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06 grid_v4 exp07 grid_v5 grid_v6 grid_v7 arl
+all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06 grid_v4 exp07 grid_v5 grid_v6 grid_v7 grid_v8 arl
 	@echo "== repro pack complete (run 'make fred' separately: needs network) =="
 
 venv:
@@ -79,6 +79,12 @@ grid_v6:
 grid_v7:
 	$(PY) -m lsc.eval.runner configs/grid_v7_llevel.yaml
 	$(PY) experiments/llevel_analyze.py
+
+# M7 (R1b): phi x q-break cross-grid — does raw's q-break advantage track
+# the 1/(1-phi^2) amplification? (pre-registered before the run)
+grid_v8:
+	$(PY) -m lsc.eval.runner configs/grid_v8_phiqbreak.yaml
+	$(PY) experiments/phiqbreak_analyze.py
 
 # M5 (R1): ARL0/ARL1 vocabulary from existing FAR tables + parquets
 arl:
