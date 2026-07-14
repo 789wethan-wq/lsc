@@ -764,6 +764,34 @@ contribution; reported as such, not smoothed over. Proposition 1 holds;
 the caveat is that total detection = transient mass + post-transient
 tail, and μ∞ governs only the second.
 
+## 2026-07-13 — M7 PRE-REGISTERED: φ × q-break cross-grid (amplification test), before any grid_v8 cell runs
+
+Registered before implementing `configs/grid_v8_phiqbreak.yaml` (verified:
+no grid_v8 config/parquet at commit time). Extends M2 (q-break) × M3 (φ)
+into a genuine cross: hold the shock variance q and obs variance r FIXED
+and sweep φ, so the state's stationary variance q/(1−φ²) — and hence the
+signal-to-noise ratio SNR(φ) = (q/r)/(1−φ²) — rises as the **1/(1−φ²)
+amplification factor**. Anchor q = 0.04875, r = 1.0 (so φ = 0.95 gives
+SNR 0.5, matching the body arena); φ ∈ {0.1, 0.5, 0.7, 0.85, 0.95, 0.99}
+gives induced SNR {0.049, 0.065, 0.096, 0.176, 0.5, 2.45}. q-break ×1.5
+and ×3; rungs raw_var_cusum / arima_var_cusum / lsc_composite; 500 reps,
+T = 500, identical seed blocks.
+
+**Pre-registered prediction (falsifiable).** The raw rung's *advantage*
+on q-breaks — Δ(φ) = detect(raw_var) − detect(arima_var) (and vs
+composite) — is (i) monotonically increasing in φ and (ii) → 0 as φ → 0,
+(iii) tracking the amplification 1/(1−φ²) (equivalently the induced SNR).
+Mechanism: at φ → 0 the observable is white (AR(0)), so whitening is a
+no-op and the q-break barely moves Y's variance → raw ≈ whitened ≈ FAR,
+Δ ≈ 0; as φ → 1 the 1/(1−φ²) amplification inflates the state's share of
+Y's variance, which a raw z² statistic sees directly while whitening
+strips it out → Δ large. Secondary consistency check: Δ at each cell
+should match the M2 SNR-sweep (grid_v5, fixed φ = 0.95) at the *same
+induced SNR* — i.e. the effect operates through amplified SNR, not φ per
+se. **Falsifiers:** Δ(φ) non-monotone; Δ(0.1) materially > 0; Δ present
+without autocorrelation; Δ inconsistent with the M2 SNR-sweep at matched
+SNR. Outcome logged with numbers when resolved; all outcomes publishable.
+
 ## 2026-07-13 — M4: local-level (RW-state) arena — DEMONSTRATED, not dismissed
 
 `configs/grid_v7_llevel.yaml` (LocalLevelDGP, SNR=q/r ∈ {0.1,0.5,2.0},
