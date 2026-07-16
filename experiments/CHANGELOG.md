@@ -884,3 +884,44 @@ message. FARs 4.8–7.8% (raw_cusum hot at low SNR, as noted).
 §8.4 expansion) stating (1) and (2) with the degeneracy figure; the
 arena now carries a positive finding (whitening-mandatory-under-
 nonstationarity), not a hand-wave.
+
+## 2026-07-16 — P1: paper finalization patch (document-only; no grid re-run, no number changed)
+
+**M1 verification pass** — every quoted number checked against its
+artifact; all matched: p = 0.007 (rd_eval: 0.0073); the full §5
+two-channel ladder (all cells vs ladder_table.csv, exact); the q-break
+×3 row 0.72/0.96/0.96 raw and 0.26/0.79/1.00 ARIMA (grid_v5_qbreak);
+μ∞ = 0.469 and the Wald delays 68/84/110 (exp06_theory_table). The
+`grid_v4_varbench` citation in Appendix C is valid: varbench_ladder.py
+regenerates grid_v4_varbench_results.parquet under `make all` by
+concatenating the core + T grids. Two text corrections: the
+"Albert–Wald" eponym in Prop 2 / Appendix B renamed to the standard
+"Wald" first-passage approximation (cites Wald 1947; Siegmund 1985 —
+THEORY.md always called it Wald); the training-prefix wording in §2/§4
+unified as 125 observations = 25% of T = 500.
+
+**M2 prose (reviewed set)** — abstract (iii) now leads with the ×3
+evidence and carries the partial-null hedge (subtle break = "whitening
+fails to recover it", not "raw detects it"); §5 q-break reading split
+subtle vs coarse with the ≤5-pp-from-FAR chance standard applied to the
+×1.5 row and the φ×q Δ values marked as near-floor differences; §6
+marks 0.33-at-SNR-2.0 as a single favorable cell; §10 deflationary (1)
+softened to "dynamics, at the floor" and the one-sentence answer to
+"dynamics (weakly) and attribution (robustly)"; §4 estimation caveat
+(ρ̄ = 0.99 is a series-level claim; detection-rate consequences are
+empirical); SV/GARCH scope sentence in related work + §10 limitations;
+§9 intro states the monitors are distribution-free.
+
+**M3** — Propositions 1–2 now have in-manuscript statements and proofs
+in Appendix B (setup/assumptions, mean-path recursion, martingale +
+union bound, Wald first-passage derivation); THEORY.md remains the
+long-form companion.
+
+**M4** — the three inline-cited figures embedded with captions as
+Figures 1–3 (grid_v6_muinf_scatter, grid_v8_phiq_amplification,
+grid_v7_llevel_degeneracy); build_paper.py gains implicit_figures and
+label-free captions.
+
+**M5** — References section added (17 entries; every inline citation
+resolved, none fabricated); abstract compressed to ~220 words
+preserving the no/yes/no trichotomy (long version in git history).

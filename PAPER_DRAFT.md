@@ -2,54 +2,29 @@
 
 ## Abstract
 
-A two-layer framework for detecting hidden structural change: a
-state-estimation layer (Kalman filtering of a latent state from noisy
-observations) and a diagnostics layer that converts features of the
-strictly-causal filtered path into alarms. All detectors — ours and
-benchmarks — are calibrated on matched null data-generating processes to
-the same false-alarm rate (5% per 500 observations), making detection
-rates and delays directly comparable. The main finding is a **trichotomy**, not a
-blanket verdict on filtering — the answer to "does filtering help you see
-a break?" is *no, yes, no* across three break types:
-
-*(i) Level shifts in a persistent state — no.* A CUSUM on the raw data
-dominates detection at every SNR, while the latent-innovation CUSUM is
-"fast or never," which we formalize (the post-break standardized
-innovation mean decays geometrically to δ(1−φ)/((1−φ(1−K))√F); below the
-CUSUM allowance, post-transient detection has an exponentially small
-bound) and bound by sweeping the persistence φ: the asymptotic drift μ∞
-sorts detection (Spearman 0.94) and the innovation CUSUM *escapes* the
-trap at low φ, so the negative result is a boundary condition of
-*persistent* states — the empirically relevant case — not a universal law.
-
-*(ii) Observation-noise variance changes — yes, but it is prewhitening,
-not the state estimate.* A whitening ladder shows the two whitened rungs
-are provably the *same filter* (the observable is exactly ARMA(1,1), so
-ARIMA-residual and Kalman-innovation whitening coincide up to estimation
-error, ρ̄ = 0.99), and both detect the subtle (×1.5) break at every SNR
-(ARIMA 0.90/0.94/0.87) while a raw-data variance CUSUM detects it only
-when observation noise dominates (0.996 at SNR 0.1) and falls to chance
-as the latent signal grows (0.56, 0.10 at SNR 0.5, 2.0).
-
-*(iii) State-innovation (shock) variance changes — no.* On the channel
-that actually describes the Great Moderation and crisis-volatility events
-the application targets, the ordering *inverts*: a raw variance CUSUM
-matches or beats the whitened rungs at every SNR (×1.5: raw 0.09/0.21/0.23
-vs ARIMA 0.03/0.10/0.16). Prewhitening reveals a break in the white
-component and *removes* the signal of a break in the state — which is why
-on real crises a raw variance CUSUM's timing is indistinguishable from the
-state-aware composite's, and why on a subtle shock-variance break raw's
-edge is governed by the state's variance share (the 1/(1−φ²) amplification
-of persistence), receding only near the unit root where the raw detector's
-own baseline degrades. The diagnostics further
-survive heavy tails via an exceedance-indicator variant and, via a
-shortfall CUSUM, detect variance *quieting* that level-oriented methods
-miss. A real-data application
-(industrial production, GDP, Treasury yields) reproduces the profile:
-every alarm attributes to a second-moment feature, association with NBER
-reference dates is significant (permutation p = 0.007), and real-time
-(ALFRED vintage) analysis confirms the COVID timing while honestly
-downgrading the 2008 timing claim.
+We ask when filtering a latent state helps detect structural change,
+under a protocol that makes the question answerable: every detector —
+state-aware or raw-data — is calibrated on matched null data-generating
+processes to the same false-alarm rate (5% per 500 observations), so
+detection rates and delays are directly comparable. The answer is a
+trichotomy — *no, yes, no* — across three break types. (i) Level shifts
+in a persistent state: no — a raw-data CUSUM dominates at every SNR,
+and we prove the innovation CUSUM is "fast or never," a boundary
+condition of persistence (μ∞ sorts detection, Spearman 0.94).
+(ii) Observation-noise variance changes:
+yes — but the advantage is prewhitening, not the state estimate: the
+observable is exactly ARMA(1,1), so ARIMA-residual and Kalman-innovation
+whitening are provably the same filter. (iii) State-innovation (shock)
+variance changes — the Great-Moderation / crisis-volatility channel:
+no, a partial null — on the coarse ×3 break,
+where all rungs detect above chance, a raw variance CUSUM matches or
+beats whitening at every SNR (0.72/0.96/0.96 vs ARIMA 0.26/0.79/1.00),
+while the subtle ×1.5 break leaves every rung near the false-alarm
+floor, so whitening *fails to recover* it rather than raw detecting it.
+On real data (industrial production, GDP, Treasury yields) every alarm
+attributes to a second-moment feature, NBER association is significant
+(permutation p = 0.007), and real-time vintages confirm the COVID
+timing while downgrading 2008.
 
 **JEL classification:** C12, C22, C52.
 **Keywords:** structural change; sequential change detection; CUSUM;
@@ -115,7 +90,7 @@ the systematic treatment of CUSUM/GLR schemes on innovation sequences in
 Basseville & Nikiforov (1993). That literature also supplies the
 evaluation currency we adopt: the average run length (ARL), with methods
 compared at a matched in-control ARL₀ — the statistical-process-control
-convention (Page 1954; Montgomery). Our contribution on this axis is
+convention (Page 1954; Montgomery 2013). Our contribution on this axis is
 *not* the innovation CUSUM or ARL-matching per se, both of which are
 standard in SPC and quickest detection; it is that this matched-error
 protocol is essentially *absent* from the applied latent-state
@@ -128,14 +103,20 @@ residuals line and its modern monitoring form (Brown, Durbin & Evans
 1975; Chu, Stinchcombe & White 1996), which watch *observable* regression
 residuals; our object is a *latent* state, and the residuals we monitor
 are a filter's innovations. Regime-switching models (Hamilton 1989;
-Kim–Nelson 1999) offer a state-aware alternative whose regime
+Kim & Nelson 1999) offer a state-aware alternative whose regime
 probabilities we include as a benchmark and find saturate under
 calibration on nonstationary data. The empirical target of the
 second-moment results is the Great Moderation volatility decline
-(McConnell–Perez-Quiros 2000; Stock–Watson 2002); as we show, that and
+(McConnell & Pérez-Quirós 2000; Stock & Watson 2002); as we show, that and
 the crisis-volatility events are *state-innovation* (shock-variance)
 breaks, the channel on which raw and prewhitened detectors are
-interchangeable. Finally, offline changepoint methods (PELT, Killick et
+interchangeable. A separate literature models conditional variance
+parametrically — GARCH (Bollerslev 1986) and stochastic-volatility
+state-space models (Kim, Shephard & Chib 1998); its object is
+*estimation* of a volatility process, not distribution-free monitoring
+at a calibrated false-alarm rate, so it is a complementary benchmark
+left to future work rather than a competitor here. Finally, offline
+changepoint methods (PELT, Killick et
 al. 2012) solve a retrospective segmentation problem; our monitoring is
 strictly causal and calibrated to a false-alarm rate. What is new here is
 not any single detector but the calibrated-parity harness that makes
@@ -148,7 +129,8 @@ second moments into a prewhitening question with a known answer.
 
 **Model layer.** S_t = φS_{t−1} + w_t (var q), Y_t = S_t + v_t (var r);
 the estimator sees only Y and fits (φ, q, r) by maximum likelihood on a
-training prefix (25% of the sample), then runs a forward-only filter with
+training prefix of 125 observations (25% of the T = 500 baseline sample;
+the same 25% fraction at other T), then runs a forward-only filter with
 frozen parameters. Standardized one-step innovations e_t and the filtered
 state are the raw material for diagnostics.
 
@@ -223,8 +205,9 @@ median delay 24–53 observations at 3σ versus raw's 58–91, at the cost of
 detection rate (0.55–0.67) — "fast or never."
 
 **Theory.** The empirics above are not an artifact of tuning; they follow
-from two facts about the detectors' post-break drift. Derivations are in
-Appendix B (`experiments/THEORY.md`).
+from two facts about the detectors' post-break drift. Statements and
+proofs are in Appendix B (long-form companion:
+`experiments/THEORY.md`).
 
 > **Proposition 1 (fast-or-never).** After a state level shift δ, the
 > standardized innovation mean decays geometrically at rate ρ = φ(1−K) to
@@ -253,9 +236,9 @@ without positing a latent state. Since θ → 1 as φ → 1, the trap is a
 persistence phenomenon, which is what the φ sweep tests next.
 
 > **Proposition 2 (raw-CUSUM delay).** The raw-Y CUSUM sees the full shift
-> as a sustained standardized drift Δ = δ/σ_Y, giving an Albert–Wald mean
-> delay of approximately h/(Δ−k) once Δ > k, and negligible power when
-> Δ ≤ k.
+> as a sustained standardized drift Δ = δ/σ_Y, giving a Wald
+> first-passage mean delay of approximately h/(Δ−k) once Δ > k (Wald
+> 1947; Siegmund 1985), and negligible power when Δ ≤ k.
 
 Verification (`experiments/exp06_theory_check.py`, 1000 reps): the Monte
 Carlo innovation path matches μ_t within MC error; the Proposition 1 bound
@@ -270,8 +253,8 @@ k, so the Wald delay (1334) dwarfs the 250-observation horizon.
 **The persistence boundary (φ sweep).** Proposition 1's regime is not
 unconditional — μ∞ = δ(1−φ)/((1−φ(1−K))√F) is *increasing in* (1−φ), so
 the fast-or-never trap should loosen as the state becomes less
-persistent. Sweeping φ ∈ {0.5, 0.8, 0.95, 0.99} at fixed SNR (Figure
-`grid_v6_muinf_scatter.png`) confirms it and turns the theory into a
+persistent. Sweeping φ ∈ {0.5, 0.8, 0.95, 0.99} at fixed SNR (Figure 1)
+confirms it and turns the theory into a
 falsifiable ordering: μ∞ sorts the innovation-CUSUM detection rate across
 all cells (Spearman 0.94), fast-regime cells (μ∞ ≥ k = 0.5) detect
 0.83–1.00 while never-regime cells (μ∞ < 0.5) detect 0.07–0.67, and at
@@ -290,11 +273,20 @@ CUSUM even when the asymptotic drift is negligible (the "fast" branch,
 strengthened by a long transient). μ∞ governs the post-transient tail;
 total detection adds the transient mass.
 
+![**Figure 1.** The φ sweep (`grid_v6_phisweep`). Left: predicted
+asymptotic innovation drift μ∞ against the observed innovation-CUSUM
+detection rate for every φ × SNR × shift cell (point labels = φ); μ∞
+sorts detection (Spearman 0.94), and the dotted line marks the
+fast-or-never boundary k = 0.5. Right: at 3σ the detector escapes the
+trap at low persistence (0.97–1.00 at φ = 0.5–0.8) and is caught at high
+persistence (0.30–0.67 at φ = 0.95–0.99).](paper_assets/grid_v6_muinf_scatter.png)
+
 **Assumptions and estimation error.** Propositions 1–2 assume the
 steady-state filter with *known* parameters. Two facts keep this from
 being a limitation in practice. First, the filter reaches its steady
-state within the 125-observation training prefix, well before monitoring
-begins (the innovation autocorrelation is flat by then). Second, the
+state within the 125-observation training prefix of §2 (25% of T = 500),
+well before monitoring begins (the innovation autocorrelation is flat by
+then). Second, the
 error from estimating (φ, q, r) rather than knowing them is second-order:
 in the M1 equivalence check (§5, `experiments/exp07`) the ARIMA and
 Kalman standardized-innovation series computed with *estimated*
@@ -302,7 +294,11 @@ parameters correlate at ρ̄ = 0.99 with each other and, computed with
 *true* parameters, at ρ = 1.000 to a max discrepancy of ≈10⁻⁹ — so the
 entire estimated-vs-true gap is the small residual that leaves the
 median correlation at 0.99. The theory describes the estimated filter to
-within that gap.
+within that gap. The scope of this claim should be stated precisely:
+ρ̄ = 0.99 establishes agreement of the innovation *series* under
+estimation; the detection-rate consequences of estimation error are
+shown empirically — every grid in the paper is run with estimated
+parameters — not proved analytically.
 
 ## 5. Second moments: a whitening ladder
 
@@ -383,12 +379,22 @@ removes exactly that autocorrelation: the *ARIMA* rung is flat across SNR
 same filter. On this channel the advantage over raw is *prewhitening under
 autocorrelation*, decisive where the latent signal masks the noise change.
 
-*State-innovation (q) breaks — raw wins, and the SNR-dependence flips.*
-Here the raw rung's dependence on SNR *reverses sign* — it *rises* with
-SNR (0.09 → 0.21 → 0.23 at ×1.5) — and the raw rung matches or beats the
-whitened rungs at every SNR (×1.5 ARIMA 0.03 / 0.10 / 0.16; ×3 raw 0.72 /
-0.96 / 0.96 vs ARIMA 0.26 / 0.79 / 1.00, the whitened rung catching up
-only at the ×3 high-SNR ceiling). The mechanism is the mirror image: a
+*State-innovation (q) breaks — the ordering inverts, read separately by
+break size.* The *coarse* ×3 break carries the inversion claim cleanly:
+every rung detects above chance, and the raw rung matches or beats the
+whitened rungs at every SNR (raw 0.72 / 0.96 / 0.96 vs ARIMA 0.26 /
+0.79 / 1.00, the whitened rung catching up only at the high-SNR
+ceiling). The *subtle* ×1.5 break must be read against the same
+≤5-pp-from-FAR "chance" standard applied to the r channel above
+(empirical FARs on this grid are 4.2–6.6%): raw at SNR 0.1 (0.09) and
+ARIMA at SNR 0.1 and 0.5 (0.03, 0.10) are within 5 pp of their empirical
+FARs — chance — and only the higher-SNR cells clear the standard (raw
+0.21 / 0.23 at SNR 0.5 / 2.0; ARIMA 0.16 at SNR 2.0). The honest
+subtle-break statement is therefore not "raw detects it" but "whitening
+fails to recover it": no rung detects a ×1.5 shock-variance break well,
+and whitening only loses ground. The raw rung's SNR-dependence still
+*reverses sign* relative to the r channel — it rises with SNR (0.09 →
+0.21 → 0.23) — and the mechanism is the mirror image: a
 q-break inflates the *state's own* variance, which dominates the marginal
 variance of Y at high SNR, so a raw z² statistic sees it directly —
 whereas prewhitening *strips out* the state-carried signal along with the
@@ -401,8 +407,8 @@ too little to Y to register its own reduction.
 the shock variance q and observation variance r fixed and sweeping the
 persistence φ makes the state's stationary variance q/(1−φ²) — and hence
 the induced SNR — rise as the **1/(1−φ²) amplification factor**
-(`configs/grid_v8_phiqbreak.yaml`, Figure `grid_v8_phiq_amplification
-.png`). The result is instructive and only partly what one might guess.
+(Figure 2; `configs/grid_v8_phiqbreak.yaml`). The result is instructive
+and only partly what one might guess.
 On the *subtle* ×1.5 break, raw's advantage Δ = detect(raw) −
 detect(ARIMA) is driven by exactly this amplification: it vanishes when
 the state is white (Δ = 0.00 at φ = 0.1, where whitening is a no-op),
@@ -410,7 +416,10 @@ rises with the amplification (Spearman 0.83), and — the clean check —
 equals the SNR-sweep value from the fixed-φ grid at the *same induced
 SNR* (Δ = 0.11 vs 0.11 at SNR 0.5; 0.07 vs 0.07 at SNR ≈ 2), so the
 φ-sweep and the SNR-sweep are one experiment: raw's edge on a subtle
-shock-variance break is the state's variance share, nothing more. But the
+shock-variance break is the state's variance share, nothing more. (These
+Δ values are differences between near-floor detection rates — e.g. 0.21
+vs 0.10 at SNR 0.5 — so they measure the visibility of a marginal
+advantage, not a large power gap.) But the
 law is not monotone to the unit root — Δ peaks at φ = 0.95 and recedes at
 φ = 0.99, because there the raw detector's own baseline degrades (its
 calibrated threshold jumps from 275 to 1829, the nonstationarity penalty
@@ -424,13 +433,23 @@ prewhitening strips the state-carried variance signal for q-breaks of any
 size — that is B2 — and the 1/(1−φ²) amplification governs only *how
 visible* the residual raw advantage is on the marginal, subtle break.
 
+![**Figure 2.** The φ × q cross-grid (`grid_v8_phiqbreak`). Left: raw's
+advantage Δ = detect(raw) − detect(ARIMA) against φ; the subtle ×1.5
+advantage vanishes at φ = 0.1 and peaks at φ = 0.95, while the coarse ×3
+advantage persists at every φ. Right: the same Δ against the 1/(1−φ²)
+amplification factor, with the fixed-φ SNR-sweep values (grid_v5)
+overlaid — on the subtle break the φ-swept and SNR-swept experiments
+coincide at matched induced SNR; note the Δ values are differences
+between near-floor detection rates.](paper_assets/grid_v8_phiq_amplification.png)
+
 This resolves the pre-registered decision rule (`experiments/CHANGELOG.md`)
 as **Outcome B2**: the "prewhitening beats raw" result is *specific to
 the observation-noise channel*. It matters because the events the
 application targets — the Great Moderation, crisis volatility — are
 state-innovation (shock-variance) breaks, not observation-noise breaks;
 on that channel a raw variance CUSUM is at least as good as any amount of
-whitening. This is not a weakness to hide but the explanation for a
+whitening — decisively on the coarse break, while on the subtle break
+every rung is near the floor and whitening only loses ground. This is not a weakness to hide but the explanation for a
 real-data fact (§9): the raw variance CUSUM's crisis timing is
 *indistinguishable* from the state-aware composite's, exactly as the q-
 channel predicts. (The earlier r-channel-only framing recorded a
@@ -464,7 +483,10 @@ conditional "level-freeze" artifact we dissect). Quieting changes
 level. Purpose-built quietness features (CUSUM of 1−e², rolling
 innovation autocorrelation) rescue detection only where the information
 exists: 0.33 at SNR 2.0 (the only above-FAR persistence detection
-anywhere in the grid) and 0.17 at T = 2000. Scale-quieting (×⅔) is
+anywhere in the grid) and 0.17 at T = 2000. That 0.33 is a single
+favorable cell, not a broad capability: its value is that it maps where
+the information floor sits, showing detection is possible exactly where
+the state is most visible and nowhere else. Scale-quieting (×⅔) is
 detectable — but, outside the noise-dominated regime, only by the
 exceedance detector (§8.3): at SNR 0.5 it reaches 0.41/0.33 (Gaussian/t₅)
 while every other method sits at chance. The one exception is the same
@@ -542,7 +564,7 @@ bars — reported as such.
 whitening-mandatory for variances.** The canonical latent-state model in
 economics is the local level (random-walk state); we ran the level and
 variance ladder cells there rather than dismiss it
-(`configs/grid_v7_llevel.yaml`, Figure `grid_v7_llevel_degeneracy.png`),
+(Figure 3; `configs/grid_v7_llevel.yaml`),
 and it splits cleanly. *Level* detection is degenerate for **every**
 method: at 3σ all five detectors sit at the 5% FAR (raw CUSUM 0.07–0.10,
 Kalman-innovation 0.04–0.15, raw/ARIMA variance and composite ≤ 0.07). A
@@ -564,6 +586,14 @@ prewhitening is not merely helpful but *mandatory* once the observable is
 nonstationary, because the raw statistic has no stationary baseline to
 calibrate against.
 
+![**Figure 3.** The local-level (random-walk state) arena at SNR 0.5
+(`grid_v7_llevel`). Left: a 3σ level break is degenerate for every
+method — all five detectors sit at the 5% FAR line. Right: a ×1.5
+observation-noise variance break is caught only by the whitened rungs
+(ARIMA-differencing 0.84, Kalman composite 0.89) while the raw variance
+CUSUM stays at chance — whitening is mandatory once Y is
+nonstationary.](paper_assets/grid_v7_llevel_degeneracy.png)
+
 **Protocol lessons (each cost us a wrong result before it was fixed).**
 plain-HMM regime probabilities saturate and cannot be FAR-calibrated on
 nonstationary data; probability-scale scores need log-odds; EM needs
@@ -577,7 +607,10 @@ detectors need larger calibration budgets.
 Three FRED series, pinned snapshots (2026-07-11), rolling causal
 monitoring (train 120 months / monitor 60), per-segment parametric
 bootstrap calibration at 5% FAR per window, alarms attributed to the
-feature that crossed.
+feature that crossed. Throughout this section the detectors are
+distribution-free monitors calibrated to a false-alarm rate; no
+parametric conditional-variance model is estimated and no such claim is
+made.
 
 **Industrial production (INDPRO, 1948–2026).** Composite alarms: 2008-09
 and 2020-04 (both variance_pressure), 1990-12 (variance_quiet), 1969-08
@@ -679,7 +712,10 @@ Four points summarize what the harness bought us.
   breaks; adaptive composite weighting (breadth tax); switching-SSM (Kim
   filter) model layer; formalizing the persistence-break mechanisms; a
   vol-regime reference set for scoring the exceedance detector on real
-  data.
+  data; and benchmarking against parametric volatility models (GARCH,
+  stochastic volatility) — a different object, conditional-variance
+  estimation rather than distribution-free monitoring, but the natural
+  complementary comparison for the second-moment results.
 
 **What, then, is the latent layer actually for?** The results invite a
 deflationary reading, and we take it seriously rather than deflect it. For
@@ -694,11 +730,12 @@ amplification on subtle breaks). A practitioner armed with a raw CUSUM,
 a raw variance CUSUM, and an off-the-shelf ARIMA residual CUSUM would
 reproduce most of the detection frontier without ever writing down a
 latent state. So what survives as genuinely the latent layer's? Four
-things, and only these. (1) *Dynamics.* Persistence and quieting changes
-have no raw analogue; the state features (rolling innovation
-autocorrelation, the 1−e² quietness CUSUM) are the *only* above-FAR
-detection of a pure persistence change anywhere in the grid (0.33 at SNR
-2.0). (2) *Speed.* Conditional on firing, the innovation CUSUM is the
+things, and only these. (1) *Dynamics, at the floor.* Persistence and
+quieting changes have no raw analogue; the state features (rolling
+innovation autocorrelation, the 1−e² quietness CUSUM) are the *only*
+above-FAR detection of a pure persistence change anywhere in the grid —
+but that detection is a single favorable cell (0.33 at SNR 2.0), a
+capability at the information floor rather than a robust one. (2) *Speed.* Conditional on firing, the innovation CUSUM is the
 fastest level detector (median delay 24–53 vs raw's 58–91) — the very
 "fast" half of fast-or-never. (3) *A single attributable instrument.* The
 composite reads ~10 channels under one calibrated FAR budget and reports
@@ -711,8 +748,69 @@ with NBER dates (p = 0.007 vs 0.56) that a raw z² statistic firing on
 every wiggle cannot match. The honest one-sentence answer: the latent
 layer is not a better detector of any single break type; it is a
 *breadth-and-interpretation* instrument whose irreducible content is
-dynamics and attribution, not the second-moment power one might have
-expected filtering to buy.
+dynamics (weakly) and attribution (robustly), not the second-moment
+power one might have expected filtering to buy.
+
+---
+
+## References
+
+Basseville, M., and I. V. Nikiforov (1993). *Detection of Abrupt
+Changes: Theory and Application*. Englewood Cliffs, NJ: Prentice-Hall.
+
+Bollerslev, T. (1986). "Generalized Autoregressive Conditional
+Heteroskedasticity." *Journal of Econometrics* 31(3), 307–327.
+
+Brown, R. L., J. Durbin, and J. M. Evans (1975). "Techniques for
+Testing the Constancy of Regression Relationships over Time." *Journal
+of the Royal Statistical Society, Series B* 37(2), 149–192.
+
+Chu, C.-S. J., M. Stinchcombe, and H. White (1996). "Monitoring
+Structural Change." *Econometrica* 64(5), 1045–1065.
+
+Hamilton, J. D. (1989). "A New Approach to the Economic Analysis of
+Nonstationary Time Series and the Business Cycle." *Econometrica*
+57(2), 357–384.
+
+Killick, R., P. Fearnhead, and I. A. Eckley (2012). "Optimal Detection
+of Changepoints with a Linear Computational Cost." *Journal of the
+American Statistical Association* 107(500), 1590–1598.
+
+Kim, C.-J., and C. R. Nelson (1999). *State-Space Models with Regime
+Switching: Classical and Gibbs-Sampling Approaches with Applications*.
+Cambridge, MA: MIT Press.
+
+Kim, S., N. Shephard, and S. Chib (1998). "Stochastic Volatility:
+Likelihood Inference and Comparison with ARCH Models." *Review of
+Economic Studies* 65(3), 361–393.
+
+Lorden, G. (1971). "Procedures for Reacting to a Change in
+Distribution." *Annals of Mathematical Statistics* 42(6), 1897–1908.
+
+McConnell, M. M., and G. Pérez-Quirós (2000). "Output Fluctuations in
+the United States: What Has Changed Since the Early 1980s?" *American
+Economic Review* 90(5), 1464–1476.
+
+Montgomery, D. C. (2013). *Introduction to Statistical Quality
+Control*, 7th ed. Hoboken, NJ: Wiley.
+
+Moustakides, G. V. (1986). "Optimal Stopping Times for Detecting
+Changes in Distributions." *Annals of Statistics* 14(4), 1379–1387.
+
+Page, E. S. (1954). "Continuous Inspection Schemes." *Biometrika*
+41(1/2), 100–115.
+
+Siegmund, D. (1985). *Sequential Analysis: Tests and Confidence
+Intervals*. New York: Springer-Verlag.
+
+Stock, J. H., and M. W. Watson (2002). "Has the Business Cycle Changed
+and Why?" *NBER Macroeconomics Annual* 17, 159–218.
+
+Wald, A. (1947). *Sequential Analysis*. New York: Wiley.
+
+Willsky, A. S., and H. L. Jones (1976). "A Generalized Likelihood Ratio
+Approach to the Detection and Estimation of Jumps in Linear Systems."
+*IEEE Transactions on Automatic Control* 21(1), 108–112.
 
 ---
 
@@ -736,24 +834,91 @@ per-time-point-standardized output so a stale artifact cannot recur). All
 post-hoc design changes and pre-registered hypotheses (including the
 three falsified ones and the two rejected robust-feature designs — one
 falsified, one diluted, §8.3) are in `experiments/CHANGELOG.md`; full experiment narratives in
-`experiments/FINDINGS.md`; theory derivations in `experiments/THEORY.md`
-(Appendix B). The complete source, pinned data snapshots, and seed
+`experiments/FINDINGS.md`; theory statements and proofs in Appendix B,
+with `experiments/THEORY.md` as the long-form companion. The complete source, pinned data snapshots, and seed
 configuration constitute the replication package, to be posted publicly on
 acceptance and available from the author on request in the interim.
 
-## Appendix B. Theory derivations
+## Appendix B. Theory: statements and proofs
 
-Full derivations of Proposition 1 (the geometric decay of the
-standardized innovation mean to μ∞ and the resulting fast-or-never
-alarm bound) and Proposition 2 (the Albert–Wald delay of the raw-Y CUSUM
-under a sustained standardized drift) are in `experiments/THEORY.md`,
-with the numerical verification in `experiments/exp06_theory_check.py`
-(1000 replications). The steady-state Kalman gain K and innovation
-variance F are the fixed-point solutions of the scalar Riccati recursion
-for the AR(1) state model of §2; μ∞, ρ, and the bound follow by taking
-the post-break innovation as a deterministic geometric transient plus
-mean-zero noise and applying a one-sided Hoeffding bound to the CUSUM
-increments.
+This appendix gives self-contained statements and proofs of
+Propositions 1–2; `experiments/THEORY.md` remains the long-form
+companion, and the numerical verification is in
+`experiments/exp06_theory_check.py` (1000 replications, §4).
+
+**Setup and assumptions.** Scalar state-space model with *known*
+parameters, filter in steady state, Gaussian innovations: S_t =
+φS_{t−1} + w_t with w_t ~ N(0, q) and |φ| < 1, and Y_t = S_t + v_t with
+v_t ~ N(0, r). The steady-state prediction variance P solves the Riccati fixed point
+P = φ²Pr/(P+r) + q; the gain is K = P/(P+r) and the innovation variance
+F = P + r. Standardized one-step innovations e_t = (Y_t − φŜ_{t−1})/√F
+are iid N(0,1) under the null. A **level break** adds δ to the state
+path from t₀ on: S̃_t = S_t + δ·1{t ≥ t₀}, hence Ỹ_t = Y_t +
+δ·1{t ≥ t₀} — the DGP used in all experiments. The one-sided Page CUSUM
+with drift allowance k and threshold h is g_t = max(0, g_{t−1} + e_t −
+k), alarming when g_t ≥ h. (The experiments use fitted training-prefix
+parameters, diffuse initialization, and a two-sided CUSUM; §4 explains
+why the known-parameter theory nevertheless describes them to first
+order.)
+
+> **Proposition 1 (fast-or-never; restated from §4).** After a state
+> level shift δ at t₀: (a) the broken path's standardized innovations
+> decompose as ẽ_t = e_t + μ_t with e_t the null innovations and μ_t
+> deterministic, decaying geometrically at rate ρ = φ(1−K) ∈ (0,1) from
+> μ_{t₀} = δ/√F to μ∞ = δ(1−φ)/((1−φ(1−K))√F); (b) if μ_t ≤ μ̃ < k for
+> all t ≥ t₁ ≥ t₀ (post-transient) and g_{t₁} = g < h, then for any
+> horizon L,
+> P( max_{t₁ < t ≤ t₁+L} g_t ≥ h | g_{t₁} = g ) ≤
+> (L+1)·exp(−2(k−μ̃)(h−g)).
+
+*Proof of (a).* The steady-state filter is a linear time-invariant map
+of Y, so the innovations of the broken path decompose as the null
+innovations plus the deterministic innovation response μ_t to the input
+δ·1{t ≥ t₀}. Write a_j for the filter's mean state-estimate response
+j steps after the break, a_j = E[Ŝ_{t₀+j}] − E[Ŝ⁰_{t₀+j}]. The filter
+predicts φa_{j−1} and corrects by K times the mean innovation:
+a_j = φa_{j−1} + K(δ − φa_{j−1}) = ρ a_{j−1} + Kδ with a_{−1} = 0 and
+ρ = φ(1−K); the mean innovation response is the input minus the
+prediction response, μ_{t₀+j} = (δ − φa_{j−1})/√F. Solving the linear
+recursion, a_j = (Kδ/(1−ρ))(1 − ρ^{j+1}), so μ decays geometrically at
+rate ρ from δ/√F to the limit (δ − φKδ/(1−ρ))/√F =
+δ(1−φ)/((1−φ(1−K))√F) = μ∞. ∎
+
+*Proof of (b).* For n > t₁, g_n = max( g + Σ_{i=t₁+1}^n X_i ,
+max_{t₁<m≤n} Σ_{i=m}^n X_i ) with increments X_i = e_i + μ_i − k =
+z_i − (k − μ_i), z_i iid N(0,1). An alarm by t₁+L requires some anchored
+sum Σ_{i=m}^n X_i ≥ h − g for an anchor m ∈ (t₁, t₁+L] (or the
+g-anchored sum ≥ h − g). Each X_i is stochastically dominated by
+z_i − (k − μ̃), for which θ\* = 2(k − μ̃) solves E[e^{θX}] = 1; the
+exponential martingale e^{θ\*Σ} with the maximal inequality gives
+P( sup_n Σ_{i=m}^n X_i ≥ h − g ) ≤ e^{−θ\*(h−g)} for each of the ≤ L+1
+anchor points, and a union bound finishes. ∎
+
+Interpretation: the filter adapts, so of the full shift δ only the
+fraction (1−φ)/(1−φ(1−K)) survives in the innovations per step. The
+transient carries total excess mass Σ_j (μ_{t₀+j} − μ∞) =
+φa∞/((1−ρ)√F), which is what a "fast" detection consumes; if the alarm
+does not fire on the transient, part (b) says it fires later with
+probability exponentially small in the threshold — fast or never.
+
+> **Proposition 2 (raw-CUSUM delay: Wald approximation; restated from
+> §4).** The raw-Y CUSUM standardizes Y by its frozen training moments;
+> after the break the standardized mean shift Δ = δ/σ_Y (σ_Y² =
+> q/(1−φ²) + r) persists for all t ≥ t₀. If Δ > k the post-break
+> increments have positive drift Δ − k and the alarm is certain as the
+> horizon grows, with first-passage (Wald) mean delay E[D] ≈ h/(Δ−k);
+> if Δ ≤ k, the bound of Proposition 1(b) applies with μ̃ = Δ.
+
+*Derivation.* Unlike the innovations, the raw standardized series has no
+adaptation: the shift δ enters Y permanently and the training moments
+are frozen, so every post-break increment is z_i + Δ − k with drift
+Δ − k > 0. The CUSUM then behaves as a positive-drift random walk, and
+Wald's identity for the first passage of level h − g gives E[D] ≈
+(h − g)/(Δ − k) ≈ h/(Δ − k) (Wald 1947). The approximation ignores
+boundary overshoot and reflection at 0, so it is an approximation, not
+a bound (a corrected version is in Siegmund 1985); against the grids it
+runs ≈15–20% conservative at 3σ (§4). If Δ ≤ k the drift is
+nonpositive and the never-detect bound applies verbatim. ∎
 
 **ARMA(1,1) equivalence of the whitened rungs (§5).** Applying the AR
 operator to the observable, (1 − φL)Y_t = w_t + v_t − φv_{t−1} =: u_t,
@@ -792,14 +957,14 @@ innovation correlation with the Kalman filter stays at 0.99; forcing
 | ARMA≡Kalman innovation ρ̄ (estimated / true params) | 0.99 / 1.000 (max\|Δ\|≈10⁻⁹) | exp07 (M1) |
 | **q**-break ×1.5: raw rung, T=500 | 0.09 / 0.21 / 0.23 (SNR 0.1/0.5/2.0) | grid_v5_qbreak (M2) |
 | **q**-break ×1.5: ARIMA rung, T=500 | 0.03 / 0.10 / 0.16 (SNR 0.1/0.5/2.0) | grid_v5_qbreak (M2) |
-| Decision-rule outcome fired | r-channel provisional C, resolved **B2** (q inverts) | CHANGELOG (M2) |
+| Decision-rule outcome fired | provisional C → **B2** (q inverts) | CHANGELOG (M2) |
 | φ sweep: μ∞ sorts innovation-CUSUM detection | Spearman 0.94 | grid_v6_phisweep (M3) |
-| Innovation CUSUM 3σ escape at low φ (φ=0.5 / 0.99) | 0.98–1.00 / 0.30–0.63 | grid_v6_phisweep (M3) |
+| Innovation CUSUM 3σ escape (φ=0.5 / 0.99) | 0.98–1.00 / 0.30–0.63 | grid_v6_phisweep (M3) |
 | Local-level 3σ level detect (all methods) | ≤ 0.15 (≈ FAR) | grid_v7_llevel (M4) |
 | Local-level ×1.5 variance (raw / ARIMA rung) | 0.06 / 0.58–0.84 | grid_v7_llevel (M4) |
 | ARL₀ at 5% window-FAR (L=375) | ≈ 7300 obs | arl_table (M5) |
-| φ×q amplification: raw q-advantage ×1.5 vs φ-swept SNR = SNR-swept | Δ 0.11=0.11 (SNR 0.5) | grid_v8 vs grid_v5 (M7) |
-| φ×q: subtle-break Δ vanishes at φ→0 / Spearman(amp,Δ) | 0.00 / 0.83; ×3 falsified (−0.60) | grid_v8_phiqbreak (M7) |
+| φ×q: ×1.5 raw edge, φ-swept = SNR-swept | Δ 0.11=0.11 (SNR 0.5) | grid_v8 vs grid_v5 (M7) |
+| φ×q: subtle Δ at φ→0 / Spearman(amp,Δ) | 0.00 / 0.83; ×3 falsified (−0.60) | grid_v8_phiqbreak (M7) |
 | Variance ×1.5 across T = 200/500/2000 | 0.11 / 0.87 / 0.99 | grid_v2_T |
 | t₅ collapse and repair (×1.5) | 0.16 → 0.75 (tail_cusum) | grid_v2_misspec, grid_v3c |
 | Quieting ×⅔ (only tail_cusum) | 0.41 / 0.33 | grid_v3c |
@@ -807,5 +972,5 @@ innovation correlation with the Kalman filter stays at 0.99; forcing
 | Multi-break: raw second-event recall | 0.00 | exp04 |
 | Composite level→var second event | 0.60 (F1 0.63) | exp04 |
 | INDPRO permutation p (composite) | 0.007 | rd_eval |
-| GFC real-time | data month 2008-09, known 2008-12 | rd_realtime |
+| GFC real-time | 2008-09 data, known 2008-12 | rd_realtime |
 | COVID real-time | data 2020-03, ~2 mo before NBER | rd_realtime |

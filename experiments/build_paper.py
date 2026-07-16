@@ -12,6 +12,7 @@ Usage: python experiments/build_paper.py [--date "July 2026"]
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import sys
 import tempfile
@@ -31,6 +32,7 @@ AUTHOR = "Ethan Wuang, E.W. Research  ·  789wethan@gmail.com"
 # "√F" is handled before the bare radical so the argument is set under it.
 MATH_SUBS = [
     ("√F", r"$\sqrt{F}$"),
+    ("√(m²−4)", r"$\sqrt{m^2-4}$"),
     ("√", r"$\surd$"),
     ("∞", r"$\infty$"),
     ("∈", r"$\in$"),
@@ -39,11 +41,18 @@ MATH_SUBS = [
     ("≥", r"$\ge$"),
     ("≈", r"$\approx$"),
     ("≡", r"$\equiv$"),
+    ("∎", r"$\blacksquare$"),
 ]
 
 
 def apply_math_subs(text: str) -> str:
     for a, b in MATH_SUBS:
+        # pandoc's tex_math_dollars refuses a closing $ immediately
+        # followed by a digit ("$\ge$200" renders literally), so pull a
+        # directly-adjacent number run inside the math span first.
+        if b.startswith("$") and b.endswith("$"):
+            text = re.sub(re.escape(a) + r"(\d[\d.]*)",
+                          lambda m: f"${b[1:-1]} {m.group(1)}$", text)
         text = text.replace(a, b)
     return text
 
@@ -79,8 +88,13 @@ def build(date: str) -> None:
     # works with the gfm reader (which does not support the raw_tex
     # extension). Shrinks wide reference tables and eases line breaking.
     preamble = ("\\usepackage{etoolbox}\n"
-                "\\AtBeginEnvironment{longtable}{\\footnotesize}\n"
-                "\\emergencystretch=3em\n")
+                "\\AtBeginEnvironment{longtable}{\\scriptsize}\n"
+                "\\emergencystretch=3em\n"
+                # figure captions carry their own hand-set "Figure N."
+                # labels (auto-numbering is off to match the draft's
+                # hand-numbered sections), so drop LaTeX's "Figure N:"
+                "\\usepackage{caption}\n"
+                "\\captionsetup[figure]{labelformat=empty}\n")
 
     tmp = Path(tempfile.mkstemp(suffix=".md", dir=str(ROOT))[1])
     hdr = Path(tempfile.mkstemp(suffix=".tex", dir=str(ROOT))[1])
@@ -96,7 +110,10 @@ def build(date: str) -> None:
         # metadata, not the body).
         "--shift-heading-level-by=-1",
         "--include-in-header", str(hdr),
-        "--from", "gfm+tex_math_dollars+yaml_metadata_block+footnotes",
+        # implicit_figures renders the draft's standalone images as
+        # captioned figures (alt text -> caption)
+        "--from", "gfm+tex_math_dollars+yaml_metadata_block+footnotes"
+                  "+implicit_figures",
         "-V", "colorlinks=true",
         "-o", str(OUT),
     ]
