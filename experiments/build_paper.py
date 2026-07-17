@@ -88,7 +88,7 @@ def build(date: str) -> None:
     # works with the gfm reader (which does not support the raw_tex
     # extension). Shrinks wide reference tables and eases line breaking.
     preamble = ("\\usepackage{etoolbox}\n"
-                "\\AtBeginEnvironment{longtable}{\\scriptsize}\n"
+                "\\AtBeginEnvironment{longtable}{\\tiny}\n"
                 "\\emergencystretch=3em\n"
                 # figure captions carry their own hand-set "Figure N."
                 # labels (auto-numbering is off to match the draft's

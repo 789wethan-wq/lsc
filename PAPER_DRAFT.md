@@ -16,15 +16,21 @@ yes — but the advantage is prewhitening, not the state estimate: the
 observable is exactly ARMA(1,1), so ARIMA-residual and Kalman-innovation
 whitening are provably the same filter. (iii) State-innovation (shock)
 variance changes — the Great-Moderation / crisis-volatility channel:
-no, a partial null — on the coarse ×3 break,
-where all rungs detect above chance, a raw variance CUSUM matches or
-beats whitening at every SNR (0.72/0.96/0.96 vs ARIMA 0.26/0.79/1.00),
-while the subtle ×1.5 break leaves every rung near the false-alarm
-floor, so whitening *fails to recover* it rather than raw detecting it.
-On real data (industrial production, GDP, Treasury yields) every alarm
-attributes to a second-moment feature, NBER association is significant
-(permutation p = 0.007), and real-time vintages confirm the COVID
-timing while downgrading 2008.
+no, a partial null. On the coarse ×3 break, where all rungs detect above
+chance, a raw variance CUSUM matches or beats whitening at every SNR
+(0.72/0.96/0.96 vs ARIMA 0.26/0.79/1.00). The subtle ×1.5 break, by
+contrast, leaves every rung near the false-alarm floor — whitening
+*fails to recover* it rather than raw detecting it.
+On real data (industrial production, GDP, Treasury yields, and
+unemployment) every alarm attributes to a second-moment feature, NBER
+association is significant (permutation p = 0.008), and real-time
+vintages confirm the COVID timing while downgrading 2008. Two
+extensions probe the edges of the protocol: an offline changepoint
+method (PELT), calibrated to the same false-alarm rate, matches the raw
+CUSUM on an obvious level break but is far weaker on variance breaks;
+and a bounded-memory ("MOSUM"-style) statistic fixes the raw CUSUM's
+complete failure to see a second, independent level break, though the
+same fix does not extend to variance-type second events.
 
 **JEL classification:** C12, C22, C52.
 **Keywords:** structural change; sequential change detection; CUSUM;
@@ -50,7 +56,11 @@ answerable. Our contributions are as follows.
   enforced structurally (parameters fit on a training prefix only;
   forward-only filtering; alarm scores are NaN on training data) and
   tested bit-identically (perturbing future observations leaves all
-  scores at earlier times unchanged, exactly).
+  scores at earlier times unchanged, exactly). The protocol extends to
+  the honesty of the research process itself: three pre-registered
+  hypotheses were falsified, and every post-hoc change is logged
+  (CHANGELOG) and the failures reported as findings rather than
+  suppressed.
 - Contribution 2 (negative + positive results): the intuition is wrong
   for first moments at high persistence — and we can prove why
   (fast-or-never theorem), then bound the claim by sweeping φ (μ∞ sorts
@@ -74,56 +84,81 @@ answerable. Our contributions are as follows.
   tests, sensitivity, pinned data snapshots, and real-time vintages for
   the real-data claims — including a self-correction on the headline GFC
   timing.
-- Honest-outcome framing throughout: three pre-registered hypotheses
-  were falsified; every post-hoc change is logged (CHANGELOG) and the
-  failures are reported as findings.
 
 **Related work.** The paper sits at the intersection of several
-literatures. Sequential change detection descends from Page's (1954)
-CUSUM and the quickest-detection tradition (Lorden 1971; Moustakides
-1986); we use the CUSUM as the common statistic across information sets
-rather than proposing a new stopping rule. The idea of monitoring a
+literatures.
+
+**Quickest detection and SPC.** Sequential change detection descends
+from Page's (1954) CUSUM and the quickest-detection tradition (Lorden
+1971; Moustakides 1986); we use the CUSUM as the common statistic across
+information sets rather than proposing a new stopping rule. That
+literature also supplies the evaluation currency we adopt: the average
+run length (ARL), with methods compared at a matched in-control ARL₀ —
+the statistical-process-control convention (Page 1954; Montgomery 2013).
+
+**Innovation-based state-space monitoring.** The idea of monitoring a
 *state-space* model through its innovations is not ours: it is the core
 of the innovation-based change-detection literature — the generalized
 likelihood ratio test on Kalman innovations (Willsky & Jones 1976) and
 the systematic treatment of CUSUM/GLR schemes on innovation sequences in
-Basseville & Nikiforov (1993). That literature also supplies the
-evaluation currency we adopt: the average run length (ARL), with methods
-compared at a matched in-control ARL₀ — the statistical-process-control
-convention (Page 1954; Montgomery 2013). Our contribution on this axis is
-*not* the innovation CUSUM or ARL-matching per se, both of which are
-standard in SPC and quickest detection; it is that this matched-error
-protocol is essentially *absent* from the applied latent-state
-econometrics literature, and that transplanting it there — calibrating
-every information set to a common false-alarm rate — is precisely what
+Basseville & Nikiforov (1993). Our contribution on this axis is *not*
+the innovation CUSUM or ARL-matching per se, both of which are standard
+in SPC and quickest detection; it is that this matched-error protocol is
+essentially *absent* from the applied latent-state econometrics
+literature, and that transplanting it there — calibrating every
+information set to a common false-alarm rate — is precisely what
 produces the negative results (raw data wins on levels; the state
-estimate adds nothing over ARIMA whitening on variances). In econometrics,
-sequential monitoring of structural change is the CUSUM-of-recursive-
-residuals line and its modern monitoring form (Brown, Durbin & Evans
-1975; Chu, Stinchcombe & White 1996), which watch *observable* regression
-residuals; our object is a *latent* state, and the residuals we monitor
-are a filter's innovations. Regime-switching models (Hamilton 1989;
-Kim & Nelson 1999) offer a state-aware alternative whose regime
-probabilities we include as a benchmark and find saturate under
-calibration on nonstationary data. The empirical target of the
-second-moment results is the Great Moderation volatility decline
-(McConnell & Pérez-Quirós 2000; Stock & Watson 2002); as we show, that and
-the crisis-volatility events are *state-innovation* (shock-variance)
+estimate adds nothing over ARIMA whitening on variances).
+
+**Econometric CUSUM-of-residuals.** In econometrics, sequential
+monitoring of structural change is the CUSUM-of-recursive-residuals line
+and its modern moving-window ("MOSUM") monitoring form (Brown, Durbin &
+Evans 1975; Chu, Stinchcombe & White 1996), which watch *observable*
+regression residuals; our object is a *latent* state, and the residuals
+we monitor are a filter's innovations. The bounded-memory fix we give
+the multi-break re-arm failure in §7 is in this same MOSUM family: a
+moving two-window mean-shift statistic, rather than a CUSUM accumulated
+against a fixed training-prefix baseline.
+
+**Regime-switching.** Regime-switching models (Hamilton 1989; Kim &
+Nelson 1999) offer a state-aware alternative whose regime probabilities
+we include as a benchmark and find saturate under calibration on
+nonstationary data.
+
+**Great Moderation and volatility empirics.** The empirical target of
+the second-moment results is the Great Moderation volatility decline
+(McConnell & Pérez-Quirós 2000; Stock & Watson 2002); as we show, that
+and the crisis-volatility events are *state-innovation* (shock-variance)
 breaks, the channel on which raw and prewhitened detectors are
-interchangeable. A separate literature models conditional variance
-parametrically — GARCH (Bollerslev 1986) and stochastic-volatility
-state-space models (Kim, Shephard & Chib 1998); its object is
-*estimation* of a volatility process, not distribution-free monitoring
-at a calibrated false-alarm rate, so it is a complementary benchmark
-left to future work rather than a competitor here. Finally, offline
-changepoint methods (PELT, Killick et
-al. 2012) solve a retrospective segmentation problem; our monitoring is
-strictly causal and calibrated to a false-alarm rate. What is new here is
-not any single detector but the calibrated-parity harness that makes
-latent-state and raw-data detectors directly comparable, and a
-reduced-form result (the exact ARMA(1,1) equivalence of the ARIMA and
-Kalman rungs) that dissolves the "does filtering help?" question for
-second moments into a prewhitening question with a known answer.
+interchangeable.
+
+**Parametric volatility models.** A separate literature models
+conditional variance parametrically — GARCH (Bollerslev 1986) and
+stochastic-volatility state-space models (Kim, Shephard & Chib 1998);
+its object is *estimation* of a volatility process, not distribution-free
+monitoring at a calibrated false-alarm rate, so it is a complementary
+benchmark left to future work rather than a competitor here.
+
+**Offline changepoint detection.** Offline changepoint methods (PELT,
+Killick et al. 2012) solve a retrospective segmentation problem; our
+monitoring is strictly causal and calibrated to a false-alarm rate, so
+the two are not comparable on delay (§8.5). We nonetheless calibrate
+PELT to the same false-alarm rate on null paths and ask whether it
+*localizes* a break at all, given the full sample: it is competitive
+with the raw-Y CUSUM on an obvious 3σ level shift (localization rate
+0.83–0.92 across SNRs vs. the causal detector's 0.97–0.99) but far
+weaker on pure variance breaks (0.00–0.02 vs. the dedicated raw
+variance-CUSUM's 0.10–1.00 across the same grid), because PELT's default
+cost model is a mean-shift detector — a concrete reason a dedicated
+variance statistic, not an off-the-shelf offline method, is the right
+tool for the channel this paper is about.
+
+What is new here is not any single detector but the calibrated-parity
+harness that makes latent-state and raw-data detectors directly
+comparable, and a reduced-form result (the exact ARMA(1,1) equivalence
+of the ARIMA and Kalman rungs) that dissolves the "does filtering help?"
+question for second moments into a prewhitening question with a known
+answer.
 
 ## 2. Framework and evaluation protocol
 
@@ -170,6 +205,48 @@ e.g. at 3σ level, SNR 0.5, ARL₁ ≈ 77–86 observations. Calibrating a
 common ARL₀ is exactly the ARL-matching convention of SPC (Basseville &
 Nikiforov 1993); we express it as a window-FAR because our horizon is
 finite.
+
+| Arena | Method | Empirical FAR | ARL₀ (obs) |
+|---|---|---|---|
+| SNR 0.1 | lsc_composite | 5.2% | 7023 |
+| SNR 0.1 | lsc_kalman_cusum | 3.4% | 10841 |
+| SNR 0.1 | lsc_state_cusum | 5.0% | 7311 |
+| SNR 0.1 | raw_cusum | 4.0% | 9187 |
+| SNR 0.5 | lsc_composite | 4.8% | 7624 |
+| SNR 0.5 | lsc_kalman_cusum | 4.8% | 7624 |
+| SNR 0.5 | lsc_state_cusum | 5.4% | 6756 |
+| SNR 0.5 | raw_cusum | 6.2% | 5859 |
+| SNR 2.0 | lsc_composite | 6.2% | 5859 |
+| SNR 2.0 | lsc_kalman_cusum | 4.8% | 7624 |
+| SNR 2.0 | lsc_state_cusum | 7.8% | 4618 |
+| SNR 2.0 | raw_cusum | 8.2% | 4383 |
+
+*Table 1. ARL₀ by arena and method (grid_v1 core, T = 500; target
+ARL₀ ≈ 7300 at the 5% window-FAR).*
+
+| Arena | Scenario | Method | Detect rate | ARL₁ (mean delay) |
+|---|---|---|---|---|
+| SNR 0.1 | level 3σ | lsc_composite | 0.766 | 112.6 |
+| SNR 0.1 | level 3σ | lsc_kalman_cusum | 0.654 | 63.9 |
+| SNR 0.1 | level 3σ | raw_cusum | 0.966 | 72.3 |
+| SNR 0.1 | variance ×3 | lsc_composite | 0.990 | 29.3 |
+| SNR 0.1 | variance ×3 | lsc_kalman_cusum | 0.870 | 80.4 |
+| SNR 0.1 | variance ×3 | raw_cusum | 0.728 | 104.0 |
+| SNR 0.5 | level 3σ | lsc_composite | 0.530 | 86.4 |
+| SNR 0.5 | level 3σ | lsc_kalman_cusum | 0.554 | 77.2 |
+| SNR 0.5 | level 3σ | raw_cusum | 0.990 | 81.8 |
+| SNR 0.5 | variance ×3 | lsc_composite | 0.992 | 25.2 |
+| SNR 0.5 | variance ×3 | lsc_kalman_cusum | 0.224 | 107.2 |
+| SNR 0.5 | variance ×3 | raw_cusum | 0.076 | 137.6 |
+| SNR 2.0 | level 3σ | lsc_composite | 0.670 | 63.2 |
+| SNR 2.0 | level 3σ | lsc_kalman_cusum | 0.674 | 49.0 |
+| SNR 2.0 | level 3σ | raw_cusum | 0.988 | 96.6 |
+| SNR 2.0 | variance ×3 | lsc_composite | 0.976 | 17.2 |
+| SNR 2.0 | variance ×3 | lsc_kalman_cusum | 0.268 | 114.6 |
+| SNR 2.0 | variance ×3 | raw_cusum | 0.058 | 172.9 |
+
+*Table 2. ARL₁ (detection rate and mean delay conditional on detection)
+at the canonical level-3σ and variance-×3 breaks, T = 500.*
 
 ## 3. Simulation design
 
@@ -403,7 +480,7 @@ removes a break in the state. Quieting (×⅔, i.e. reduced q) is
 undetectable by every rung (≤ 0.07, at FAR): a low-q state contributes
 too little to Y to register its own reduction.
 
-*Where does raw's q-break advantage come from? A φ sweep (M7).* Holding
+*Where does raw's q-break advantage come from? A φ sweep.* Holding
 the shock variance q and observation variance r fixed and sweeping the
 persistence φ makes the state's stationary variance q/(1−φ²) — and hence
 the induced SNR — rise as the **1/(1−φ²) amplification factor**
@@ -432,6 +509,21 @@ selects a stationary AR(1), not a differencing model.) The honest reading:
 prewhitening strips the state-carried variance signal for q-breaks of any
 size — that is B2 — and the 1/(1−φ²) amplification governs only *how
 visible* the residual raw advantage is on the marginal, subtle break.
+
+| φ | Amplification 1/(1−φ²) | Δ, subtle ×1.5 (raw − ARIMA) | Δ, coarse ×3 (raw − ARIMA) |
+|---|---|---|---|
+| 0.10 | 1.01 | 0.000 | 0.344 |
+| 0.50 | 1.33 | 0.016 | 0.526 |
+| 0.70 | 1.96 | 0.038 | 0.528 |
+| 0.85 | 3.60 | 0.104 | 0.204 |
+| 0.95 | 10.26 | 0.112 | 0.168 |
+| 0.99 | 50.25 | 0.074 | 0.302 |
+
+*Table 3. Raw's detection-rate advantage over the ARIMA rung (Δ),
+swept over φ at fixed q, r (`grid_v8_phiqbreak`). On the subtle break Δ
+tracks the amplification factor and peaks at φ = 0.95 before receding
+at the unit-root edge; on the coarse break Δ stays large at every φ,
+including φ = 0.1 where amplification is negligible.*
 
 ![**Figure 2.** The φ × q cross-grid (`grid_v8_phiqbreak`). Left: raw's
 advantage Δ = detect(raw) − detect(ARIMA) against φ; the subtle ×1.5
@@ -507,10 +599,47 @@ is cross-channel pairs: level→variance is caught by the composite alone
 (second-event recall 0.60, F1 0.63) because its variance features were
 never saturated by the level event. Re-arming costs almost nothing under
 the null (≤ 1.2% of null paths give a second alarm) — saturation, not
-chatter, binds. Bounded-memory (windowed) statistics are the identified
-fix and are left to future work.
+chatter, binds.
+
+**A bounded-memory fix, and its limits (2026-07-16).** The diagnosis
+above — a fixed-baseline statistic compares every observation against
+the *original* training-prefix reference and so never drains after a
+permanent shift — points to a specific repair: replace the fixed
+reference with a moving one. We build a MOSUM-style two-window
+statistic (the same family as the CUSUM-of-recursive-residuals
+monitoring literature; Chu, Stinchcombe & White 1996) that compares a
+trailing window's mean to the window immediately before it, rather
+than to the training baseline, for both the raw-Y and
+innovation-CUSUM channels (`windowed_break_pressure`). On the level→level scenario this closes the
+gap dramatically: the windowed raw-Y statistic's second-event recall
+rises from 0.004 to 0.682 — essentially matching its own first-event
+recall (0.692) — at *higher* precision than the unwindowed statistic
+(0.99 vs 0.80), a real fix rather than a threshold trick, at a modest
+first-event recall cost (0.692 vs 0.738). The windowed innovation-CUSUM
+improves less (second-event recall 0.008 → 0.234) because the filter's
+own adaptivity (μ∞, Proposition 1) already partially "forgets" a level
+shift, leaving less room for a moving reference to add. The fix is
+channel-specific, not general: on level→variance and variance→variance
+scenarios, both windowed statistics stay at second-event recall ≈ 0.00,
+because they are mean-shift statistics and a pure variance change
+carries no mean signal for a moving-window *mean* comparison to see —
+closing that gap needs a windowed *variance* statistic (a
+moving-window analogue of the r/q-channel CUSUMs of §5), left to future
+work. Multi-break detection therefore needs the statistic's channel
+matched to the break, exactly as the single-break results of §5 already
+required — the two sections are the same lesson at different time
+scales, and the one real economic setting where it bites is a
+recession cluster (§9): a level shock followed by a shock-variance
+regime change is exactly the level→variance case the composite already
+handles, but two level shocks in close succession — a double-dip — are
+exactly where every fixed-baseline statistic here still fails.
 
 ## 8. Robustness
+
+We stress-test the §5–§7 results along five axes: sample size,
+distributional misspecification, a repaired heavy-tailed statistic,
+composite-vs-standalone dilution, and real-data sensitivity to the
+false-alarm target and window length.
 
 **8.1 Sample size.** §5 numbers; short-T caveat: heavy-tailed null maxima
 make quantile thresholds noisy, and at T = 200 the two baseline CUSUMs
@@ -594,6 +723,55 @@ observation-noise variance break is caught only by the whitened rungs
 CUSUM stays at chance — whitening is mandatory once Y is
 nonstationary.](paper_assets/grid_v7_llevel_degeneracy.png)
 
+**8.5 An offline benchmark: PELT, calibrated to the same false-alarm
+rate (2026-07-16).** Related work dismisses offline changepoint methods
+as solving a different problem (retrospective segmentation, not causal
+monitoring), which is true but does not by itself say how well an
+off-the-shelf method would do if pressed into the same role. We
+calibrate PELT (Killick, Fearnhead & Eckley 2012; `ruptures`, l2 cost,
+applied to Y standardized by the training-prefix mean/std — the raw
+rung's own standardization) to a 5% false-alarm rate on null AR(1)
+paths by bisecting its penalty parameter, exactly mirroring the
+threshold-calibration protocol used for every causal detector, then ask
+whether it *localizes* a break within 25 observations, given the full
+sample — an offline-localization question, deliberately not a delay
+comparison, since PELT sees future data the causal detectors cannot.
+
+| Arena (SNR) | Scenario | PELT localize rate |
+|---|---|---|
+| 0.1 | level 0.5σ | 0.02 |
+| 0.1 | level 1σ | 0.07 |
+| 0.1 | level 3σ | 0.83 |
+| 0.1 | variance ×1.5 | 0.00 |
+| 0.1 | variance ×3 | 0.20 |
+| 0.5 | level 0.5σ | 0.03 |
+| 0.5 | level 1σ | 0.11 |
+| 0.5 | level 3σ | 0.91 |
+| 0.5 | variance ×1.5 | 0.01 |
+| 0.5 | variance ×3 | 0.01 |
+| 2.0 | level 0.5σ | 0.02 |
+| 2.0 | level 1σ | 0.11 |
+| 2.0 | level 3σ | 0.92 |
+| 2.0 | variance ×1.5 | 0.02 |
+| 2.0 | variance ×3 | 0.02 |
+
+*Table 4. PELT localization rate at a FAR-matched (5%) operating
+point, n = 300 per cell (`exp08_pelt`).*
+
+On the canonical 3σ level break PELT is competitive with the causal
+raw-Y CUSUM (0.83–0.92 here vs. 0.97–0.99 in Table 1's arena, seeing
+the whole path rather than detecting online) — an off-the-shelf offline
+method genuinely can find an obvious level shift. But on variance
+breaks it is close to useless (0.00–0.02, against the dedicated raw
+variance-CUSUM's ladder-table numbers of 0.10–1.00, §5), because PELT's
+default l2 cost model is a mean-shift statistic: it responds to a
+variance change only through the second-order effect that within-
+segment sum-of-squares grows, a far weaker signal than a statistic
+built for variance directly. The comparison sharpens rather than
+undercuts the paper's thesis: an off-the-shelf offline segmentation
+method is not a substitute for a channel-matched statistic, even when
+it is given the unfair advantage of seeing the whole sample.
+
 **Protocol lessons (each cost us a wrong result before it was fixed).**
 plain-HMM regime probabilities saturate and cannot be FAR-calibrated on
 nonstationary data; probability-scale scores need log-odds; EM needs
@@ -604,27 +782,73 @@ detectors need larger calibration budgets.
 
 ## 9. Real data (illustrative)
 
-Three FRED series, pinned snapshots (2026-07-11), rolling causal
-monitoring (train 120 months / monitor 60), per-segment parametric
-bootstrap calibration at 5% FAR per window, alarms attributed to the
-feature that crossed. Throughout this section the detectors are
-distribution-free monitors calibrated to a false-alarm rate; no
-parametric conditional-variance model is estimated and no such claim is
-made.
+Four FRED series — industrial production, GDP, and 10-year Treasury
+yields (pinned snapshots, 2026-07-11) plus the unemployment rate
+(pinned 2026-07-16) — rolling causal monitoring (train 120 months /
+monitor 60), per-segment parametric bootstrap calibration at 5% FAR per
+window, alarms attributed to the feature that crossed. Throughout this
+section the detectors are distribution-free monitors calibrated to a
+false-alarm rate; no parametric conditional-variance model is estimated
+and no such claim is made. Association with NBER-registered events is
+tested by permutation: the observed count of registered events "hit"
+(an alarm within 12 months after) is compared to the distribution of
+hit counts from 20,000 resamples of the same number of alarm months
+drawn uniformly from all monitored months; the reported p is the
+fraction of resamples at least as extreme as the observed count, so a
+small p means alarms cluster after registered events more than chance
+alone would produce (`real_data_eval.py`).
+
+| Series | Method | Alarms | Hits / events | Stray | Perm. p |
+|---|---|---|---|---|---|
+| INDPRO | lsc_composite | 4 | 3/9 | 1 | 0.008 |
+| INDPRO | lsc_kalman_cusum | 2 | 2/9 | 0 | 0.021 |
+| INDPRO | lsc_tail_cusum | 5 | 0/9 | 5 | 1.000 |
+| INDPRO | raw_cusum | 1 | 1/9 | 0 | 0.148 |
+| INDPRO | raw_var_cusum | 5 | 1/9 | 4 | 0.554 |
+| GDP | lsc_composite | 3 | 2/9 | 1 | 0.067 |
+| GDP | lsc_kalman_cusum | 1 | 1/9 | 0 | 0.164 |
+| GDP | lsc_tail_cusum | 3 | 2/9 | 1 | 0.063 |
+| GDP | raw_cusum | 0 | — | — | — |
+| GDP | raw_var_cusum | 2 | 1/9 | 1 | 0.309 |
+| GS10 | lsc_composite | 7 | 1/3 | 6 | 0.325 |
+| GS10 | lsc_kalman_cusum | 2 | 1/3 | 1 | 0.109 |
+| GS10 | lsc_tail_cusum | 4 | 0/3 | 4 | 1.000 |
+| GS10 | raw_cusum | 2 | 1/3 | 1 | 0.104 |
+| GS10 | raw_var_cusum | 9 | 1/3 | 8 | 0.402 |
+| UNRATE | lsc_composite | 3 | 2/9 | 1 | 0.057 |
+| UNRATE | lsc_kalman_cusum | 4 | 4/9 | 0 | 0.0002 |
+| UNRATE | lsc_tail_cusum | 6 | 2/9 | 4 | 0.205 |
+| UNRATE | raw_cusum | 4 | 4/9 | 0 | 0.0004 |
+| UNRATE | raw_var_cusum | 7 | 2/9 | 5 | 0.257 |
+
+*Table 5. Real-data alarm summary at 5% FAR, 120-month training
+(`rd_eval.csv`). GDP's raw_cusum fired zero alarms across
+all 12 windows, so no permutation test applies. UNRATE (new, P2) is the
+single strongest association in the table — both raw_cusum and
+lsc_kalman_cusum fire exactly 4 alarms, all 4 landing on NBER peaks
+(zero strays), out of 9 peaks in range.*
 
 **Industrial production (INDPRO, 1948–2026).** Composite alarms: 2008-09
 and 2020-04 (both variance_pressure), 1990-12 (variance_quiet), 1969-08
 (variance_quiet; within the false-alarm budget and reported as such).
 Hits 3/9 NBER peaks within 12 months, 1 stray vs 0.7 expected;
-permutation p = 0.007 (innovation CUSUM p = 0.018; raw CUSUM 1 hit,
+permutation p = 0.008 (innovation CUSUM p = 0.021; raw CUSUM 1 hit,
 p = 0.15). The **raw variance CUSUM** — the bottom rung of the ladder,
 added here to test real-data uniqueness — does catch the GFC (2008-09,
 up-arm, the same month as the composite) but embeds it among four stray
 quieting alarms (1967, 1968, 1988, 2019) and misses COVID, so its
-NBER association is not significant (5 alarms, 1 hit, p = 0.56). The
+NBER association is not significant (5 alarms, 1 hit, p = 0.55). The
 crisis *is* detectable by a raw variance statistic; what the latent layer
 buys on real data is a *clean* alarm profile — a significant, low-stray
-association — not the crisis catch itself.
+association — not the crisis catch itself. A permutation-test
+implementation note: the p-values in this section are recomputed with a
+per-series, per-method seed (2026-07-16) after we found the original
+shared, sequentially-consumed random generator made one series' p-value
+depend on which *other* series happened to be present in the run —
+harmless for any single number in isolation, but a reproducibility
+hazard the fix removes; every value moved by ≤ 0.002 from the
+originally reported estimates, consistent with Monte Carlo noise at
+20,000 draws, not a change in any underlying alarm.
 
 **What real-time data changes (ALFRED vintages).** Re-running each
 decision on the data *as it existed that month* both tempers and sharpens
@@ -659,20 +883,70 @@ full-sample break dates are not reproducible by honest monitoring.
 months after the registered 1979-10 event (variance_pressure; raw and
 innovation CUSUM the same month); the post-Volcker disinflation
 quietings are flagged (1989–1996, shortfall/variance_quiet); the 2008
-ZLB event is missed within 12 months. The raw variance CUSUM also flags
-Volcker (1980-02, up-arm) but is the noisiest detector on this series
-(9 alarms, 8 stray, p = 0.28) — on a series that is *all* volatility
-regime, a raw z² statistic fires on every regime shift, which is exactly
-why its event-association washes out.
+ZLB event is missed within 12 months. A third registered event, the
+2022-03 hiking-cycle onset, is missed by *every* method within 24
+months (`rd_gs10_summary.csv`) — unlike Volcker, a persistent
+directional yield rise without a matching shock-variance regime shift
+falls outside every detector's reach here, a genuine miss reported as
+such rather than a horizon-window artifact. The raw variance CUSUM also
+flags Volcker (1980-02, up-arm) but is the noisiest detector on this
+series (9 alarms, 8 stray, 1/3 events hit, p = 0.40) — on a series that
+is *all* volatility regime, a raw z² statistic fires on every regime
+shift, which is exactly why its event-association washes out.
 
-**Sensitivity.** FAR = 10% behaves as expected. Training window 180
-months breaks both variance-based detectors' bootstrap calibration on
-nonstationary real data — the composite and the raw variance CUSUM each
-fire 14 alarms / 21 windows — while the level (raw CUSUM, 2), innovation
-(3), and tail (5) detectors stay sane. It is the *second-moment* statistic,
-not the composite machinery, that is sensitive to a training window long
-enough to straddle a volatility regime; training windows must be short
-enough to be locally stationary (120 months worked).
+**Sensitivity.** All numbers below are on INDPRO, the headline series.
+
+| Variant | Method | Alarms | Hits / events | Perm. p |
+|---|---|---|---|---|
+| FAR 1% | lsc_composite | 3 | 3/9 | 0.003 |
+| FAR 1% | lsc_kalman_cusum | 1 | 1/9 | 0.146 |
+| FAR 1% | lsc_tail_cusum | 1 | 0/9 | 1.000 |
+| FAR 1% | raw_cusum | 1 | 0/9 | 1.000 |
+| FAR 1% | raw_var_cusum | 4 | 2/9 | 0.100 |
+| FAR 5% (baseline) | lsc_composite | 4 | 3/9 | 0.008 |
+| FAR 5% (baseline) | lsc_kalman_cusum | 2 | 2/9 | 0.021 |
+| FAR 5% (baseline) | lsc_tail_cusum | 5 | 0/9 | 1.000 |
+| FAR 5% (baseline) | raw_cusum | 1 | 1/9 | 0.148 |
+| FAR 5% (baseline) | raw_var_cusum | 5 | 1/9 | 0.554 |
+| FAR 10% | lsc_composite | 5 | 2/9 | 0.148 |
+| FAR 10% | lsc_kalman_cusum | 3 | 2/9 | 0.055 |
+| FAR 10% | lsc_tail_cusum | 5 | 2/9 | 0.148 |
+| FAR 10% | raw_cusum | 2 | 2/9 | 0.018 |
+| FAR 10% | raw_var_cusum | 6 | 1/9 | 0.619 |
+| FAR 20% | lsc_composite | 9 | 1/9 | 0.773 |
+| FAR 20% | lsc_kalman_cusum | 3 | 2/9 | 0.052 |
+| FAR 20% | lsc_tail_cusum | 7 | 1/9 | 0.682 |
+| FAR 20% | raw_cusum | 2 | 2/9 | 0.020 |
+| FAR 20% | raw_var_cusum | 8 | 1/9 | 0.727 |
+| Window 180 mo | lsc_composite | 14 | 2/8 | 0.556 |
+| Window 180 mo | lsc_kalman_cusum | 3 | 2/8 | 0.046 |
+| Window 180 mo | lsc_tail_cusum | 5 | 3/8 | 0.015 |
+| Window 180 mo | raw_cusum | 2 | 2/8 | 0.017 |
+| Window 180 mo | raw_var_cusum | 14 | 1/8 | 0.878 |
+
+*Table 6. INDPRO sensitivity to the false-alarm target (1/5/10/20%,
+120-month training) and to a longer training window (180 months, 5%
+FAR).*
+
+Two independent stress tests both isolate the composite's association
+as fragile *relative to itself*, not to the other detectors. The FAR
+sweep is monotone and clean for the composite: tightening from 5% to
+1% *sharpens* the association (p = 0.008 → 0.003, alarm count falls
+from 4 to 3 as the marginal, least-reliable alarm drops out), while
+relaxing to 10% and 20% floods it with noise (p = 0.148, then 0.773) —
+exactly the dilution a well-behaved calibrated statistic should show.
+raw_cusum and lsc_kalman_cusum stay comparatively stable across the same
+sweep (p in the 0.02–0.15 range throughout), because they fire too few
+alarms for the FAR target to matter much either way. Training window
+180 months breaks both variance-based detectors' bootstrap calibration
+on nonstationary real data — the composite and the raw variance CUSUM
+each fire 14 alarms / 21 windows (p = 0.556 and 0.878, both
+uninformative) — while the level (raw CUSUM), innovation, and tail
+detectors stay sane (2–5 alarms, p as low as 0.015–0.046). It is the
+*second-moment* statistic, not the composite machinery, that is
+sensitive to a training window long enough to straddle a volatility
+regime; training windows must be short enough to be locally stationary
+(120 months worked).
 
 ## 10. Discussion
 
@@ -708,14 +982,17 @@ Four points summarize what the harness bought us.
 - The calibrated-parity protocol itself is a contribution: it exposed
   every failure mode above, and it is what makes the negative results
   informative rather than anecdotal.
-- Limitations / future work: bounded-memory statistics for multiple
-  breaks; adaptive composite weighting (breadth tax); switching-SSM (Kim
-  filter) model layer; formalizing the persistence-break mechanisms; a
-  vol-regime reference set for scoring the exceedance detector on real
-  data; and benchmarking against parametric volatility models (GARCH,
-  stochastic volatility) — a different object, conditional-variance
-  estimation rather than distribution-free monitoring, but the natural
-  complementary comparison for the second-moment results.
+- Limitations / future work: a bounded-memory (MOSUM-style) statistic
+  fixes the multiple-breaks re-arm failure for level-type second events
+  (§7) but not variance-type ones — a windowed *variance* statistic is
+  the natural next step; adaptive composite weighting (breadth tax);
+  switching-SSM (Kim filter) model layer; formalizing the
+  persistence-break mechanisms; a vol-regime reference set for scoring
+  the exceedance detector on real data; and benchmarking against
+  parametric volatility models (GARCH, stochastic volatility) — a
+  different object, conditional-variance estimation rather than
+  distribution-free monitoring, but the natural complementary
+  comparison for the second-moment results.
 
 **What, then, is the latent layer actually for?** The results invite a
 deflationary reading, and we take it seriously rather than deflect it. For
@@ -744,7 +1021,7 @@ interpretable event (every crisis alarm attributes to a named
 second-moment feature, §9). (4) *A clean association profile.* On real
 data the composite's crisis *timing* is no better than a raw variance
 CUSUM's, but its *selectivity* is — a significant, low-stray association
-with NBER dates (p = 0.007 vs 0.56) that a raw z² statistic firing on
+with NBER dates (p = 0.008 vs 0.55) that a raw z² statistic firing on
 every wiggle cannot match. The honest one-sentence answer: the latent
 layer is not a better detector of any single break type; it is a
 *breadth-and-interpretation* instrument whose irreducible content is
@@ -819,21 +1096,28 @@ Approach to the Detection and Estimation of Jumps in Linear Systems."
 `make all` regenerates every table and figure from pinned seeds
 (Python 3.14, statsmodels/hmmlearn; `make fred` / `make realdata` /
 `make realtime` for the data applications, snapshots under `data/`). The
-referee-hardening round adds six reproducible artifacts to the pack:
-`exp07` (ARMA equivalence, M1), `grid_v5` (the q-break channel, M2),
-`grid_v6` (the φ sweep, M3), `grid_v7` (the local-level arena, M4),
-`grid_v8` (the φ×q amplification cross-grid, M7), and `arl` (ARL₀/ARL₁
-table, M5); all are pinned-seed and join the existing grids
-draw-for-draw. 95 tests include bit-identical no-lookahead checks
-for every feature and detector (including the raw and ARIMA variance
-rungs and a training-freeze check), DGP ground-truth checks (now
-including the state-innovation break's SD scaling and null-match),
+referee-hardening round added six reproducible artifacts to the pack:
+`exp07` (ARMA equivalence), `grid_v5` (the q-break channel),
+`grid_v6` (the φ sweep), `grid_v7` (the local-level arena),
+`grid_v8` (the φ×q amplification cross-grid), and `arl` (ARL₀/ARL₁
+table); all are pinned-seed and join the existing grids draw-for-draw.
+A second round (2026-07-16) added `exp08` (the PELT localization
+benchmark, §8.5) and extended `exp04` with the two windowed-CUSUM
+methods (§7) and `realdata` with a fourth series (unemployment,
+`unrate`), a third GS10 event (the 2022 hiking cycle), and a
+false-alarm-rate sweep (1%, 5%, 10%, 20%) on INDPRO. 98 tests include
+bit-identical no-lookahead checks for every feature and detector
+(including the raw and ARIMA variance rungs, the two windowed
+statistics, and a training-freeze check), DGP ground-truth checks
+(including the state-innovation break's SD scaling and null-match),
 the ARMA(1,1)/Riccati identity and Kalman-equivalence guards, calibration-
-parity checks, and composite golden-score regression guards (which pin the
-per-time-point-standardized output so a stale artifact cannot recur). All
-post-hoc design changes and pre-registered hypotheses (including the
-three falsified ones and the two rejected robust-feature designs — one
-falsified, one diluted, §8.3) are in `experiments/CHANGELOG.md`; full experiment narratives in
+parity checks, composite golden-score regression guards (which pin the
+per-time-point-standardized output so a stale artifact cannot recur),
+and the windowed-statistic bounded-memory (drain-after-permanent-shift)
+property. All post-hoc design changes and pre-registered hypotheses
+(including the three falsified ones and the two rejected robust-feature
+designs — one falsified, one diluted, §8.3) are in
+`experiments/CHANGELOG.md`; full experiment narratives in
 `experiments/FINDINGS.md`; theory statements and proofs in Appendix B,
 with `experiments/THEORY.md` as the long-form companion. The complete source, pinned data snapshots, and seed
 configuration constitute the replication package, to be posted publicly on
@@ -953,24 +1237,28 @@ innovation correlation with the Kalman filter stays at 0.99; forcing
 | Composite variance ×1.5, T=500 | 0.82 / 0.87 / 0.91 (SNR 0.1/0.5/2.0) | grid_v1 |
 | Ladder ×1.5: raw rung, T=500 | 1.00 / 0.56 / 0.10 (SNR 0.1/0.5/2.0) | grid_v4_varbench |
 | Ladder ×1.5: ARIMA rung, T=500 | 0.90 / 0.94 / 0.87 (SNR 0.1/0.5/2.0) | grid_v4_varbench |
-| Ladder ×1.5 t₅ (raw/ARIMA/composite), SNR 0.5 | 0.43 / 0.74 / 0.16 | grid_v4_varbench, grid_v2_misspec |
-| ARMA≡Kalman innovation ρ̄ (estimated / true params) | 0.99 / 1.000 (max\|Δ\|≈10⁻⁹) | exp07 (M1) |
-| **q**-break ×1.5: raw rung, T=500 | 0.09 / 0.21 / 0.23 (SNR 0.1/0.5/2.0) | grid_v5_qbreak (M2) |
-| **q**-break ×1.5: ARIMA rung, T=500 | 0.03 / 0.10 / 0.16 (SNR 0.1/0.5/2.0) | grid_v5_qbreak (M2) |
-| Decision-rule outcome fired | provisional C → **B2** (q inverts) | CHANGELOG (M2) |
-| φ sweep: μ∞ sorts innovation-CUSUM detection | Spearman 0.94 | grid_v6_phisweep (M3) |
-| Innovation CUSUM 3σ escape (φ=0.5 / 0.99) | 0.98–1.00 / 0.30–0.63 | grid_v6_phisweep (M3) |
-| Local-level 3σ level detect (all methods) | ≤ 0.15 (≈ FAR) | grid_v7_llevel (M4) |
-| Local-level ×1.5 variance (raw / ARIMA rung) | 0.06 / 0.58–0.84 | grid_v7_llevel (M4) |
-| ARL₀ at 5% window-FAR (L=375) | ≈ 7300 obs | arl_table (M5) |
-| φ×q: ×1.5 raw edge, φ-swept = SNR-swept | Δ 0.11=0.11 (SNR 0.5) | grid_v8 vs grid_v5 (M7) |
-| φ×q: subtle Δ at φ→0 / Spearman(amp,Δ) | 0.00 / 0.83; ×3 falsified (−0.60) | grid_v8_phiqbreak (M7) |
+| Ladder ×1.5 t₅ (raw/ARIMA/composite), SNR 0.5 | 0.43 / 0.74 / 0.16 | grid_v4_varbench, v2_misspec |
+| ARMA≡Kalman innovation ρ̄ (estimated / true params) | 0.99 / 1.000 (max\|Δ\|≈10⁻⁹) | exp07 |
+| **q**-break ×1.5: raw rung, T=500 | 0.09 / 0.21 / 0.23 (SNR 0.1/0.5/2.0) | grid_v5_qbreak |
+| **q**-break ×1.5: ARIMA rung, T=500 | 0.03 / 0.10 / 0.16 (SNR 0.1/0.5/2.0) | grid_v5_qbreak |
+| Pre-registered decision rule (§5) resolved | Outcome B2 (r-channel-specific) | §5, CHANGELOG |
+| φ sweep: μ∞ sorts innovation-CUSUM detection | Spearman 0.94 | grid_v6_phisweep |
+| Innovation CUSUM 3σ escape (φ=0.5 / 0.99) | 0.98–1.00 / 0.30–0.63 | grid_v6_phisweep |
+| Local-level 3σ level detect (all methods) | ≤ 0.15 (≈ FAR) | grid_v7_llevel |
+| Local-level ×1.5 variance (raw / ARIMA rung) | 0.06 / 0.58–0.84 | grid_v7_llevel |
+| ARL₀ at 5% window-FAR (L=375) | ≈ 7300 obs | arl_table |
+| φ×q: ×1.5 raw edge, φ-swept = SNR-swept | Δ 0.11=0.11 (SNR 0.5) | grid_v8 vs grid_v5 |
+| φ×q: subtle Δ at φ→0 / Spearman(amp,Δ) | 0.00 / 0.83; ×3 falsified (−0.60) | grid_v8_phiqbreak |
 | Variance ×1.5 across T = 200/500/2000 | 0.11 / 0.87 / 0.99 | grid_v2_T |
-| t₅ collapse and repair (×1.5) | 0.16 → 0.75 (tail_cusum) | grid_v2_misspec, grid_v3c |
+| t₅ collapse and repair (×1.5) | 0.16 → 0.75 (tail_cusum) | grid_v2_misspec, v3c |
 | Quieting ×⅔ (only tail_cusum) | 0.41 / 0.33 | grid_v3c |
 | Persistence-down, best anywhere | 0.33 (SNR 2.0) | grid_v1 |
-| Multi-break: raw second-event recall | 0.00 | exp04 |
+| Multi-break: raw second-event recall (level→level) | 0.00 | exp04 |
 | Composite level→var second event | 0.60 (F1 0.63) | exp04 |
-| INDPRO permutation p (composite) | 0.007 | rd_eval |
+| Windowed-CUSUM fix, level→level 2nd event (raw / innovation) | 0.00→0.68 / 0.01→0.23 | exp04 |
+| Windowed-CUSUM fix, level→var / var→var 2nd event | no improvement (≈0.00): mean-shift only | exp04 |
+| PELT localization at FAR-matched 5%, level 3σ | 0.83–0.92 (vs. causal raw CUSUM 0.97–0.99) | exp08_pelt |
+| PELT localization at FAR-matched 5%, variance ×1.5/×3 | 0.00–0.20 (vs. dedicated raw variance-CUSUM 0.10–1.00) | exp08_pelt |
+| INDPRO permutation p (composite) | 0.008 | rd_eval |
 | GFC real-time | 2008-09 data, known 2008-12 | rd_realtime |
 | COVID real-time | data 2020-03, ~2 mo before NBER | rd_realtime |

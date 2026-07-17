@@ -17,6 +17,7 @@ from __future__ import annotations
 import glob
 import re
 import sys
+import zlib
 from pathlib import Path
 
 import numpy as np
@@ -51,9 +52,20 @@ def hits_within(alarm_dates: pd.DatetimeIndex,
     return n
 
 
+def seeded_rng(run_name: str, method: str) -> np.random.Generator:
+    """Deterministic per-(run, method) RNG, independent of how many
+    other rd_* runs exist or what order glob returns them in — a
+    shared, sequentially-consumed RNG made every run's p-value depend
+    on unrelated files added to paper_assets/ (P2 fix, 2026-07-16:
+    caught because rd_indpro's own permutation p-value shifted
+    0.0073 -> 0.0092 after adding unrelated rd_unrate/_far1/_far20
+    runs, even though rd_indpro's alarm data was byte-identical)."""
+    digest = zlib.crc32(f"{run_name}:{method}".encode())
+    return np.random.default_rng(np.random.SeedSequence([20260711, digest]))
+
+
 def main() -> None:
     rows = []
-    rng = np.random.default_rng(20260711)
     for meta_path in sorted(glob.glob("paper_assets/rd_*_meta.csv")):
         run_name = re.sub(r"_meta\.csv$", "", Path(meta_path).name)
         meta = pd.read_csv(meta_path).iloc[0]
@@ -77,7 +89,8 @@ def main() -> None:
                     (dts >= ev) & (dts <= ev + pd.DateOffset(
                         months=HORIZON_MONTHS)))
             n_stray = int((~near_any).sum())
-            # permutation
+            # permutation (seeded per run+method: see seeded_rng)
+            rng = seeded_rng(run_name, method)
             perm_hits = np.empty(N_PERM)
             mon_arr = mon.values
             for b in range(N_PERM):

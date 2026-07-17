@@ -3,3 +3,5 @@ lsc_composite,0.06,2,0.048,0.012
 lsc_kalman_cusum,0.062,3,0.048,0.012
 lsc_state_cusum,0.054,1,0.054,0.0
 raw_cusum,0.062,1,0.062,0.0
+lsc_windowed_cusum,0.102,3,0.066,0.032
+windowed_raw_cusum,0.072,2,0.068,0.004

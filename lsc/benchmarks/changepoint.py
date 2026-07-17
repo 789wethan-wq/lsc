@@ -27,6 +27,34 @@ def raw_cusum_score(Y: np.ndarray, n_train: int, k: float = 0.5) -> np.ndarray:
     return out
 
 
+def windowed_raw_cusum_score(Y: np.ndarray, n_train: int,
+                             window: int = 60) -> np.ndarray:
+    """Bounded-memory, MOSUM-style counterpart of raw_cusum_score
+    (Chu, Stinchcombe & White 1996 fluctuation-test family): a moving
+    two-window mean-shift z-statistic on standardized Y, rather than a
+    CUSUM accumulated against the training-prefix baseline. See
+    windowed_break_pressure for the full rationale (a naive
+    restart-every-window CUSUM against a FIXED reference does not
+    drain after a permanent shift; this two-window design does,
+    because both windows slide and eventually sit inside the same new
+    regime). Fixes the second-event miss documented for raw_cusum in
+    exp04 (CHANGELOG P2 2026-07-16)."""
+    Y = np.asarray(Y, dtype=float)
+    mu = Y[:n_train].mean()
+    sd = Y[:n_train].std(ddof=1)
+    e = (Y - mu) / max(sd, 1e-12)
+    T = len(Y)
+    out = np.full(T, np.nan)
+    for t in range(n_train, T):
+        if t - n_train - 2 * window + 1 < 0:
+            continue
+        test = e[t - window + 1: t + 1]
+        ref = e[t - 2 * window + 1: t - window + 1]
+        se = np.sqrt(test.var(ddof=1) / window + ref.var(ddof=1) / window)
+        out[t] = abs(test.mean() - ref.mean()) / max(se, 1e-6)
+    return out
+
+
 def pelt_breakpoints(Y: np.ndarray, pen: float = 10.0, model: str = "l2") -> list[int]:
     """OFFLINE change-point detection (ruptures PELT). Uses the full
     sample — retrospective analysis only, excluded from delay tables."""

@@ -77,8 +77,14 @@ SERIES = {
     "gs10": dict(
         fred_id="GS10", transform="diff", start="1953-04-01",
         months_per_obs=1, n_train=120, n_monitor=60,
-        events=["1979-10", "2008-12"], event_label="vol-regime event",
+        events=["1979-10", "2008-12", "2022-03"],
+        event_label="vol-regime event",
         shade=[("1979-10", "1982-11")]),
+    "unrate": dict(
+        fred_id="UNRATE", transform="diff", start="1948-01-01",
+        months_per_obs=1, n_train=120, n_monitor=60,
+        events=NBER_PEAKS, event_label="NBER peak",
+        shade=list(zip(NBER_PEAKS, NBER_TROUGHS))),
 }
 
 FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={id}"

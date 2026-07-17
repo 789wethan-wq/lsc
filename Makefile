@@ -9,9 +9,9 @@
 PY := .venv/bin/python
 ASSETS := paper_assets
 
-.PHONY: all venv test figures recovery exp01 exp02 exp03 exp04 exp05 exp06 grid grid_v2 grid_v4 fred paper clean
+.PHONY: all venv test figures recovery exp01 exp02 exp03 exp04 exp05 exp06 exp08 grid grid_v2 grid_v4 fred paper clean
 
-all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06 grid_v4 exp07 grid_v5 grid_v6 grid_v7 grid_v8 arl
+all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06 grid_v4 exp07 grid_v5 grid_v6 grid_v7 grid_v8 exp08 arl
 	@echo "== repro pack complete (run 'make fred' separately: needs network) =="
 
 venv:
@@ -86,6 +86,11 @@ grid_v8:
 	$(PY) -m lsc.eval.runner configs/grid_v8_phiqbreak.yaml
 	$(PY) experiments/phiqbreak_analyze.py
 
+# P2: PELT (offline changepoint) calibrated to a matched FAR, then
+# evaluated on offline localization rather than delay
+exp08:
+	$(PY) experiments/exp08_pelt_benchmark.py 300
+
 # M5 (R1): ARL0/ARL1 vocabulary from existing FAR tables + parquets
 arl:
 	$(PY) experiments/arl_report.py
@@ -110,9 +115,12 @@ paper:
 realdata:
 	$(PY) experiments/real_data.py indpro 200
 	$(PY) experiments/real_data.py indpro 200 --train 180 --monitor 36 --tag _w180
+	$(PY) experiments/real_data.py indpro 200 --far 0.01 --tag _far1
 	$(PY) experiments/real_data.py indpro 200 --far 0.10 --tag _far10
+	$(PY) experiments/real_data.py indpro 200 --far 0.20 --tag _far20
 	$(PY) experiments/real_data.py gdp 200
 	$(PY) experiments/real_data.py gs10 200
+	$(PY) experiments/real_data.py unrate 200
 	$(PY) experiments/real_data_eval.py
 
 realtime:

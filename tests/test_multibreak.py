@@ -1,7 +1,9 @@
 """Re-arm alarm protocol and event-level multi-break metrics (exp04)."""
 import numpy as np
 
+from lsc.benchmarks.changepoint import raw_cusum_score, windowed_raw_cusum_score
 from lsc.diagnostics.alarms import CalibratedDetector
+from lsc.diagnostics.features import break_pressure, windowed_break_pressure
 from lsc.eval.metrics import multi_break_outcome, summarize_multi_break
 
 
@@ -87,3 +89,42 @@ def test_summarize_multi_break_nan_aware():
     assert s["recall"] == 0.5
     assert s["precision"] == 1.0  # NaN excluded
     assert s["n"] == 2
+
+
+def test_windowed_break_pressure_drains_after_permanent_shift():
+    # a permanent +2 innovation-mean shift at t=100 in an otherwise-null
+    # series: the cumulative statistic must stay pinned near its peak
+    # (never drains -> exp04's second-event miss), the windowed variant
+    # must fall back near its pre-shift level once the shift exits the
+    # trailing window.
+    rng = np.random.default_rng(0)
+    e = rng.normal(size=400)
+    e[100:] += 2.0
+    cum = break_pressure(e, k=0.5, warmup=10)
+    win = windowed_break_pressure(e, window=60, warmup=10)
+    assert cum[380:400].mean() > cum[180:200].mean()  # cumulative: never drains
+    # windowed: near-peak contrast around t=190 (test window mostly
+    # post-shift, ref window still pre-shift), back near its null scale
+    # (~unit z) by t~=380-400 once both windows sit in the new regime
+    assert win[380:400].mean() < 0.3 * win[180:200].mean()
+
+
+def test_windowed_raw_cusum_drains_after_permanent_shift():
+    rng = np.random.default_rng(1)
+    Y = rng.normal(size=400)
+    Y[100:] += 2.0
+    n_train = 50
+    cum = raw_cusum_score(Y, n_train=n_train, k=0.5)
+    win = windowed_raw_cusum_score(Y, n_train=n_train, window=60)
+    assert cum[380:400].mean() > cum[180:200].mean()
+    assert win[380:400].mean() < 0.3 * win[180:200].mean()
+
+
+def test_windowed_break_pressure_still_detects_a_single_break():
+    # bounded memory should not come at the cost of missing an isolated
+    # break within the window
+    rng = np.random.default_rng(2)
+    e = rng.normal(size=200)
+    e[100:] += 3.0
+    win = windowed_break_pressure(e, window=60, warmup=10)
+    assert np.nanmax(win[100:130]) > 5.0

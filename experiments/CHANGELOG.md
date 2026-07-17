@@ -925,3 +925,135 @@ label-free captions.
 **M5** — References section added (17 entries; every inline citation
 resolved, none fabricated); abstract compressed to ~220 words
 preserving the no/yes/no trichotomy (long version in git history).
+
+## 2026-07-16 — P2: publishability pass (new experiments; science
+unfrozen by explicit user request after P1's document-only gate)
+
+P1 froze the science and only patched prose/artifacts. P2 is a genuine
+extension: a critical review (prose + gap analysis) identified concrete
+weaknesses, and the user authorized new experiments to address them —
+this entry logs what was added, run, and found, including where a
+first design was wrong and had to be corrected before it reached the
+paper.
+
+**Prose/structure (review Bucket A).** Related work split into seven
+labeled strands (quickest detection/SPC, innovation-based state-space
+monitoring, econometric CUSUM-of-residuals, regime-switching, Great
+Moderation empirics, parametric volatility models, offline changepoint)
+— was one 45-line paragraph. Contribution 5 (honest-outcome framing)
+folded into Contribution 1 (it's a property of the protocol, not a
+separate result). Abstract sentence (iii) split from one ~120-word
+run-on into three sentences. §7 and §8 Appendix-A internal milestone
+tags ("(M2)", "(M7)", "provisional C → B2") stripped or replaced with
+self-explanatory text — they were dev-process scaffolding, meaningless
+without CHANGELOG context. §8 gained a one-sentence roadmap. §7's
+abrupt ending now ties the multi-break lesson back to real recession
+clusters (double-dip recessions are exactly the unfixed case).
+
+**B1 retabulation (no new runs, data already on disk).** Added: a
+compact ARL₀ table (grid_v1 core) and ARL₁ table to §2 (previously
+prose-only, citing `arl_table.csv`/`arl1_table.csv` without showing
+them); a numeric Δ-vs-amplification table to §5 (`grid_v8_phiqbreak`,
+previously prose-only despite six numbers already being quoted in
+running text).
+
+**B2a — PELT as an actual benchmark, not just a related-work dismissal.**
+`lsc/benchmarks/changepoint.py::pelt_breakpoints` (ruptures, l2 cost)
+already existed but was never run in a grid. New
+`experiments/exp08_pelt_benchmark.py`: calibrates PELT's penalty
+parameter by bisection to a 5% false-alarm rate on null AR(1) paths
+(mirroring the causal-detector calibration protocol exactly), then
+evaluates OFFLINE LOCALIZATION (does PELT report a breakpoint within 25
+obs of the true break, given the full sample) — explicitly not a delay
+comparison, since PELT sees future data the causal detectors cannot.
+Result (n=300, `paper_assets/exp08_pelt_results.csv`): PELT is
+competitive with the causal raw-Y CUSUM on the canonical 3σ level break
+(localize 0.83–0.92 vs. 0.97–0.99) but far weaker on pure variance
+breaks (0.00–0.20 vs. the dedicated raw variance-CUSUM's 0.10–1.00),
+because PELT's default l2 cost model is fundamentally a mean-shift
+statistic. Written up in new §8.5 and the related-work PELT sentence
+(previously an unsupported dismissal, now backed by a number).
+
+**B2b — bounded-memory statistics for the §7 multi-break failure.** §7
+diagnosed but did not fix the re-arm failure: raw_cusum's fixed-baseline
+CUSUM never drains after a permanent shift, so it cannot see a second
+event. First design (rejected by its own test before reaching the
+paper): restart a Page CUSUM accumulator every `window` observations,
+but still compare against the FIXED k/0 reference — this reproduces the
+same steady-state elevated value in every window after a permanent
+shift and does NOT drain (caught by
+`tests/test_multibreak.py::test_windowed_break_pressure_drains_after_
+permanent_shift` failing with win[399]=90.7 vs win[150]=77.6, i.e. no
+decay at all). Corrected design: a MOSUM-style two-window mean-shift
+statistic (Chu, Stinchcombe & White 1996 family) comparing a trailing
+window's mean against the window immediately before it — both windows
+slide forward together, so `window` obs after a permanent shift both
+sit in the same new regime and the statistic returns to its null scale,
+while a shift *between* the windows still produces a sharp transient
+peak. Implemented as `windowed_break_pressure` (innovation space) and
+`windowed_raw_cusum_score` (raw-Y space), wired into `exp04_multibreak.
+py` as `lsc_windowed_cusum` / `windowed_raw_cusum` (window=60). Result
+(n=500): on the level→level scenario, windowed_raw_cusum's second-event
+recall rises from 0.004 to 0.682 — essentially matching its own
+first-event recall (0.692) — at higher precision (0.99 vs 0.80) than
+the unwindowed statistic, at a modest first-event recall cost (0.692 vs
+0.738). The windowed innovation-CUSUM improves less (0.008 → 0.234)
+because the filter's own adaptivity already partially forgets a level
+shift (μ∞, Proposition 1), leaving less room for a moving reference to
+add. On level→variance and variance→variance scenarios BOTH windowed
+statistics stay at ≈0.00 — they are mean-shift statistics and a pure
+variance change carries no mean signal for a windowed mean comparison
+to see. The fix is channel-specific, exactly like §5's main result; a
+windowed variance statistic is the natural next step, left to future
+work. Existing exp04 methods' numbers are byte-identical to the
+pre-P2 committed csv (verified via git diff before committing) — this
+is a pure addition, not a re-run of prior results.
+
+**B2c — real-data extensions.** Added a fourth series, `unrate`
+(unemployment rate, diff transform, NBER peaks as events, same
+treatment as gs10): catches 1973-11, 2007-12, and 2020-02 across most
+methods (`paper_assets/rd_unrate_*`). Added a third GS10 event, the
+2022-03 hiking-cycle onset (data already pinned through mid-2026, no
+re-pull needed for the existing GFC/Volcker events). Added a
+false-alarm-rate sweep on INDPRO beyond the existing 5%/10% pair: 1%
+(`_far1` tag) and 20% (`_far20` tag), both against the pinned
+2026-07-11 snapshot — no network access needed since `load_series`
+reads the local snapshot unless `--live` is passed. UNRATE's raw data
+snapshot pulled fresh (`data/UNRATE_2026-07-16.csv`, live FRED pull,
+network-verified reachable) and pinned for future reruns.
+`Makefile:realdata` extended with all of the above;
+`experiments/real_data_eval.py` picks up every new run automatically
+via its `rd_*_meta.csv` glob.
+
+**B2d — real_data_eval.py permutation-seeding bug, found and fixed.**
+Adding the new rd_* runs above shifted rd_indpro's OWN permutation
+p-value (lsc_composite: 0.0073 -> 0.0092) even though rd_indpro's
+alarm data was verified byte-identical (`git diff` empty on
+`rd_indpro_alarms.csv`/`_summary.csv`/`_meta.csv`). Root cause:
+`real_data_eval.py` instantiated ONE `np.random.default_rng(20260711)`
+and consumed it sequentially across every (run, method) pair in
+glob-sorted order — adding a new file earlier in sort order shifts
+which random draws land on every later pair, so a run's reported
+p-value depended on which OTHER files happened to exist in
+`paper_assets/`, not just on its own data. This silently violates the
+paper's own reproducibility contract (Appendix A: "make all regenerates
+every table... from pinned seeds"). Fixed with a `seeded_rng(run_name,
+method)` helper (`zlib.crc32` digest of the pair name folded into a
+`SeedSequence`), giving each permutation test a seed that depends only
+on its own identity. Re-running with the fix moved every value by
+<= 0.002 from the pre-fix estimates (consistent with ordinary Monte
+Carlo noise at 20,000 draws, not a systematic shift) — rd_indpro's
+lsc_composite lands at p = 0.0080, close to both the pre-P2 committed
+0.0073 and the P2-but-still-buggy 0.0092. All in-text citations of
+"p = 0.007" updated to p = 0.008 (abstract, §9, §10, Appendix C) with a
+one-sentence disclosure in §9 of the fix and its bound on how much any
+number moved.
+
+**Reproducibility.** `exp08` added as a new Makefile target and folded
+into `make all`; `exp04`'s two new methods run automatically inside the
+existing `exp04` target (no Makefile change needed there). Test suite
+grew from 95 to 98 (three new tests for the windowed statistics'
+bounded-memory property, including the one that caught the first,
+wrong design). `make all` reproduces every pre-existing artifact
+byte-identically except the already-documented BLAS-epsilon noise in
+`m2_param_recovery.csv`.

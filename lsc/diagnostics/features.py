@@ -89,6 +89,42 @@ def break_pressure(innovations: np.ndarray, k: float = 0.5,
     return out
 
 
+def windowed_break_pressure(innovations: np.ndarray, window: int = 60,
+                            warmup: int = 10) -> np.ndarray:
+    """MOSUM-style bounded-memory alternative to break_pressure: a
+    moving two-window mean-shift statistic (Chu, Stinchcombe & White
+    1996 fluctuation-test family) rather than a CUSUM accumulated from
+    the training baseline.
+
+    At each t, compares the mean of the trailing ``window``
+    innovations ("test") against the mean of the ``window``
+    innovations immediately before that ("reference") via a
+    two-sample z-statistic. A first attempt restarted a Page CUSUM
+    accumulator every ``window`` obs but STILL compared against the
+    fixed reference k/0 baseline, so it reproduced the same
+    steady-state elevated value in every window after a permanent
+    shift and never drained (caught by
+    tests/test_multibreak.py::test_windowed_break_pressure_drains_
+    after_permanent_shift, CHANGELOG P2 2026-07-16) — the reference
+    itself has to be local and sliding, not fixed, for the statistic
+    to forget an old, already-absorbed shift. Here both windows slide
+    forward together, so ``window`` obs after a permanent shift both
+    windows sit inside the same new regime and the statistic returns
+    to its null level, while a shift *between* the two windows still
+    produces a sharp, transient peak. O(T*window)."""
+    T = len(innovations)
+    e = np.where(np.isfinite(innovations), innovations, 0.0)
+    out = np.full(T, np.nan)
+    for t in range(warmup, T):
+        if t - 2 * window + 1 < 0:
+            continue
+        test = e[t - window + 1: t + 1]
+        ref = e[t - 2 * window + 1: t - window + 1]
+        se = np.sqrt(test.var(ddof=1) / window + ref.var(ddof=1) / window)
+        out[t] = abs(test.mean() - ref.mean()) / max(se, 1e-6)
+    return out
+
+
 def variance_pressure(innovations: np.ndarray, k: float = 0.25,
                       warmup: int = 10) -> np.ndarray:
     """One-sided CUSUM of (e_t^2 - 1): pressure toward variance increase."""

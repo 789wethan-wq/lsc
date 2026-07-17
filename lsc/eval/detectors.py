@@ -86,6 +86,35 @@ def make_composite_detector(model_factory: Callable[[], Model],
     return score_fn
 
 
+def make_windowed_innovation_cusum_detector(model_factory: Callable[[], Model],
+                                            n_train: int,
+                                            window: int = 60) -> ScoreFn:
+    """Bounded-memory counterpart of make_innovation_cusum_detector
+    (P2 exp04 fix): a MOSUM-style two-window mean-shift statistic on
+    the model's causal innovations, so it can drain and re-arm for a
+    second break (see windowed_break_pressure)."""
+    from lsc.diagnostics.features import windowed_break_pressure
+
+    def score_fn(Y: np.ndarray) -> np.ndarray:
+        est = model_factory().fit_filter(Y, n_train=n_train)
+        return _mask_train(
+            windowed_break_pressure(est.innovations, window=window),
+            n_train)
+
+    return score_fn
+
+
+def make_windowed_raw_cusum_detector(n_train: int, window: int = 60) -> ScoreFn:
+    """Bounded-memory counterpart of make_raw_cusum_detector (P2 exp04
+    fix)."""
+    from lsc.benchmarks.changepoint import windowed_raw_cusum_score
+
+    def score_fn(Y: np.ndarray) -> np.ndarray:
+        return windowed_raw_cusum_score(Y, n_train=n_train, window=window)
+
+    return score_fn
+
+
 def make_state_cusum_detector(model_factory: Callable[[], Model],
                               n_train: int, k: float = 0.5) -> ScoreFn:
     """LSC state-shift detector: baseline CUSUM of the filtered state —

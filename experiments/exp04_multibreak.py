@@ -18,6 +18,12 @@ Scenarios:
   var_up_down    — obs-noise x3 at 0.4, then x(1/3) at 0.7 (back to
                    baseline: the second event is a pure quieting)
 
+P2 (2026-07-16): added lsc_windowed_cusum / windowed_raw_cusum, the
+bounded-memory MOSUM-style statistics designed to fix the second-event
+miss documented for the fixed-baseline detectors here (raw_cusum
+recall_break2 = 0.00 in the R1 run) — see
+lsc.diagnostics.features.windowed_break_pressure.
+
 Outputs: paper_assets/exp04_results.csv/.parquet,
 exp04_far_calibration.csv, exp04_null_alarm_counts.csv.
 
@@ -38,6 +44,8 @@ from lsc.eval.detectors import (
     make_innovation_cusum_detector,
     make_raw_cusum_detector,
     make_state_cusum_detector,
+    make_windowed_innovation_cusum_detector,
+    make_windowed_raw_cusum_detector,
 )
 from lsc.eval.metrics import multi_break_outcome, summarize_multi_break
 from lsc.models import KalmanModel
@@ -82,6 +90,11 @@ def main(n_reps: int = 500) -> None:
         "lsc_state_cusum": make_state_cusum_detector(
             lambda: KalmanModel("ar1"), N_TRAIN),
         "raw_cusum": make_raw_cusum_detector(N_TRAIN),
+        # P2 (2026-07-16): bounded-memory MOSUM-style alternatives,
+        # designed specifically to fix the second-event miss below
+        "lsc_windowed_cusum": make_windowed_innovation_cusum_detector(
+            lambda: KalmanModel("ar1"), N_TRAIN),
+        "windowed_raw_cusum": make_windowed_raw_cusum_detector(N_TRAIN),
     }
 
     far_rows, null_rows, rows = [], [], []
