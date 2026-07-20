@@ -3,34 +3,27 @@
 ## Abstract
 
 We ask when filtering a latent state helps detect structural change,
-under a protocol that makes the question answerable: every detector —
-state-aware or raw-data — is calibrated on matched null data-generating
-processes to the same false-alarm rate (5% per 500 observations), so
-detection rates and delays are directly comparable. The answer is a
-trichotomy — *no, yes, no* — across three break types. (i) Level shifts
-in a persistent state: no — a raw-data CUSUM dominates at every SNR,
-and we prove the innovation CUSUM is "fast or never," a boundary
-condition of persistence (μ∞ sorts detection, Spearman 0.94).
-(ii) Observation-noise variance changes:
-yes — but the advantage is prewhitening, not the state estimate: the
-observable is exactly ARMA(1,1), so ARIMA-residual and Kalman-innovation
-whitening are provably the same filter. (iii) State-innovation (shock)
-variance changes — the Great-Moderation / crisis-volatility channel:
-no, a partial null. On the coarse ×3 break, where all rungs detect above
-chance, a raw variance CUSUM matches or beats whitening at every SNR
-(0.72/0.96/0.96 vs ARIMA 0.26/0.79/1.00). The subtle ×1.5 break, by
-contrast, leaves every rung near the false-alarm floor — whitening
-*fails to recover* it rather than raw detecting it.
-On real data (industrial production, GDP, Treasury yields, and
-unemployment) every alarm attributes to a second-moment feature, NBER
-association is significant (permutation p = 0.008), and real-time
-vintages confirm the COVID timing while downgrading 2008. Two
-extensions probe the edges of the protocol: an offline changepoint
-method (PELT), calibrated to the same false-alarm rate, matches the raw
-CUSUM on an obvious level break but is far weaker on variance breaks;
-and a bounded-memory ("MOSUM"-style) statistic fixes the raw CUSUM's
-complete failure to see a second, independent level break, though the
-same fix does not extend to variance-type second events.
+using a protocol that calibrates every detector to the same
+false-alarm rate (5% per 500 observations) on matched null data. The
+answer is a trichotomy — *no, yes, no* — across three break types.
+(i) Level shifts in a persistent state: no — a raw-data CUSUM
+dominates at every SNR, and the innovation CUSUM is provably "fast or
+never," a boundary condition of persistence (μ∞ sorts detection,
+Spearman 0.94). (ii) Observation-noise variance changes: yes, but the
+advantage is prewhitening, not the state estimate — the observable is
+exactly ARMA(1,1), so ARIMA and Kalman whitening are provably the same
+filter. (iii) State-innovation (shock) variance changes — the
+Great-Moderation/crisis-volatility channel: no, a partial null. Raw
+matches or beats whitening on the coarse ×3 break (0.72/0.96/0.96 vs
+0.26/0.79/1.00), but the subtle ×1.5 break leaves every rung near the
+false-alarm floor — whitening *fails to recover* it. On real data
+(industrial production, GDP, Treasury yields, unemployment) every
+alarm attributes to a second-moment feature; NBER association is
+significant (permutation p = 0.008), and real-time vintages confirm
+COVID while downgrading 2008. Two extensions probe the protocol's
+edges: offline PELT matches raw CUSUM on level breaks but not variance
+breaks, and a bounded-memory statistic fixes raw CUSUM's blindness to
+a second level break, though not a second variance break.
 
 **JEL classification:** C12, C22, C52.
 **Keywords:** structural change; sequential change detection; CUSUM;
