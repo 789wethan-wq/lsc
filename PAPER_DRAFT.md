@@ -192,7 +192,8 @@ per-observation false-alarm hazard: with monitored window length L = 375
 (T = 500, 25% training) and empirical window-FAR α, the hazard is
 p = 1 − (1−α)^{1/L} and ARL₀ = 1/p ≈ L/α; our 5% window target
 corresponds to ARL₀ ≈ 7300 observations, and the empirical detectors sit
-at 5900–7600 (raw CUSUM calibrates slightly hot). The out-of-control
+at 5900–7600 (raw CUSUM calibrates hot, increasingly so at higher SNR:
+4.0% → 6.2% → 8.2% vs. the 5% target). The out-of-control
 **ARL₁** is the post-break detection delay (mean delay conditional on
 detection, reported beside the detection rate since misses are censored):
 e.g. at 3σ level, SNR 0.5, ARL₁ ≈ 77–86 observations. Calibrating a
@@ -216,7 +217,8 @@ finite.
 | SNR 2.0 | raw_cusum | 8.2% | 4383 |
 
 *Table 1. ARL₀ by arena and method (grid_v1 core, T = 500; target
-ARL₀ ≈ 7300 at the 5% window-FAR).*
+ARL₀ ≈ 7300 at the 5% window-FAR). MC SEs on empirical FAR ≤ 0.013
+(n_reps = 500, √(p(1−p)/n_reps)).*
 
 | Arena | Scenario | Method | Detect rate | ARL₁ (mean delay) |
 |---|---|---|---|---|
@@ -240,7 +242,8 @@ ARL₀ ≈ 7300 at the 5% window-FAR).*
 | SNR 2.0 | variance ×3 | raw_cusum | 0.058 | 172.9 |
 
 *Table 2. ARL₁ (detection rate and mean delay conditional on detection)
-at the canonical level-3σ and variance-×3 breaks, T = 500.*
+at the canonical level-3σ and variance-×3 breaks, T = 500. MC SEs on
+detect rate ≤ 0.023 (n_reps = 500).*
 
 ## 3. Simulation design
 
@@ -259,7 +262,8 @@ the identical SD convention, so "×1.5" means SD×1.5 in both channels.
 The two are structurally different: an r-break changes only the marginal
 variance of Y, whereas a q-break changes both the marginal variance and
 the autocorrelation structure (it shifts the reduced-form ARMA(1,1) MA
-parameter). Also: level shifts (0.5, 1, 3 σ_ref), logistic ramps, and
+parameter). Also: level shifts (0.5, 1, 3 σ_ref, where σ_ref = √(q/(1−φ²)) is the
+latent state's own stationary standard deviation), logistic ramps, and
 pure persistence changes (φ → 0.995 or 0.80 with the stationary variance
 held fixed). T = 500 baseline with a T ∈ {200, 2000} sweep;
 misspecification arenas with t₅ observation noise and a nonlinear tanh
@@ -369,7 +373,17 @@ within that gap. The scope of this claim should be stated precisely:
 ρ̄ = 0.99 establishes agreement of the innovation *series* under
 estimation; the detection-rate consequences of estimation error are
 shown empirically — every grid in the paper is run with estimated
-parameters — not proved analytically.
+parameters — not proved analytically. On at least one margin this gap
+is not second-order: for the Table 2 flagship cell (SNR 0.5, φ = 0.95,
+level 3σ), holding sidedness and calibration fixed and replacing
+estimated (φ, q, r) with the arena's true values raises the two-sided
+innovation-CUSUM detection rate from 0.554 to 0.970, and pairing known
+parameters with a one-sided CUSUM (a common alternative convention,
+not what Table 2 reports) reaches 0.990 — so a reader reimplementing
+this cell under either convention should expect a substantially higher
+detection rate than 0.554, which reflects the estimated-parameter,
+two-sided construction actually used, not an error
+(`experiments/exp10_cusum_ablation.py`).
 
 ## 5. Second moments: a whitening ladder
 
@@ -770,7 +784,7 @@ comparison, since PELT sees future data the causal detectors cannot.
 | 2.0 | variance ×3 | 0.02 |
 
 *Table 4. PELT localization rate at a FAR-matched (5%) operating
-point, n = 300 per cell (`exp08_pelt`).*
+point, n = 300 per cell (`exp08_pelt`). MC SEs ≤ 0.024 (n = 300).*
 
 On the canonical 3σ level break PELT is competitive with the causal
 raw-Y CUSUM (0.83–0.92 here vs. 0.97–0.99 in Table 1's arena, seeing
@@ -847,7 +861,10 @@ latent-state mechanism. GS10's permutation p-values rest
 on only 3 registered events, so only four hit-counts (0–3) are achievable
 and the resulting p's are far coarser than INDPRO's or UNRATE's (n=9);
 read the raw hit/alarm counts there as more informative than the exact
-p.*
+p. Alarm and hit counts are exact given the fixed historical series,
+not Monte Carlo estimates; only the permutation p-values carry
+resampling uncertainty, from the 20,000-draw test — SE = √(p(1−p)/20000)
+≤ 0.0035 across every p-value reported here.*
 
 **Industrial production (INDPRO, 1948–2026).** Composite alarms: 2008-09
 and 2020-04 (both variance_pressure), 1990-12 (variance_quiet), 1969-08
@@ -976,7 +993,10 @@ regardless of any state-space model.
 
 *Table 6. INDPRO sensitivity to the false-alarm target (1/5/10/20%,
 120-month training) and to a longer training window (180 months, 5%
-FAR).*
+FAR). Alarm and hit counts are exact given the fixed historical series,
+not Monte Carlo estimates; only the permutation p-values carry
+resampling uncertainty, from the 20,000-draw test — SE = √(p(1−p)/20000)
+≤ 0.0035 across every p-value reported here.*
 
 Two independent stress tests both isolate the composite's association
 as fragile *relative to itself*, not to the other detectors. The FAR
@@ -1164,7 +1184,10 @@ false-alarm-rate sweep (1%, 5%, 10%, 20%) on INDPRO. A third addition,
 `paper_assets/exp09_ljungbox_table.csv`), runs a Ljung-Box residual
 check and a model-implied-vs-sample ACF comparison on the fitted AR(1)
 filter for every rolling training window of all four real-data series
-(§9). 98 tests include
+(§9). A fourth, `exp10` (`experiments/exp10_cusum_ablation.py`,
+`paper_assets/exp10_cusum_ablation.csv`), ablates sidedness and
+known-vs-estimated parameters for the Table 2 flagship cell's
+innovation CUSUM (§4). 98 tests include
 bit-identical no-lookahead checks for every feature and detector
 (including the raw and ARIMA variance rungs, the two windowed
 statistics, and a training-freeze check), DGP ground-truth checks
@@ -1176,7 +1199,40 @@ and the windowed-statistic bounded-memory (drain-after-permanent-shift)
 property. All post-hoc design changes and pre-registered hypotheses
 (including the three falsified ones and the two rejected robust-feature
 designs — one falsified, one diluted, §8.3) are in
-`experiments/CHANGELOG.md`; full experiment narratives in
+`experiments/CHANGELOG.md`.
+
+**On "three pre-registered hypotheses falsified" (Contribution 1).**
+This refers specifically to the exp05 robust-variance-feature
+registration (`experiments/CHANGELOG.md`, 2026-07-11, "registered
+before running: robust variance features (exp05)..."): three named
+predictions — (a) under t₅ noise, `composite_robust` recovers variance
+×1.5 detection to ≥0.5 (from the standard composite's 0.16); (b) under
+Gaussian noise the robustness tax on variance scenarios is ≤~10pp; (c)
+level and persistence rows are roughly unchanged — all three logged
+FALSIFIED in the same-day outcome entry. CHANGELOG documents
+pre-registration as a repeated practice through the project, not
+confined to this one instance, and other pre-registered predictions
+were also falsified elsewhere: both of exp03's registered predictions
+(2026-07-10), exp03b's quietness-detection hypothesis (falsified in
+its original run and again after a standardization fix, 2026-07-10),
+and Outcome A of the varbench claim-adoption decision rule (M0, three
+outcomes A/B/C registered before any grid_v4 cell ran; A falsified, C
+fired, 2026-07-11/07-12) — so "three" names this specific registration,
+not a project-wide total of every falsified pre-registered prediction.
+The real-data extension (m6x, 2026-07-11) is a different category:
+GDP and GS10 were "chosen for the method's signature cases before
+looking at their results," and the evaluation protocol was likewise
+fixed in advance, but CHANGELOG frames this explicitly as registering
+a design rather than a falsifiable hypothesis ("this entry registers
+the design, not power hypotheses") — committed in advance, but not
+scored against a stated prediction. Beyond these named cases,
+CHANGELOG does not tag each of Appendix C's individual rows as
+pre-registered or identified post hoc; absent an explicit
+"registered/pre-registered before running" note for a specific claim,
+no such status is asserted here, and no complete per-row taxonomy is
+attempted.
+
+Full experiment narratives in
 `experiments/FINDINGS.md`; theory statements and proofs in Appendix B,
 with `experiments/THEORY.md` as the long-form companion. The complete source, pinned data snapshots, and seed
 configuration constitute the replication package, to be posted publicly on

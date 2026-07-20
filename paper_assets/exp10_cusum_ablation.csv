@@ -1,0 +1,5 @@
+variant,threshold,detect_rate,detect_rate_se
+a_two_sided_estimated,22.1451,0.554,0.0223
+b_one_sided_estimated,16.305,0.636,0.0215
+c_two_sided_known,7.5101,0.97,0.0076
+d_one_sided_known,7.2466,0.99,0.0045
