@@ -62,8 +62,9 @@ answerable. Our contributions are as follows.
   ladder collapses to *two* rungs because the ARIMA and Kalman rungs are
   the same filter — the observable is exactly ARMA(1,1), an equivalence
   we state as theory and confirm to machine precision — so "prewhitening"
-  and "state estimation" are not separable here; the state layer adds
-  nothing the ARIMA residuals do not. And the prewhitening advantage is
+  and "state estimation" are not separable here; the state layer's
+  channel-specific advantage on this DGP reduces to prewhitening, which
+  ARIMA residuals also supply. And the prewhitening advantage is
   *channel-specific*: it holds for observation-noise breaks (decisive at
   high SNR, where the latent signal masks the noise change and raw sits at
   chance) but *inverts* for state-innovation breaks, where the raw
@@ -374,19 +375,28 @@ parameters — not proved analytically.
 
 Is the latent layer's second-moment advantage about the *state estimate*,
 or merely about *prewhitening* the autocorrelated observations before
-applying a variance statistic? We answer this directly by running the
-identical variance CUSUM (up-arm Page CUSUMs of z²−1 at allowances k =
-0.25 and 0.05, a down-arm CUSUM of 1−z², max over arms, no per-time
-standardization) at three levels of prewhitening, calibrated by the same
-routine on the same matched-null seed blocks:
+applying a variance statistic? We probe this with a three-rung ladder,
+calibrated by the same routine on the same matched-null seed blocks:
 
-- **raw** — z from the raw observations, standardized by frozen
-  training-prefix moments;
-- **ARIMA** — the same statistic on the standardized one-step residuals
-  of an AIC-selected, training-prefix-frozen ARIMA model (whitened, but
-  not state-aware);
-- **latent** — the composite's e²-based variance features on the Kalman
-  innovations (state-aware).
+- **raw** — a variance CUSUM (up-arm Page CUSUMs of z²−1 at allowances
+  k = 0.25 and 0.05, a down-arm CUSUM of 1−z², max over arms, no
+  per-time standardization) on z from the raw observations, standardized
+  by frozen training-prefix moments;
+- **ARIMA** — the identical statistic on the standardized one-step
+  residuals of an AIC-selected, training-prefix-frozen ARIMA model
+  (whitened, but not state-aware);
+- **latent** — not the same statistic re-run on Kalman innovations, but
+  the paper's eleven-feature diagnostic composite (§2) evaluated on the
+  Kalman-filtered path, whose score is a max over features each
+  standardized per time point against Monte Carlo null replications.
+
+The raw and ARIMA rungs isolate one axis — prewhitening — holding the
+detection statistic fixed. The latent rung changes two things at once,
+the information set (Kalman-filtered, state-aware) and the statistic
+itself (composite, per-time-standardized, versus the lower rungs'
+unstandardized 3-arm CUSUM), so its comparison to raw/ARIMA below should
+be read as *state-aware composite* vs. *whitened single statistic*, not
+as a third setting of one controlled instrument.
 
 **The ladder has three rungs but only two are distinct.** For the AR(1)
 + noise DGP the observable Y has an *exact* ARMA(1,1) reduced form:
@@ -444,10 +454,12 @@ state's variance dominates the marginal variance of Y, so a ×1.5 change
 in the (now-small) observation-noise component is a shrinking fraction of
 total variance, masked by state-driven autocorrelation. Prewhitening
 removes exactly that autocorrelation: the *ARIMA* rung is flat across SNR
-(0.90 / 0.94 / 0.87) and tracks the *latent* rung step for step (0.82 /
-0.87 / 0.91) — as it must, since the equivalence above makes them the
-same filter. On this channel the advantage over raw is *prewhitening under
-autocorrelation*, decisive where the latent signal masks the noise change.
+(0.90 / 0.94 / 0.87) and the *latent* rung tracks it closely (0.82 /
+0.87 / 0.91) — an empirical proximity, not a consequence of the
+equivalence above, which concerns the shared innovation series rather
+than the composite statistic built on top of it. On this channel the
+advantage over raw is *prewhitening under autocorrelation*, decisive
+where the latent signal masks the noise change.
 
 *State-innovation (q) breaks — the ordering inverts, read separately by
 break size.* The *coarse* ×3 break carries the inversion claim cleanly:
@@ -701,7 +713,14 @@ observation-noise break the raw z² CUSUM is at chance (0.06 at every SNR;
 threshold ≈ 10⁴, meaningless on a nonstationary series) while the
 ARIMA-differencing rung detects (0.71 / 0.84 / 0.58) and the Kalman
 composite detects (0.97 / 0.89 / 0.68); at ×3 the whitened rungs reach
-0.97–1.00 while raw stays at chance. This is the exact complement of §5's
+0.97–1.00 while raw stays at chance. As in §5, the ARIMA and composite
+figures here are not two settings of one controlled statistic — the
+composite is the broader, per-time-standardized eleven-feature detector,
+not the ARIMA rung's own CUSUM re-run on Kalman innovations — so the gap
+between them is not evidence that the state estimate adds power beyond
+ARIMA specifically. What the two whitened rungs agree on is the
+qualitative point, and ARIMA alone already establishes it (0.71/0.84/0.58
+vs. raw's 0.06 at every SNR): this is the exact complement of §5's
 r-channel AR(1) result — where a raw variance CUSUM could *win* when
 observation noise dominates — and it sharpens the paper's thesis:
 prewhitening is not merely helpful but *mandatory* once the observable is
@@ -711,9 +730,11 @@ calibrate against.
 ![**Figure 3.** The local-level (random-walk state) arena at SNR 0.5
 (`grid_v7_llevel`). Left: a 3σ level break is degenerate for every
 method — all five detectors sit at the 5% FAR line. Right: a ×1.5
-observation-noise variance break is caught only by the whitened rungs
-(ARIMA-differencing 0.84, Kalman composite 0.89) while the raw variance
-CUSUM stays at chance — whitening is mandatory once Y is
+observation-noise variance break is caught by both whitened detectors —
+ARIMA-differencing (0.84) and the state-aware composite (0.89, a
+distinct, broader statistic, not the same CUSUM re-run on Kalman
+innovations) — while the raw variance CUSUM stays at chance: whitening is
+mandatory once Y is
 nonstationary.](paper_assets/grid_v7_llevel_degeneracy.png)
 
 **8.5 An offline benchmark: PELT, calibrated to the same false-alarm
@@ -816,10 +837,17 @@ alone would produce (`real_data_eval.py`).
 
 *Table 5. Real-data alarm summary at 5% FAR, 120-month training
 (`rd_eval.csv`). GDP's raw_cusum fired zero alarms across
-all 12 windows, so no permutation test applies. UNRATE (new, P2) is the
-single strongest association in the table — both raw_cusum and
-lsc_kalman_cusum fire exactly 4 alarms, all 4 landing on NBER peaks
-(zero strays), out of 9 peaks in range.*
+all 12 windows, so no permutation test applies. UNRATE (new, P2) shows
+the largest raw_cusum/lsc_kalman_cusum association by p-value in the
+table (4/4 hits, zero strays, out of 9 peaks in range), but see the
+model-fit discussion below — three of the four hits fall in windows
+where the fitted AR(1) persistence is degenerate, complicating a
+straightforward reading of the association as evidence for the
+latent-state mechanism. GS10's permutation p-values rest
+on only 3 registered events, so only four hit-counts (0–3) are achievable
+and the resulting p's are far coarser than INDPRO's or UNRATE's (n=9);
+read the raw hit/alarm counts there as more informative than the exact
+p.*
 
 **Industrial production (INDPRO, 1948–2026).** Composite alarms: 2008-09
 and 2020-04 (both variance_pressure), 1990-12 (variance_quiet), 1969-08
@@ -885,7 +913,36 @@ such rather than a horizon-window artifact. The raw variance CUSUM also
 flags Volcker (1980-02, up-arm) but is the noisiest detector on this
 series (9 alarms, 8 stray, 1/3 events hit, p = 0.40) — on a series that
 is *all* volatility regime, a raw z² statistic fires on every regime
-shift, which is exactly why its event-association washes out.
+shift, which is exactly why its event-association washes out. (The
+Volcker-catch window itself is well-fit — Ljung-Box p=0.42/0.19,
+φ=0.24, unclipped — so unlike UNRATE below, this alarm is not an
+artifact of degenerate model fit; the intervening windows bracketing
+the shock, 1973–1988, fit far worse, but neither produces the reported
+alarm.)
+
+**Unemployment rate (UNRATE, monthly).** Table 5's raw_cusum and
+lsc_kalman_cusum results on UNRATE look like the strongest association
+in the real-data application — 4/4 hits, zero strays, p=0.0002–0.0004
+— but a model-fit check (`experiments/exp09_real_data_fit_check.py`)
+complicates that reading. In three of the four windows producing these
+hits (the 1974, 2001, and 2008 recessions), the AR(1) MLE fits a
+*negative* φ (−0.82, −0.19, −0.41) before the pipeline's clipping to
+[0.01, 0.99] — not merely weak persistence, but a sign that the model
+class itself is misspecified for these windows, since a stationary
+AR(1) with φ∈[0,1) cannot represent the dynamics the likelihood is
+pointing toward. The clip substitutes a boundary value for whatever
+the unconstrained estimate wanted, and the resulting filter behavior
+in these windows (Kalman gains of 0.05, 0.54, and 0.22 — not uniformly
+small) has no clean interpretation as "the state estimate found little
+persistence." Only the fourth hit, 2020, sits in a window with a
+well-estimated, unclipped φ (0.948). The honest summary: UNRATE's four
+hits are real, and raw_cusum and lsc_kalman_cusum's close agreement on
+their timing is a genuine empirical fact, but three of the four rest
+on windows where the paper's own latent-state model does not describe
+the series, which weakens UNRATE's standing as evidence for the
+diagnostic framework specifically, as opposed to evidence that
+unemployment has level-type breaks raw CUSUM is well-suited to catch
+regardless of any state-space model.
 
 **Sensitivity.** All numbers below are on INDPRO, the headline series.
 
@@ -948,15 +1005,19 @@ Four points summarize what the harness bought us.
 - The latent-state diagnostics layer is not a better level-shift
   detector; it is a *different instrument*, reading second moments and
   dynamics. But the whitening ladder (§5) sharpens the claim past the
-  point where "the state estimate" survives as an ingredient: on this DGP
-  the Kalman innovations *are* the ARMA(1,1) innovations (an exact
-  reduced-form equivalence, verified to machine precision), so whatever
-  second-moment power the latent layer has is prewhitening, full stop —
-  ARIMA residuals capture it identically. What the state framing still
+  point where "the state estimate" survives as an ingredient on the
+  observation-noise channel: the Kalman innovations *are* the ARMA(1,1)
+  innovations (an exact reduced-form equivalence, verified to machine
+  precision), and empirically the ARIMA rung tracks the composite closely
+  there (0.90/0.94/0.87 vs 0.82/0.87/0.91) — so on this channel
+  prewhitening is doing the work, even though the composite is a
+  distinct, per-time-standardized eleven-feature statistic rather than
+  the ARIMA rung's own CUSUM re-run on Kalman innovations. What the state framing still
   buys is dynamics features (persistence, quieting) and the fast-or-never
   speed edge on levels. The division of labor is now measured (grids),
-  reduced (raw vs. whitened, the two whitened rungs proven identical), and
-  derived (fast-or-never with its φ boundary).
+  reduced (raw vs. whitened, the ARIMA and Kalman filters proven identical
+  at the innovation-series level, not the composite's detection numbers),
+  and derived (fast-or-never with its φ boundary).
 - Practical recipe, now channel-aware. Run raw CUSUM for levels. For
   scale changes the right move depends on *which variance moves*, and one
   usually does not know: (i) if the break is in the observation
@@ -1098,7 +1159,12 @@ A second round (2026-07-16) added `exp08` (the PELT localization
 benchmark, §8.5) and extended `exp04` with the two windowed-CUSUM
 methods (§7) and `realdata` with a fourth series (unemployment,
 `unrate`), a third GS10 event (the 2022 hiking cycle), and a
-false-alarm-rate sweep (1%, 5%, 10%, 20%) on INDPRO. 98 tests include
+false-alarm-rate sweep (1%, 5%, 10%, 20%) on INDPRO. A third addition,
+`exp09` (`experiments/exp09_real_data_fit_check.py`,
+`paper_assets/exp09_ljungbox_table.csv`), runs a Ljung-Box residual
+check and a model-implied-vs-sample ACF comparison on the fitted AR(1)
+filter for every rolling training window of all four real-data series
+(§9). 98 tests include
 bit-identical no-lookahead checks for every feature and detector
 (including the raw and ARIMA variance rungs, the two windowed
 statistics, and a training-freeze check), DGP ground-truth checks
