@@ -1,0 +1,5 @@
+series,n_months,n_events,observed_minp,minp_method,joint_p,joint_p_bonferroni_x4
+indpro,780,9,0.0092,lsc_composite,0.0089,0.0356
+gdp,240,9,0.0669,lsc_composite,0.0928,0.3712
+gs10,720,3,0.1064,raw_cusum,0.195,0.7798
+unrate,780,9,0.0001,lsc_kalman_cusum,0.0001,0.0006
