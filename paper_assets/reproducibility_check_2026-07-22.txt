@@ -1,0 +1,105 @@
+Fresh-clone reproducibility check
+=================================
+Date: 2026-07-22
+Verified commit: e2d89ba269ffdd15ca19194939c9252ca207bf4b
+  ("Add arch to pinned dependencies -- exp15's GARCH benchmark is
+  load-bearing for a cited Related Work number")
+Method: `git clone --local` into a scratch directory (not the working
+copy), fresh `python3 -m venv`, `pip install -e ".[dev]"` from that
+clone's pyproject.toml, nothing carried over from any other
+environment.
+
+This is a standing, checkable record, not a one-time verbal claim: it
+answers "does a fresh clone following the documented setup actually
+reproduce a table and two of the paper's cited benchmark numbers,"
+which is the concrete thing Appendix A's reproducibility statement
+asserts.
+
+1. Installed package versions (pip freeze, filtered to the pinned set)
+------------------------------------------------------------------------
+arch==8.0.0
+hmmlearn==0.3.3
+matplotlib==3.11.0
+numpy==2.5.1
+pandas==3.0.3
+pyarrow==25.0.0
+pytest==9.1.1
+PyYAML==6.0.3
+ruptures==1.1.9
+scipy==1.18.0
+statsmodels==0.14.6
+
+Matches pyproject.toml's pinned dependencies exactly -- no version
+drift between what's declared and what a fresh install resolves to.
+
+2. Test suite
+------------------------------------------------------------------------
+$ python -m pytest tests/ -q
+98 passed, 24 warnings in 75.39s (0:01:15)
+
+(24 warnings are all "All-NaN slice encountered" RuntimeWarnings from
+lsc/diagnostics/alarms.py's composite feature-scale estimation on
+short/degenerate inputs during test setup -- pre-existing, harmless,
+not related to this check.)
+
+3. experiments/exp15_garch_benchmark.py, n_reps=500 (matching the
+   published grid's n_reps), run in full from the clean environment
+------------------------------------------------------------------------
+$ python experiments/exp15_garch_benchmark.py 500
+[    89s] channel=r SNR=0.5 vol_mult=1.5 n_reps=500:
+  threshold   raw=274.798  arima=173.075  garch=473.833
+  emp. FAR    raw=0.050  arima=0.050  garch=0.050
+  detect rate raw=0.560  arima=0.942  garch=0.098
+[   172s] channel=r SNR=2.0 vol_mult=1.5 n_reps=500:
+  threshold   raw=615.260  arima=170.232  garch=242.890
+  emp. FAR    raw=0.050  arima=0.050  garch=0.050
+  detect rate raw=0.102  arima=0.868  garch=0.096
+[   236s] channel=q SNR=0.5 vol_mult=1.5 n_reps=500:
+  threshold   raw=274.798  arima=173.075  garch=473.833
+  emp. FAR    raw=0.050  arima=0.050  garch=0.050
+  detect rate raw=0.212  arima=0.100  garch=0.066
+[   300s] channel=q SNR=2.0 vol_mult=1.5 n_reps=500:
+  threshold   raw=615.260  arima=170.232  garch=242.890
+  emp. FAR    raw=0.050  arima=0.050  garch=0.050
+  detect rate raw=0.230  arima=0.158  garch=0.098
+[   300s] wrote paper_assets/exp15_garch_benchmark.csv
+
+Bit-for-bit identical to the run committed in 4916d7c and to the
+numbers cited in Related Work / Appendix C: raw/ARIMA reproduce
+Table 3 (0.56/0.94, 0.10/0.87, 0.21/0.10, 0.23/0.16); GARCH sits at
+the 0.050 FAR floor in all four cells (0.098/0.096/0.066/0.098).
+
+4. experiments/exp14_mixed_channel.py, n_eval=300 (matching the
+   committed run), run in full from the clean environment
+------------------------------------------------------------------------
+$ python experiments/exp14_mixed_channel.py 300
+Mixed-channel test (50/50 r/q, unknown to detector), n_eval=300:
+  SNR=0.1: threshold raw=126.065 arima=167.819 combined=1.438 | empirical FAR raw=0.050 arima=0.050 combined=0.050 | detect raw=0.553 arima=0.517 combined=0.493
+  SNR=0.5: threshold raw=260.636 arima=157.205 combined=1.380 | empirical FAR raw=0.050 arima=0.050 combined=0.050 | detect raw=0.410 arima=0.560 combined=0.490
+  SNR=2.0: threshold raw=571.648 arima=147.556 combined=1.420 | empirical FAR raw=0.050 arima=0.050 combined=0.050 | detect raw=0.213 arima=0.623 combined=0.457
+[238s] wrote paper_assets/exp14_mixed_channel.csv
+
+Bit-for-bit identical to the run committed in 4916d7c and to the
+numbers cited in §10 / Appendix C: combined loses to the single
+better detector at every SNR (0.06 / 0.07 / 0.166 down).
+
+5. What this does and doesn't establish
+------------------------------------------------------------------------
+Does establish: a fresh clone of this exact commit, following only
+the documented `make venv`-equivalent setup, reproduces the test suite
+and the two most recently added benchmark scripts' numbers exactly --
+not approximately, not "close enough given MC noise," bit-for-bit.
+That closes the specific gap this reproducibility push was about: a
+script whose output is cited in the paper is actually runnable from
+scratch, not just present in the repository.
+
+Does not establish: correctness of the underlying statistics or DGP
+assumptions (that's what the paper's own theory sections and tests/
+argue for), or reproducibility of the FRED/ALFRED real-data sections
+(covered separately by `make realdata`/`make realtime` against the
+pinned data/ snapshots, not re-verified in this pass).
+
+This log itself was generated by running the commands above against a
+real clone and pasting their actual output -- not reconstructed from
+memory or from the numbers already reported earlier in this project's
+history.

@@ -1429,6 +1429,13 @@ Full experiment narratives in
 with `experiments/THEORY.md` as the long-form companion. The complete source, pinned data snapshots, and seed
 configuration constitute the replication package, to be posted publicly on
 acceptance and available from the author on request in the interim.
+`paper_assets/reproducibility_check_2026-07-22.txt` is a standing,
+checkable record (not a one-time claim) of a fresh `git clone` into a
+scratch directory, a fresh virtual environment installed only via the
+documented `pyproject.toml` setup, the full test suite, and the two
+most recently added benchmark scripts (`exp14`, `exp15`) run in full
+from that clean environment -- reproducing the test count and every
+cited number in this section bit-for-bit.
 
 ## Appendix B. Theory: statements and proofs
 
