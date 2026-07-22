@@ -141,8 +141,29 @@ interchangeable.
 conditional variance parametrically — GARCH (Bollerslev 1986) and
 stochastic-volatility state-space models (Kim, Shephard & Chib 1998);
 its object is *estimation* of a volatility process, not distribution-free
-monitoring at a calibrated false-alarm rate, so it is a complementary
-benchmark left to future work rather than a competitor here.
+monitoring at a calibrated false-alarm rate, so a full stochastic-volatility
+comparison remains future work. A GARCH(1,1) benchmark is reportable
+now, however: fit on the training prefix only (via the `arch` package),
+causally forward-filtered for conditional variance over the full series
+with the fixed fitted parameters, and run through the same three-arm
+max-CUSUM used for the raw and ARIMA rungs on its standardized residuals
+(`experiments/garch_detector.py`, `experiments/exp15_garch_benchmark.py`).
+Calibrated at n_reps = 500 matching the published grid (empirical FAR
+0.050 in every cell checked), GARCH sits at the false-alarm floor on
+both variance channels at every SNR tested — r-channel ×1.5: 0.098
+(SNR 0.5), 0.096 (SNR 2.0); q-channel ×1.5: 0.066 (SNR 0.5), 0.098
+(SNR 2.0) — against raw's 0.56/0.10/0.21/0.23 and ARIMA's
+0.94/0.87/0.10/0.16 on the same four cells (§5, Table 3). This is not
+merely "GARCH is dominated": on this DGP it contributes nothing over
+chance. The likely mechanism is a generative mismatch — GARCH(1,1) is
+built for conditional heteroskedasticity (volatility clustering driven
+by squared past shocks), a different assumption than this paper's DGP
+(a permanent step change in noise variance layered on a highly
+persistent φ = 0.95 latent state) — but we have not isolated the
+mechanism beyond this scope note, and do not rule out an
+implementation-specific cause. A break-aware GARCH variant (allowing
+its own parameters to shift) and the full stochastic-volatility
+comparison remain open.
 
 **Offline changepoint detection.** Offline changepoint methods (PELT,
 Killick et al. 2012) solve a retrospective segmentation problem; our
@@ -1183,8 +1204,25 @@ The mechanics behind that verdict are summarized in four points.
   in the state's own shock variance — the Great-Moderation / crisis-
   volatility case — a raw variance CUSUM is at least as good as whitening
   at every SNR, and whitening can *hurt*. Because the practitioner rarely
-  knows the channel, running *both* a raw and a whitened variance CUSUM
-  (cheap, and they agree on the q channel) is the robust default. Use the
+  knows the channel, one might default to running *both* a raw and a
+  whitened variance CUSUM. Checked directly against a 50/50-mixed,
+  channel-unknown-to-the-detector population (r- and q-channel breaks
+  at ×1.5, SNR ∈ {0.1, 0.5, 2.0}, both detectors jointly recalibrated
+  to hold one combined 5% false-alarm budget — not run independently
+  at their own 5% each, which would silently inflate the compounded
+  FAR — `experiments/exp14_mixed_channel.py`), running both is not a
+  free win: it loses to the single better detector at every SNR
+  tested, with the gap widening as SNR rises — 0.553 (raw) vs. 0.493
+  (combined) at SNR 0.1 (a 0.06 loss), 0.560 (ARIMA) vs. 0.490 at SNR
+  0.5 (0.07), and 0.623 (ARIMA) vs. 0.457 at SNR 2.0 (0.166) — because
+  jointly calibrating two statistics to one FAR budget raises the bar
+  each individually must clear, and that tax outweighs the benefit of
+  channel-agnosticism in this test. The honest recommendation is
+  weaker than "run both, it's free": if forced to pick one detector
+  under real channel uncertainty, ARIMA was the better single choice
+  in two of the three SNRs tested here; running both is only clearly
+  justified if the analyst has a specific reason to think the channel
+  mix is skewed toward the regime where raw wins (low SNR). Use the
   exceedance-indicator variant under heavy tails and the composite for
   breadth. Calibrate everything on matched nulls at a common FAR (a common
   ARL₀) and report empirical FARs.
@@ -1197,11 +1235,15 @@ The mechanics behind that verdict are summarized in four points.
   the natural next step; adaptive composite weighting (breadth tax);
   switching-SSM (Kim filter) model layer; formalizing the
   persistence-break mechanisms; a vol-regime reference set for scoring
-  the exceedance detector on real data; and benchmarking against
-  parametric volatility models (GARCH, stochastic volatility) — a
-  different object, conditional-variance estimation rather than
-  distribution-free monitoring, but the natural complementary
-  comparison for the second-moment results.
+  the exceedance detector on real data; a plain GARCH(1,1) benchmark
+  is now reported (Related Work) and sits at the false-alarm floor on
+  both variance channels, contributing nothing over chance on this
+  DGP; a break-aware GARCH variant (allowing its own parameters to
+  shift, in the spirit of Bai & Perron 2003) and a full
+  stochastic-volatility state-space comparison remain open — the
+  plain-GARCH result rules out the most obvious "just use GARCH"
+  objection without resolving whether a purpose-built regime-shift
+  volatility model would fare differently.
 
 ---
 
@@ -1316,7 +1358,28 @@ four series and does not change §9's conclusion. This has only been
 run for INDPRO, whose exact registered-event dates are in hand with
 full provenance; GDP, GS10, and UNRATE need the same treatment once
 their event-date lists are available in the same form — left for
-future work, not assumed to generalize. 98 tests include
+future work, not assumed to generalize. A sixth addition, `exp14`
+(`experiments/exp14_mixed_channel.py`), tests §10's original practical
+recommendation to run both a raw and a whitened variance CUSUM under
+real channel uncertainty: a 50/50 population of r- and q-channel
+breaks with the channel unknown to the detector, both statistics
+jointly recalibrated to hold a common 5% FAR (not run independently at
+their own 5% each). The recommendation as originally stated did not
+hold up — running both loses to the single better detector at every
+SNR tested, with the gap widening from 0.06 (SNR 0.1) to 0.166 (SNR
+2.0) — and §10's practical-recipe bullet has been revised accordingly.
+A seventh addition, `exp15` (`experiments/exp15_garch_benchmark.py`,
+`experiments/garch_detector.py`), fits a GARCH(1,1) on the training
+prefix only (via the `arch` package), causally forward-filters
+conditional variance over the full series with the fixed fitted
+parameters, and runs the same three-arm max-CUSUM used for the raw and
+ARIMA rungs on the standardized residuals — reported in Related Work
+rather than left deferred. Calibrated at n_reps = 500 (empirical FAR
+0.050 confirmed in every cell), GARCH sits at the false-alarm floor on
+both variance channels at every SNR tested, contributing nothing over
+chance on this DGP — a materially stronger negative result than a
+prior placeholder estimate had suggested, and reported at its measured
+value rather than softened. 98 tests include
 bit-identical no-lookahead checks for every feature and detector
 (including the raw and ARIMA variance rungs, the two windowed
 statistics, and a training-freeze check), DGP ground-truth checks
@@ -1504,5 +1567,8 @@ innovation correlation with the Kalman filter stays at 0.99; forcing
 | PELT localization at FAR-matched 5%, level 3σ | 0.83–0.92 (vs. causal raw CUSUM 0.97–0.99) | exp08_pelt |
 | PELT localization at FAR-matched 5%, variance ×1.5/×3 | 0.00–0.20 (vs. dedicated raw variance-CUSUM 0.10–1.00) | exp08_pelt |
 | INDPRO permutation p (composite) | 0.008 (uncorrected — does not survive Bonferroni/BH-FDR across the 19 tests in Table 6; §9) | rd_eval |
+| Circular-shift joint test, INDPRO (5 methods, total hits) | observed 7 vs. null mean 2.25, SD 1.80 (20,000 draws), p ≈ 0.023 — does not survive Bonferroni across 4 series; §9 | exp13c_circular_shift |
+| GARCH(1,1) benchmark vs. raw/ARIMA rungs, ×1.5, SNR 0.5/2.0 (n_reps=500) | r-channel: 0.098/0.096 (GARCH) vs. 0.56/0.10 (raw), 0.94/0.87 (ARIMA); q-channel: 0.066/0.098 (GARCH) vs. 0.21/0.23 (raw), 0.10/0.16 (ARIMA) — GARCH at the FAR floor throughout | exp15_garch_benchmark |
+| Mixed-channel (raw+ARIMA run jointly, unknown channel), SNR 0.1/0.5/2.0 | combined loses to single-better detector at every SNR: 0.493 vs 0.553 / 0.490 vs 0.560 / 0.457 vs 0.623 | exp14_mixed_channel |
 | GFC real-time | 2008-09 data, known 2008-12 | rd_realtime |
 | COVID real-time | data 2020-03, ~2 mo before NBER | rd_realtime |
