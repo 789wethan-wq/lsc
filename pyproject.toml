@@ -4,19 +4,19 @@ version = "0.1.0"
 description = "Latent-State Structural Change Detection Framework"
 requires-python = ">=3.11"
 dependencies = [
-    "numpy",
-    "scipy",
-    "pandas",
-    "statsmodels",
-    "hmmlearn",
-    "ruptures",
-    "matplotlib",
-    "pyyaml",
-    "pyarrow",
+    "numpy==2.5.1",
+    "scipy==1.18.0",
+    "pandas==3.0.3",
+    "statsmodels==0.14.6",
+    "hmmlearn==0.3.3",
+    "ruptures==1.1.9",
+    "matplotlib==3.11.0",
+    "pyyaml==6.0.3",
+    "pyarrow==25.0.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest==9.1.1"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
