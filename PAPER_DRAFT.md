@@ -1525,9 +1525,10 @@ attempted.
 
 Full experiment narratives in
 `experiments/FINDINGS.md`; theory statements and proofs in Appendix B,
-with `experiments/THEORY.md` as the long-form companion. The complete source, pinned data snapshots, and seed
-configuration constitute the replication package, to be posted publicly on
-acceptance and available from the author on request in the interim.
+with `experiments/THEORY.md` as the long-form companion. The complete
+source, pinned data snapshots, and seed configuration constitute the
+replication package and are publicly available now, not deferred to
+acceptance: https://github.com/789wethan-wq/lsc.
 `paper_assets/reproducibility_check_2026-07-22.txt` is a standing,
 checkable record (not a one-time claim) of a fresh `git clone` into a
 scratch directory, a fresh virtual environment installed only via the
