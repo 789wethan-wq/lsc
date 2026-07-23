@@ -1101,7 +1101,20 @@ on windows where the paper's own latent-state model does not describe
 the series, which weakens UNRATE's standing as evidence for the
 diagnostic framework specifically, as opposed to evidence that
 unemployment has level-type breaks raw CUSUM is well-suited to catch
-regardless of any state-space model.
+regardless of any state-space model. This qualitative reading is now
+also a direct test rather than an inference:
+`experiments/exp17_unrate_phi_gated.py` excludes the three φ-clipped
+windows (segments where the pipeline's clip bound, |φ| at 0.01 or
+0.99, actually bound) from both the hit count and the resampling
+universe — a gated test cannot compare a restricted numerator against
+an unrestricted denominator without biasing the result. Gating drops
+both detectors from 4/9 to 1/9 hits (only the well-estimated 2020
+window survives) against a resampling universe of 540 of the original
+780 monitored months, and the association collapses entirely:
+p = 0.1474 for both raw_cusum and lsc_kalman_cusum, against the
+ungated 0.0002–0.0004. Properly isolated from the model-misspecified
+windows that produce most of its apparent significance, UNRATE's
+association is not distinguishable from chance.
 
 **Sensitivity.** All numbers below are on INDPRO, the headline series.
 
@@ -1450,7 +1463,22 @@ rather than left deferred. Calibrated at n_reps = 500 (empirical FAR
 both variance channels at every SNR tested, contributing nothing over
 chance on this DGP — a materially stronger negative result than a
 prior placeholder estimate had suggested, and reported at its measured
-value rather than softened. 98 tests include
+value rather than softened. An eighth addition, `exp16`
+(`experiments/exp16_aic_order_frequencies.py`,
+`paper_assets/exp16_aic_order_frequencies.csv`), quantifies Appendix B's
+near-unit-root AIC order-selection claim across the same 12 (φ, SNR)
+cells as `grid_v6_phisweep`, 500 replicates each, tallying
+`lsc.benchmarks.arima.fit_arima_prefix`'s own order choice rather than
+a separate re-derivation — see Appendix B for the resulting
+frequencies. A ninth, `exp17`
+(`experiments/exp17_unrate_phi_gated.py`,
+`paper_assets/exp17_unrate_phi_gated.csv`), turns the UNRATE
+model-fit caveat (§9) into a direct test: excluding the φ-clipped
+windows from both the hit count and the resampling universe (not just
+the hit count, which would compare a restricted numerator against an
+unrestricted denominator) drops raw_cusum and lsc_kalman_cusum from
+4/9 to 1/9 hits each and collapses their significance to p = 0.1474 —
+see §9. 98 tests include
 bit-identical no-lookahead checks for every feature and detector
 (including the raw and ARIMA variance rungs, the two windowed
 statistics, and a training-freeze check), DGP ground-truth checks
@@ -1614,7 +1642,22 @@ over the benchmark order grid rarely selects the exact (1,0,1) at φ = 0.95
 (it prefers (1,0,0) at low SNR, the differencing (0,1,1) at higher SNR),
 but these approximate the ARMA(1,1) closely enough that the median
 innovation correlation with the Kalman filter stays at 0.99; forcing
-(1,0,1) restores 0.9995.
+(1,0,1) restores 0.9995. This is now measured directly rather than
+asserted from spot checks: `experiments/exp16_aic_order_frequencies.py`
+tallies `lsc.benchmarks.arima.fit_arima_prefix`'s own order choice
+(the identical call that fits every ARIMA rung elsewhere in the paper)
+over 500 null replicates at each of the same 12 (φ, SNR) cells as
+`grid_v6_phisweep`. At φ = 0.95, (1,0,1) is selected 12.0% (SNR 0.1),
+9.4% (SNR 0.5), and 7.8% (SNR 2.0) of the time; (1,0,0) dominates at
+SNR 0.1 (43.0%) and (0,1,1) dominates at SNR 0.5–2.0 (64.8%, 68.6%),
+exactly the qualitative pattern above, now with frequencies rather
+than an impression. The pattern is not unique to φ = 0.95: at
+φ = 0.99, (0,1,1) reaches 72.8% at SNR 2.0, and even at φ = 0.5 the
+grid's nominal AIC-optimal choice, (1,0,1), is a minority pick (8.4–
+18.4% across SNR) against (1,0,0)'s 61.6–63.0% — the finite-sample AIC
+grid favors parsimony over exactness throughout, not only near the
+unit root (`paper_assets/exp16_aic_order_frequencies.csv`, all 12
+cells).
 
 ## Appendix C. Summary of key quantities
 
@@ -1655,6 +1698,8 @@ innovation correlation with the Kalman filter stays at 0.99; forcing
 | Circular-shift joint test, GS10 | 4 vs. null mean 1.30, max 6 (720 shifts, exact) — p=0.076, does not survive; §9 | exp13d_all_series_circular_shift |
 | Circular-shift joint test, UNRATE | 14 vs. null mean 3.57, max 16 (780 shifts, exact) — p=0.0115, nominally survives, but 64% of hits (9/14) sit in the same φ-clipped windows already flagged in §9; §9 | exp13d_all_series_circular_shift |
 | GARCH(1,1) benchmark vs. raw/ARIMA rungs, ×1.5, SNR 0.5/2.0 (n_reps=500) | r-channel: 0.098/0.096 (GARCH) vs. 0.56/0.10 (raw), 0.94/0.87 (ARIMA); q-channel: 0.066/0.098 (GARCH) vs. 0.21/0.23 (raw), 0.10/0.16 (ARIMA) — GARCH at the FAR floor throughout | exp15_garch_benchmark |
+| AIC order-selection frequency at φ=0.95 (SNR 0.1/0.5/2.0), n=500/cell | (1,0,1): 12.0%/9.4%/7.8%; (1,0,0) dominant at SNR 0.1 (43.0%), (0,1,1) dominant at SNR 0.5-2.0 (64.8%/68.6%) | exp16_aic_order_frequencies |
+| UNRATE φ-gated permutation test (raw_cusum, lsc_kalman_cusum) | 4/9→1/9 hits after excluding clipped-φ windows from both numerator and resampling universe (540/780 months); p=0.1474 (both), vs. ungated 0.0002-0.0004; §9 | exp17_unrate_phi_gated |
 | Mixed-channel (raw+ARIMA run jointly, unknown channel), SNR 0.1/0.5/2.0 | combined loses to single-better detector at every SNR: 0.493 vs 0.553 / 0.490 vs 0.560 / 0.457 vs 0.623 | exp14_mixed_channel |
 | GFC real-time | 2008-09 data, known 2008-12 | rd_realtime |
 | COVID real-time | data 2020-03, ~2 mo before NBER | rd_realtime |

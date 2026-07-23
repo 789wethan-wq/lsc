@@ -1,0 +1,3 @@
+gated_observed_hits,gated_n_events,gated_n_alarms,p_gated,null_mean,method
+1,6,1,0.14745,0.14745,raw_cusum
+1,6,1,0.14745,0.14745,lsc_kalman_cusum
