@@ -971,16 +971,39 @@ that doesn't touch relative offsets between methods, unlike
 independent per-method redraws), gives a materially different and
 usable result for INDPRO specifically
 (`experiments/exp13c_circular_shift.py`): the total hit count summed
-across all five methods (7, vs. a circular-shift null with mean 2.52,
-SD 1.85, 20,000 draws) has p ≈ 0.029 (consistent across independent
-seeds, 0.027–0.029). This is a genuine dependence-aware joint
-statistic, not the collapsed one — but it is still short of surviving
-a further Bonferroni step across the four series (α/4 ≈ 0.0125 would
-be needed; 0.029 does not clear it), so it does not change this
-section's overall conclusion. The same circular-shift test has not yet
-been run for GDP, GS10, or UNRATE, since this package does not have
-their exact registered-event-date lists in hand with the same
-provenance as INDPRO's — see Appendix A.
+across all five methods gives an *exact* p-value for each series
+(the shift's sample space is small and discrete — at most 780
+possible values — so every possible shift is enumerated, not Monte
+Carlo sampled), against a Bonferroni threshold of α/4 = 0.0125 across
+the four series. INDPRO (total hits 7 vs. a null with mean 2.52,
+max 10, over 780 possible shifts): p = 0.028, does not survive.
+GS10 (total 4 vs. null mean 1.30, max 6, 720 shifts): p = 0.076,
+does not survive. GDP (total 6 vs. null mean 1.50, max 6, 240
+shifts, quarter-constrained since GDPC1 is quarterly): p = 0.0125
+exactly — a mathematical tie with the threshold itself (3/240 =
+0.05/4 to machine precision), not a survival or a failure by any
+real margin. Half of GDP's six hits come from a single window:
+`lsc_composite`, `raw_var_cusum`, and `lsc_kalman_cusum` all fire in
+the same quarter (2020-Q2), all hitting the same event (2020-02
+COVID) — one synchronized co-firing, not three independent
+agreements. UNRATE (total 14 vs. null mean 3.57, max 16, 780
+shifts): p = 0.0115, nominally clearing the threshold — but 9 of
+its 14 hits (64%) sit in the same φ-clipped (degenerate AR(1) fit)
+windows already flagged below as undermining `raw_cusum`/
+`lsc_kalman_cusum`'s marginal association, and the GFC window shows
+all five methods firing together in that single misspecified
+window, not five independent detections; only the remaining 5 hits
+(36%), all from the one well-estimated 2020 window, reflect a
+model the paper's own diagnostics would trust. Read together: no
+series clears both the multiple-testing bar and the model-fit bar
+at once, the same conclusion this section already draws from the
+per-method corrections above — but this is now a *checked* claim
+across all four series (`experiments/exp13d_export_other_series.py`,
+`experiments/exp13d_all_series_circular_shift.py`), not the
+provisional, INDPRO-only estimate an earlier draft of this section
+had to leave incomplete pending real data for the other three
+series — see Appendix A for the two bugs this extension found and
+fixed along the way.
 
 **Industrial production (INDPRO, 1948–2026).** Composite alarms: 2008-09
 and 2020-04 (both variance_pressure), 1990-12 (variance_quiet), 1969-08
@@ -1366,11 +1389,47 @@ arbitrary origin disconnected from where the window actually sits.
 With that fix: total hits across methods = 7 against a null with mean
 2.52, SD 1.85 over 20,000 draws, p ≈ 0.029, still short of a further
 Bonferroni step across the four series and not changing §9's
-conclusion. This has only been run for INDPRO, whose exact
-registered-event dates are in hand with full provenance; GDP, GS10,
-and UNRATE need the same treatment, with their own window bounds
-pulled from the same file — not assumed to match INDPRO's, and left
-for future work. A sixth addition, `exp14`
+conclusion.
+
+Extending this to GDP, GS10, and UNRATE
+(`experiments/exp13d_export_other_series.py`, which reuses
+`real_data_eval.py`'s own `monitored_months()` and event-filtering
+directly so each series' inputs match Table 6's own denominators
+exactly, and `experiments/exp13d_all_series_circular_shift.py`, which
+runs the same test on all four) found a second, different bug in the
+same family: GDP's `n_monitor` (from `real_data.py`'s `SERIES` config)
+counts *quarterly* observations, since GDPC1 is quarterly, but an
+initial version used it directly as a month-count -- 12 segments x 20
+"months" (actually quarters) treated as 240 months, when the true
+monitored window (1962-04 to 2022-01, per
+`real_data_date_boundaries.csv`) is 718 months wide. This silently
+truncated GDP's window by roughly 3x, the same failure mode as the
+epoch bug above (real events/alarms falling outside the range any
+shift could reach) via a different mechanism (a units mismatch instead
+of an anchor mismatch). Fixed by deriving `n_months` from the window's
+actual start and end dates directly, rounded up to a multiple of the
+series' observation step (3 for quarterly GDP, 1 for the three monthly
+series). Because two different bugs in this same family have now
+escaped notice once each, `exp13c_circular_shift.py` also gained a
+`_validate_window` check, called at the start of every test run, that
+raises an error if any real event or alarm index falls outside the
+stated window -- a structural guard against a third occurrence, not
+just a fix for the two already found.
+
+With both fixes and exact (exhaustive, not Monte Carlo) enumeration
+throughout: INDPRO p = 0.028, GS10 p = 0.076 (neither survives);
+GDP p = 0.0125, exactly equal to the Bonferroni threshold (0.05/4)
+to machine precision -- a tie, not a survival, and half of its six
+hits trace to one synchronized cross-method co-firing (§9); UNRATE
+p = 0.0115, nominally below threshold, but 9 of its 14 hits (64%)
+sit in the same φ-clipped windows already flagged in this section's
+UNRATE discussion, cross-referenced directly against
+`experiments/exp09_real_data_fit_check.py`'s per-segment fitted φ
+via the `segment` column already present in `rd_unrate_alarms.csv`.
+Neither nominal "survival" holds up as independent evidence once
+traced to its source; §9's conclusion is unchanged, now as a checked
+result across all four series rather than an INDPRO-only estimate.
+A sixth addition, `exp14`
 (`experiments/exp14_mixed_channel.py`), tests §10's original practical
 recommendation to run both a raw and a whitened variance CUSUM under
 real channel uncertainty: a 50/50 population of r- and q-channel
@@ -1586,7 +1645,10 @@ innovation correlation with the Kalman filter stays at 0.99; forcing
 | PELT localization at FAR-matched 5%, level 3σ | 0.83–0.92 (vs. causal raw CUSUM 0.97–0.99) | exp08_pelt |
 | PELT localization at FAR-matched 5%, variance ×1.5/×3 | 0.00–0.20 (vs. dedicated raw variance-CUSUM 0.10–1.00) | exp08_pelt |
 | INDPRO permutation p (composite) | 0.008 (uncorrected — does not survive Bonferroni/BH-FDR across the 19 tests in Table 6; §9) | rd_eval |
-| Circular-shift joint test, INDPRO (5 methods, total hits) | observed 7 vs. null mean 2.52, SD 1.85 (20,000 draws), p ≈ 0.029 — does not survive Bonferroni across 4 series; §9 | exp13c_circular_shift |
+| Circular-shift joint test, INDPRO (5 methods, total hits) | 7 vs. null mean 2.52, max 10 (780 shifts, exact) — p=0.028, does not survive Bonferroni (α/4=0.0125); §9 | exp13c_circular_shift |
+| Circular-shift joint test, GDP | 6 vs. null mean 1.50, max 6 (240 shifts, exact) — p=0.0125, exact tie with the threshold, half the hits from one synchronized co-firing; §9 | exp13d_all_series_circular_shift |
+| Circular-shift joint test, GS10 | 4 vs. null mean 1.30, max 6 (720 shifts, exact) — p=0.076, does not survive; §9 | exp13d_all_series_circular_shift |
+| Circular-shift joint test, UNRATE | 14 vs. null mean 3.57, max 16 (780 shifts, exact) — p=0.0115, nominally survives, but 64% of hits (9/14) sit in the same φ-clipped windows already flagged in §9; §9 | exp13d_all_series_circular_shift |
 | GARCH(1,1) benchmark vs. raw/ARIMA rungs, ×1.5, SNR 0.5/2.0 (n_reps=500) | r-channel: 0.098/0.096 (GARCH) vs. 0.56/0.10 (raw), 0.94/0.87 (ARIMA); q-channel: 0.066/0.098 (GARCH) vs. 0.21/0.23 (raw), 0.10/0.16 (ARIMA) — GARCH at the FAR floor throughout | exp15_garch_benchmark |
 | Mixed-channel (raw+ARIMA run jointly, unknown channel), SNR 0.1/0.5/2.0 | combined loses to single-better detector at every SNR: 0.493 vs 0.553 / 0.490 vs 0.560 / 0.457 vs 0.623 | exp14_mixed_channel |
 | GFC real-time | 2008-09 data, known 2008-12 | rd_realtime |

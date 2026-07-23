@@ -52,12 +52,24 @@ i.e. the first segment's test_start in real_data_date_boundaries.csv,
 NOT the series' full data start. Get this per-series from that file;
 do not assume it matches another series' value.
 
-STATUS: run and verified for INDPRO only (its exact registered event
-dates are available with full provenance from
-paper_assets/exp13_indpro_series_data.json). GDP/GS10/UNRATE need the
-same treatment, with their OWN window_start_idx pulled from
-real_data_date_boundaries.csv -- do not assume this generalizes to
-them without running it.
+SECOND FIX, found extending this to GDP: GDPC1 is quarterly, so its
+real alarms can only ever fall on a quarterly grid (Jan/Apr/Jul/Oct --
+all real GDP alarm indices satisfy (idx - window_start_idx) % 3 == 0).
+A shift `s` drawn uniformly from ALL n_months integers (not just
+multiples of 3) moves alarms onto calendar months GDP was never
+actually observed at -- a null that's too loose relative to what's
+physically achievable for a quarterly series. This is not a hypothesis:
+constraining `s` to multiples of 3 for GDP changes the null's max
+achievable total-hit count from 6 (matching the observed value, giving
+p=0.0082 over 20,000 draws) to 5 (i.e. the observed total of 6 was
+never reached in 20,000 properly-constrained draws) -- checked
+directly, not assumed. `step` (default 1, set to 3 for GDP) is the
+granularity of valid shift values; monthly series (INDPRO, GS10,
+UNRATE all have alarm/event indices spanning all three mod-3 residues,
+confirmed) need no change.
+
+STATUS: run and verified for all four series. GDP required the `step`
+parameter above; INDPRO/GS10/UNRATE use the default step=1.
 
 Usage: python experiments/exp13c_circular_shift.py [series_json] [n_perm]
 Output: prints observed_hits/observed_total/p_total_hits/... to stdout.
@@ -83,12 +95,30 @@ def hit_count(alarm_months, event_months, hit_window):
     return hits
 
 
+def _validate_window(series: dict) -> None:
+    """Every real event/alarm index must fall inside
+    [window_start_idx, window_start_idx + n_months - 1], or the shift
+    silently can't reach it -- this exact bug class has recurred twice
+    (a fixed-epoch mismatch, then a units mismatch for GDP's quarterly
+    n_monitor); catch it here regardless of how the JSON was produced."""
+    n_months = series["n_months"]
+    ws = series["window_start_idx"]
+    all_idx = list(series["event_months"]) + [a for v in series["alarms"].values() for a in v]
+    bad = [i for i in all_idx if not (ws <= i <= ws + n_months - 1)]
+    if bad:
+        raise ValueError(
+            f"{len(bad)} event/alarm index(es) fall outside the stated window "
+            f"[{ws}, {ws + n_months - 1}] -- n_months or window_start_idx is wrong: {bad}")
+
+
 def circular_shift_joint_test(series: dict, n_perm: int = 20000, seed: int = 2026):
+    _validate_window(series)
     n_months = series["n_months"]
     window_start = series["window_start_idx"]
     event_months = series["event_months"]
     hit_window = series["hit_window"]
     alarms = series["alarms"]
+    step = series.get("step", 1)
     methods = [m for m in alarms if len(alarms[m]) > 0]
 
     observed_hits = {m: hit_count(alarms[m], event_months, hit_window) for m in methods}
@@ -99,12 +129,14 @@ def circular_shift_joint_test(series: dict, n_perm: int = 20000, seed: int = 202
     null_total = np.empty(n_perm, dtype=int)
     null_max = np.empty(n_perm, dtype=int)
     for i in range(n_perm):
-        s = rng.integers(0, n_months)
+        s = step * rng.integers(0, n_months // step)
         total = 0
         mx = 0
         for m in methods:
             # shift within [window_start, window_start + n_months - 1] --
-            # the window's TRUE absolute range -- not [0, n_months).
+            # the window's TRUE absolute range -- not [0, n_months) --
+            # and only among values reachable at this series' true
+            # observation grid (step=3 for quarterly GDP, else 1).
             shifted = [window_start + ((a - window_start + s) % n_months)
                        for a in alarms[m]]
             h = hit_count(shifted, event_months, hit_window)
@@ -122,6 +154,51 @@ def circular_shift_joint_test(series: dict, n_perm: int = 20000, seed: int = 202
     )
 
 
+def circular_shift_joint_test_exact(series: dict):
+    """Exact version of circular_shift_joint_test: the shift's sample
+    space is discrete and small (n_months // step <= 780 for every
+    series here), so enumerate every possible shift exactly rather than
+    Monte Carlo sample it -- no sampling noise, and cheap (a few
+    hundred to a few thousand total (shift x method) evaluations)."""
+    _validate_window(series)
+    n_months = series["n_months"]
+    window_start = series["window_start_idx"]
+    event_months = series["event_months"]
+    hit_window = series["hit_window"]
+    alarms = series["alarms"]
+    step = series.get("step", 1)
+    methods = [m for m in alarms if len(alarms[m]) > 0]
+
+    observed_hits = {m: hit_count(alarms[m], event_months, hit_window) for m in methods}
+    observed_total = sum(observed_hits.values())
+    observed_max = max(observed_hits.values())
+
+    n_shifts = n_months // step
+    null_total = np.empty(n_shifts, dtype=int)
+    null_max = np.empty(n_shifts, dtype=int)
+    for k in range(n_shifts):
+        s = k * step
+        total = 0
+        mx = 0
+        for m in methods:
+            shifted = [window_start + ((a - window_start + s) % n_months)
+                       for a in alarms[m]]
+            h = hit_count(shifted, event_months, hit_window)
+            total += h
+            mx = max(mx, h)
+        null_total[k] = total
+        null_max[k] = mx
+
+    p_total = float((null_total >= observed_total).mean())
+    p_max = float((null_max >= observed_max).mean())
+    return dict(
+        observed_hits=observed_hits, observed_total=observed_total,
+        observed_max=observed_max, p_total_hits=p_total, p_max_single_method=p_max,
+        null_total_mean=float(null_total.mean()), null_total_sd=float(null_total.std()),
+        n_shifts_exhaustive=n_shifts, null_total_max=int(null_total.max()),
+    )
+
+
 if __name__ == "__main__":
     path = sys.argv[1] if len(sys.argv) > 1 else "paper_assets/exp13_indpro_series_data.json"
     n_perm = int(sys.argv[2]) if len(sys.argv) > 2 else 20000
@@ -133,8 +210,13 @@ if __name__ == "__main__":
         hit_window=raw["hit_window"],
         event_months=[to_month_index(d) for d in raw["event_months"]],
         alarms={m: [to_month_index(d) for d in v] for m, v in raw["alarms"].items()},
+        step=raw.get("step", 1),
     )
     out = circular_shift_joint_test(series, n_perm=n_perm)
-    print(f"n_perm={n_perm}")
+    print(f"Monte Carlo, n_perm={n_perm}")
     for k, v in out.items():
+        print(f"  {k}: {v}")
+    exact = circular_shift_joint_test_exact(series)
+    print(f"\nExact (exhaustive over all {exact['n_shifts_exhaustive']} possible shifts)")
+    for k, v in exact.items():
         print(f"  {k}: {v}")
