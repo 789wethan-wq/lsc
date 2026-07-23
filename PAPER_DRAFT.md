@@ -4,12 +4,18 @@
 
 We ask when filtering a latent state helps detect structural change,
 using a protocol that calibrates every detector to the same
-false-alarm rate (5% per 500 observations) on matched null data. The
+false-alarm rate (5% per 500 observations) on matched null data. For
+the scalar AR(1)-plus-noise DGP class studied here, the
 answer is a trichotomy — *no, yes, no* — across three break types.
 (i) Level shifts in a persistent state: no — a raw-data CUSUM
-dominates at every SNR, and the innovation CUSUM is provably "fast or
+dominates at every SNR in the main grid, and the innovation CUSUM is provably "fast or
 never," a boundary condition of persistence (μ∞ sorts detection,
-Spearman 0.94). (ii) Observation-noise variance changes: yes, but the
+Spearman 0.94); at the flagship benchmark cell this "dominates" is
+itself convention-dependent — replacing estimated with true
+parameters and using a one-sided rather than two-sided CUSUM ties
+raw's rate exactly (§4) — so the result should be read as raw's
+advantage under the estimated, two-sided construction used throughout,
+not as an unconditional property of the detection problem. (ii) Observation-noise variance changes: yes, but the
 advantage is prewhitening, not the state estimate — the observable is
 exactly ARMA(1,1), so ARIMA and Kalman whitening are provably the same
 filter. (iii) State-innovation (shock) variance changes — the
@@ -185,6 +191,20 @@ question is causal monitoring at a calibrated false-alarm rate, not
 retrospective break-date estimation, but it is the natural reference
 point for §7's multi-break discussion.
 
+**Online Bayesian changepoint detection.** A separate causal-monitoring
+literature frames change detection as online Bayesian inference over
+the run length since the last change (Adams & MacKay 2007), rather than the
+frequentist calibrated-threshold approach we use throughout; we do not
+benchmark against it directly — a proper comparison would need to
+calibrate its posterior-probability alarm rule to the same false-alarm
+rate as every other detector here, which is a different exercise from
+this paper's threshold-calibration protocol. For a broader view of
+where the sequential change-detection field has moved since the
+classical quickest-detection results this paper builds on, Xie et al. (2021)
+surveys both the classical theory and more recent directions,
+including the kind of causally-constrained, distribution-free
+monitoring this paper's protocol is an instance of.
+
 What is new here is not any single detector but the calibrated-parity
 harness that makes latent-state and raw-data detectors directly
 comparable, and a reduced-form result (the exact ARMA(1,1) equivalence
@@ -258,30 +278,31 @@ finite.
 ARL₀ ≈ 7300 at the 5% window-FAR). MC SEs on empirical FAR ≤ 0.013
 (n_reps = 500, √(p(1−p)/n_reps)).*
 
-| Arena | Scenario | Method | Detect rate | ARL₁ (mean delay) |
-|---|---|---|---|---|
-| SNR 0.1 | level 3σ | lsc_composite | 0.766 | 112.6 |
-| SNR 0.1 | level 3σ | lsc_kalman_cusum | 0.654 | 63.9 |
-| SNR 0.1 | level 3σ | raw_cusum | 0.966 | 72.3 |
-| SNR 0.1 | variance ×3 | lsc_composite | 0.990 | 29.3 |
-| SNR 0.1 | variance ×3 | lsc_kalman_cusum | 0.870 | 80.4 |
-| SNR 0.1 | variance ×3 | raw_cusum | 0.728 | 104.0 |
-| SNR 0.5 | level 3σ | lsc_composite | 0.530 | 86.4 |
-| SNR 0.5 | level 3σ | lsc_kalman_cusum | 0.554 | 77.2 |
-| SNR 0.5 | level 3σ | raw_cusum | 0.990 | 81.8 |
-| SNR 0.5 | variance ×3 | lsc_composite | 0.992 | 25.2 |
-| SNR 0.5 | variance ×3 | lsc_kalman_cusum | 0.224 | 107.2 |
-| SNR 0.5 | variance ×3 | raw_cusum | 0.076 | 137.6 |
-| SNR 2.0 | level 3σ | lsc_composite | 0.670 | 63.2 |
-| SNR 2.0 | level 3σ | lsc_kalman_cusum | 0.674 | 49.0 |
-| SNR 2.0 | level 3σ | raw_cusum | 0.988 | 96.6 |
-| SNR 2.0 | variance ×3 | lsc_composite | 0.976 | 17.2 |
-| SNR 2.0 | variance ×3 | lsc_kalman_cusum | 0.268 | 114.6 |
-| SNR 2.0 | variance ×3 | raw_cusum | 0.058 | 172.9 |
+| Arena | Scenario | Method | Detect rate | SE (detect rate) | ARL₁ (mean delay) |
+|---|---|---|---|---|---|
+| SNR 0.1 | level 3σ | lsc_composite | 0.766 | 0.019 | 112.6 |
+| SNR 0.1 | level 3σ | lsc_kalman_cusum | 0.654 | 0.021 | 63.9 |
+| SNR 0.1 | level 3σ | raw_cusum | 0.966 | 0.008 | 72.3 |
+| SNR 0.1 | variance ×3 | lsc_composite | 0.990 | 0.004 | 29.3 |
+| SNR 0.1 | variance ×3 | lsc_kalman_cusum | 0.870 | 0.015 | 80.4 |
+| SNR 0.1 | variance ×3 | raw_cusum | 0.728 | 0.020 | 104.0 |
+| SNR 0.5 | level 3σ | lsc_composite | 0.530 | 0.022 | 86.4 |
+| SNR 0.5 | level 3σ | lsc_kalman_cusum | 0.554 | 0.022 | 77.2 |
+| SNR 0.5 | level 3σ | raw_cusum | 0.990 | 0.004 | 81.8 |
+| SNR 0.5 | variance ×3 | lsc_composite | 0.992 | 0.004 | 25.2 |
+| SNR 0.5 | variance ×3 | lsc_kalman_cusum | 0.224 | 0.019 | 107.2 |
+| SNR 0.5 | variance ×3 | raw_cusum | 0.076 | 0.012 | 137.6 |
+| SNR 2.0 | level 3σ | lsc_composite | 0.670 | 0.021 | 63.2 |
+| SNR 2.0 | level 3σ | lsc_kalman_cusum | 0.674 | 0.021 | 49.0 |
+| SNR 2.0 | level 3σ | raw_cusum | 0.988 | 0.005 | 96.6 |
+| SNR 2.0 | variance ×3 | lsc_composite | 0.976 | 0.007 | 17.2 |
+| SNR 2.0 | variance ×3 | lsc_kalman_cusum | 0.268 | 0.020 | 114.6 |
+| SNR 2.0 | variance ×3 | raw_cusum | 0.058 | 0.010 | 172.9 |
 
 *Table 2. ARL₁ (detection rate and mean delay conditional on detection)
-at the canonical level-3σ and variance-×3 breaks, T = 500. MC SEs on
-detect rate ≤ 0.023 (n_reps = 500).*
+at the canonical level-3σ and variance-×3 breaks, T = 500. Per-cell MC
+SEs on detect rate reported directly above (n_reps = 500,
+√(p(1−p)/n_reps)); all ≤ 0.023.*
 
 ## 3. Simulation design
 
@@ -605,7 +626,16 @@ visible* the residual raw advantage is on the marginal, subtle break.
 swept over φ at fixed q, r (`grid_v8_phiqbreak`). On the subtle break Δ
 tracks the amplification factor and peaks at φ = 0.95 before receding
 at the unit-root edge; on the coarse break Δ stays large at every φ,
-including φ = 0.1 where amplification is negligible.*
+including φ = 0.1 where amplification is negligible. Each Δ is a
+difference of two detection rates at n_reps = 500; without the paired
+per-replicate covariance we report the conservative
+(independence-assuming) bound SE(Δ) ≤ 0.032 for every cell in this
+table. Read against that bound, the subtle-break "recedes at the
+unit-root edge" claim (0.112 at φ = 0.95 vs. 0.074 at φ = 0.99, a
+difference of 0.038) is not clearly distinguishable from Monte Carlo
+noise between those two adjacent points — the qualitative shape is
+supported by the broader sweep, but the specific 0.95-vs-0.99 ordering
+should not be read as a precise, noise-free finding.*
 
 ![**Figure 2.** The φ × q cross-grid (`grid_v8_phiqbreak`). Left: raw's
 advantage Δ = detect(raw) − detect(ARIMA) against φ; the subtle ×1.5
@@ -929,7 +959,13 @@ not Monte Carlo estimates; only the permutation p-values carry
 resampling uncertainty, from the 20,000-draw test — SE = √(p(1−p)/20000)
 ≤ 0.0035 across every p-value reported here.*
 
-**Multiple-comparisons correction.** Table 6 reports 19 valid
+**Multiple-comparisons correction.** The bottom line first, since the
+argument below is long enough that it could otherwise be missed on a
+first read: no real-data series in this section clears both the
+multiple-testing bar and the model-fit bar at once, whether checked
+via the per-method corrections immediately below or the joint
+circular-shift test later in this section — the details that follow
+are how we verified that, not a hedge on it. Table 6 reports 19 valid
 permutation tests (5 methods × 4 series, less GDP's zero-alarm
 raw_cusum cell, which admits no test). A Bonferroni threshold across
 all 19 (α/19 ≈ 0.0026) or a Benjamini–Hochberg FDR procedure at
@@ -1178,7 +1214,12 @@ regime; training windows must be short enough to be locally stationary
 **What, then, is the latent layer actually for?** The results invite a
 deflationary reading, and we take it seriously rather than deflect it. For
 raw *detection power*, the state-space layer is largely redundant: raw
-CUSUM owns level shifts (§4); ARIMA whitening owns observation-noise
+CUSUM owns level shifts in the scalar AR(1)-plus-noise DGP class studied
+here (§4) — though at the flagship benchmark cell this ownership is
+itself convention-dependent, tying exactly under a one-sided,
+known-parameter construction, so the robust claim is the fast-or-never
+mechanism and its φ-boundary, not an unconditional numerical advantage
+under every reasonable convention; ARIMA whitening owns observation-noise
 variance and, by the exact ARMA(1,1) equivalence, *is* the Kalman
 innovation filter — the state estimate contributes nothing beyond it
 (§5); and on the shock-variance channel that motivates the application, a
@@ -1285,6 +1326,9 @@ The mechanics behind that verdict are summarized in four points.
 
 ## References
 
+Adams, R. P., and D. J. C. MacKay (2007). "Bayesian Online Changepoint
+Detection." *arXiv preprint* arXiv:0710.3742.
+
 Bai, J., and P. Perron (2003). "Computation and Analysis of Multiple
 Structural Change Models." *Journal of Applied Econometrics* 18(1),
 1–22.
@@ -1348,6 +1392,10 @@ Wald, A. (1947). *Sequential Analysis*. New York: Wiley.
 Willsky, A. S., and H. L. Jones (1976). "A Generalized Likelihood Ratio
 Approach to the Detection and Estimation of Jumps in Linear Systems."
 *IEEE Transactions on Automatic Control* 21(1), 108–112.
+
+Xie, L., S. Zou, Y. Xie, and V. V. Veeravalli (2021). "Sequential
+(Quickest) Change Detection: Classical Results and New Directions."
+*IEEE Journal on Selected Areas in Information Theory* 2(2), 494–514.
 
 ---
 
