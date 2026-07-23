@@ -971,12 +971,12 @@ that doesn't touch relative offsets between methods, unlike
 independent per-method redraws), gives a materially different and
 usable result for INDPRO specifically
 (`experiments/exp13c_circular_shift.py`): the total hit count summed
-across all five methods (7, vs. a circular-shift null with mean 2.25,
-SD 1.80, 20,000 draws) has p ≈ 0.023 (consistent across independent
-seeds, 0.021–0.023). This is a genuine dependence-aware joint
+across all five methods (7, vs. a circular-shift null with mean 2.52,
+SD 1.85, 20,000 draws) has p ≈ 0.029 (consistent across independent
+seeds, 0.027–0.029). This is a genuine dependence-aware joint
 statistic, not the collapsed one — but it is still short of surviving
 a further Bonferroni step across the four series (α/4 ≈ 0.0125 would
-be needed; 0.023 does not clear it), so it does not change this
+be needed; 0.029 does not clear it), so it does not change this
 section's overall conclusion. The same circular-shift test has not yet
 been run for GDP, GS10, or UNRATE, since this package does not have
 their exact registered-event-date lists in hand with the same
@@ -1350,15 +1350,27 @@ practice is to report failed attempts rather than remove them. A
 second implementation (`experiments/exp13c_circular_shift.py`) shifts
 all five methods' alarm months by the same random amount per draw — a
 rigid rotation that preserves real cross-method timing correlation
-exactly, unlike independent redraws — and gives a usable,
-dependence-aware result for INDPRO (total hits across methods = 7
-against a null with mean 2.25, SD 1.80 over 20,000 draws, p ≈ 0.023),
-though this still falls short of a further Bonferroni step across the
-four series and does not change §9's conclusion. This has only been
-run for INDPRO, whose exact registered-event dates are in hand with
-full provenance; GDP, GS10, and UNRATE need the same treatment once
-their event-date lists are available in the same form — left for
-future work, not assumed to generalize. A sixth addition, `exp14`
+exactly, unlike independent redraws. An initial version of this shift
+had its own bug, caught before being trusted: it wrapped alarms into
+an interval anchored at a fixed 1948 epoch rather than the monitored
+window's own true start (1958 for INDPRO), so any event at or beyond
+the window's width from that epoch — the 2020-02 COVID NBER peak,
+concretely — was structurally unreachable by any shifted alarm, at
+any seed, inflating the apparent significance (p = 0.021–0.023 instead
+of the corrected 0.027–0.029; two of the seven observed hits were
+against exactly that unreachable event). The corrected version shifts
+alarms within the window's true absolute bounds
+(`window_start_idx + ((a - window_start_idx + s) % n_months)`, per
+segment boundaries in `real_data_date_boundaries.csv`) rather than an
+arbitrary origin disconnected from where the window actually sits.
+With that fix: total hits across methods = 7 against a null with mean
+2.52, SD 1.85 over 20,000 draws, p ≈ 0.029, still short of a further
+Bonferroni step across the four series and not changing §9's
+conclusion. This has only been run for INDPRO, whose exact
+registered-event dates are in hand with full provenance; GDP, GS10,
+and UNRATE need the same treatment, with their own window bounds
+pulled from the same file — not assumed to match INDPRO's, and left
+for future work. A sixth addition, `exp14`
 (`experiments/exp14_mixed_channel.py`), tests §10's original practical
 recommendation to run both a raw and a whitened variance CUSUM under
 real channel uncertainty: a 50/50 population of r- and q-channel
@@ -1574,7 +1586,7 @@ innovation correlation with the Kalman filter stays at 0.99; forcing
 | PELT localization at FAR-matched 5%, level 3σ | 0.83–0.92 (vs. causal raw CUSUM 0.97–0.99) | exp08_pelt |
 | PELT localization at FAR-matched 5%, variance ×1.5/×3 | 0.00–0.20 (vs. dedicated raw variance-CUSUM 0.10–1.00) | exp08_pelt |
 | INDPRO permutation p (composite) | 0.008 (uncorrected — does not survive Bonferroni/BH-FDR across the 19 tests in Table 6; §9) | rd_eval |
-| Circular-shift joint test, INDPRO (5 methods, total hits) | observed 7 vs. null mean 2.25, SD 1.80 (20,000 draws), p ≈ 0.023 — does not survive Bonferroni across 4 series; §9 | exp13c_circular_shift |
+| Circular-shift joint test, INDPRO (5 methods, total hits) | observed 7 vs. null mean 2.52, SD 1.85 (20,000 draws), p ≈ 0.029 — does not survive Bonferroni across 4 series; §9 | exp13c_circular_shift |
 | GARCH(1,1) benchmark vs. raw/ARIMA rungs, ×1.5, SNR 0.5/2.0 (n_reps=500) | r-channel: 0.098/0.096 (GARCH) vs. 0.56/0.10 (raw), 0.94/0.87 (ARIMA); q-channel: 0.066/0.098 (GARCH) vs. 0.21/0.23 (raw), 0.10/0.16 (ARIMA) — GARCH at the FAR floor throughout | exp15_garch_benchmark |
 | Mixed-channel (raw+ARIMA run jointly, unknown channel), SNR 0.1/0.5/2.0 | combined loses to single-better detector at every SNR: 0.493 vs 0.553 / 0.490 vs 0.560 / 0.457 vs 0.623 | exp14_mixed_channel |
 | GFC real-time | 2008-09 data, known 2008-12 | rd_realtime |

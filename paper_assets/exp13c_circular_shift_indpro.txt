@@ -2,7 +2,7 @@ n_perm=20000
   observed_hits: {'lsc_composite': 3, 'lsc_kalman_cusum': 2, 'lsc_tail_cusum': 0, 'raw_cusum': 1, 'raw_var_cusum': 1}
   observed_total: 7
   observed_max: 3
-  p_total_hits: 0.02265
-  p_max_single_method: 0.06455
-  null_total_mean: 2.2455
-  null_total_sd: 1.8030334855459562
+  p_total_hits: 0.0291
+  p_max_single_method: 0.08205
+  null_total_mean: 2.52315
+  null_total_sd: 1.849071139112825
