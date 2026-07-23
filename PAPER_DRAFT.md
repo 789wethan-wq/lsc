@@ -1507,6 +1507,11 @@ documented `pyproject.toml` setup, the full test suite, and the two
 most recently added benchmark scripts (`exp14`, `exp15`) run in full
 from that clean environment -- reproducing the test count and every
 cited number in this section bit-for-bit.
+`paper_assets/reproducibility_check_2026-07-23.txt` repeats this for
+the four-series circular-shift extension above: a separate fresh
+clone reproduces the export step's window-bounds validation and the
+exact enumeration results for all four series bit-for-bit, including
+GDP's exact tie with the Bonferroni threshold.
 
 ## Appendix B. Theory: statements and proofs
 

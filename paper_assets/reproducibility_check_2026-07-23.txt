@@ -1,0 +1,88 @@
+Fresh-clone reproducibility check
+=================================
+Date: 2026-07-23
+Verified commit: 2797de8293599387b385ae9ef51a787c2fafd05e
+  ("Move updated grid_v6/v7/v8 figures from experiments/ into paper_assets/")
+Method: `git clone --local` into a scratch directory (not the working
+copy), fresh `python3 -m venv`, `pip install -e ".[dev]"` from that
+clone's pyproject.toml only, then the full test suite, then the
+exp13d exporter + circular-shift pipeline run in full from that clean
+environment -- this round's most substantive content change (the
+four-series circular-shift joint test in Section 9, Appendix A, and
+Appendix C).
+
+1. Installed package versions (pip freeze, filtered to the pinned set)
+------------------------------------------------------------------------
+arch==8.0.0
+hmmlearn==0.3.3
+matplotlib==3.11.0
+numpy==2.5.1
+pandas==3.0.3
+pyarrow==25.0.0
+pytest==9.1.1
+PyYAML==6.0.3
+ruptures==1.1.9
+scipy==1.18.0
+statsmodels==0.14.6
+
+Matches pyproject.toml's pinned dependencies exactly.
+
+2. Test suite
+------------------------------------------------------------------------
+$ python -m pytest tests/ -q
+98 passed, 24 warnings in 73.61s (0:01:13)
+
+3. experiments/exp13d_export_other_series.py, run in full from the
+   clean environment
+------------------------------------------------------------------------
+$ python experiments/exp13d_export_other_series.py
+wrote paper_assets/exp13_gdp_series_data.json: n_months=720,
+  window_start=1962-04-01, step=3, 9 events, 9 total alarms across 4
+  methods -- window bounds check passed (18 indices, all inside)
+wrote paper_assets/exp13_gs10_series_data.json: n_months=720,
+  window_start=1963-05-01, step=1, 3 events, 24 total alarms across 5
+  methods -- window bounds check passed (27 indices, all inside)
+wrote paper_assets/exp13_unrate_series_data.json: n_months=780,
+  window_start=1958-02-01, step=1, 9 events, 24 total alarms across 5
+  methods -- window bounds check passed (33 indices, all inside)
+
+Identical to the committed JSONs -- n_months, window_start, step, and
+every count reproduce exactly, including the _validate_window guard
+passing cleanly for all three series.
+
+4. experiments/exp13d_all_series_circular_shift.py, run in full from
+   the clean environment
+------------------------------------------------------------------------
+$ python experiments/exp13d_all_series_circular_shift.py
+INDPRO: total_hits=7 null_mean=2.515 null_sd=1.848 null_max=10 n_shifts_exhaustive=780 EXACT p_total_hits=0.028205
+GDP: total_hits=6 null_mean=1.500 null_sd=1.466 null_max=6 n_shifts_exhaustive=240 EXACT p_total_hits=0.012500
+GS10: total_hits=4 null_mean=1.296 null_sd=1.280 null_max=6 n_shifts_exhaustive=720 EXACT p_total_hits=0.076389
+UNRATE: total_hits=14 null_mean=3.565 null_sd=3.123 null_max=16 n_shifts_exhaustive=780 EXACT p_total_hits=0.011538
+
+Bonferroni across 4 series: threshold = 0.05/4 = 0.01250
+  INDPRO: p=0.02821  does not survive
+  GDP: p=0.01250  SURVIVES
+  GS10: p=0.07639  does not survive
+  UNRATE: p=0.01154  SURVIVES
+
+Conclusion: at least one series clears both the multiple-testing bar
+and would need the model-fit cross-check before being reported as a
+finding.
+
+Bit-for-bit identical to the numbers committed in f4c7690 and cited
+in Section 9, Appendix A, and Appendix C -- including GDP's exact tie
+with the Bonferroni threshold (0.0125 = 0.0125) and UNRATE's p=0.0115.
+
+5. What this does and doesn't establish
+------------------------------------------------------------------------
+Does establish: a fresh clone of this exact commit, following only the
+documented setup, reproduces the test suite and this round's entire
+new pipeline (export -> window-bounds validation -> exact circular-
+shift enumeration across four series) exactly, including the two
+window bugs' fixes and the numbers that survived them.
+
+Does not establish: whether GDP's exact tie or UNRATE's 64%-confounded
+survival should be read as findings -- that's a substantive judgment
+call already made in the paper's own prose (both are reported at their
+measured value, with the confounds stated plainly), not a
+reproducibility question.
