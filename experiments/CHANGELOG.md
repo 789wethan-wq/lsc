@@ -1202,3 +1202,348 @@ rather than merely inferred from reading the code. Docstring, inline
 comments, and `PAPER_DRAFT.md`'s Table 4 caption all rewritten to
 state this precisely: aggregate reproduction is checked; pairing
 reproduction is a checked-mechanism argument, not a checked outcome.
+
+## 2026-07-23 -- exp21: innovation-only 5-feature composite isolates where exp20's Kalman-vs-ARIMA gap comes from
+
+exp20 found composite-on-ARIMA badly underperforms composite-on-Kalman
+in several cells even though 5 of COMPOSITE_V1's 11 features
+(`break_pressure`, `variance_pressure`, `variance_pressure_slow`,
+`variance_quiet`, `innovation_ac`) act on `innovations` alone -- an
+object exp07's ARMA(1,1) equivalence says the two models should share
+on the null path. The other 6 act on the filtered state / one-step
+forecast, which has no such shared-object guarantee (ARIMA's
+`fittedvalues` standing in for the Kalman filtered state is a
+disclosed judgment call, not an equivalence).
+
+New include-list `lsc.diagnostics.features.COMPOSITE_INNOV5` (the 5
+innovation-only features) run through the unmodified
+`make_composite_detector` on both `KalmanModel("ar1")` and
+`ARIMAModel()`, across the identical 12-cell grid as exp20 (channel
+{r,q} x vol_mult {1.5,3.0} x SNR {0.1,0.5,2.0}, same seeds/FAR/n_reps
+protocol) -- `experiments/exp21_composite_innov5.py`,
+`paper_assets/exp21_composite_innov5.csv`.
+
+**Result: the gap opens almost entirely at the innovation-only
+level.** Comparing gap = detect(Kalman) - detect(ARIMA) for the
+5-feature composite vs. the published 11-feature composite (exp20),
+the two agree to within ~0.02-0.03 (the n=500 noise floor) in 10/12
+cells, e.g. r/SNR0.5/x1.5: 0.458 vs 0.452; r/SNR2.0/x1.5: 0.280 vs
+0.278; q/SNR0.5/x3.0: 0.398 vs 0.380. Only one cell (r/SNR0.1/x1.5)
+shows the full composite pulling meaningfully further ahead (0.592 vs
+0.442, a real ~0.15 contribution from the six filtered-state
+features); two q-channel cells (q/SNR0.1/x1.5 and q/SNR0.1/x3.0) show
+the *innovation-only* gap exceeding the full-composite gap -- adding
+the filtered-state features narrows the Kalman/ARIMA difference there
+rather than widening it. FAR held near the 0.05 target throughout
+(0.038-0.066) for both models.
+
+**Reading: destructive substitution, not missing state information.**
+Since Y is exactly ARMA(1,1)-equivalent to the Kalman innovations on
+the null path (exp07), the fact that ARIMA's own standardized
+one-step residual already reproduces almost the whole gap by itself
+means ARIMA's residual is a measurably worse detection INPUT under a
+break -- not that the composite's power depends on genuinely
+state-specific (filtered-state) features the ARIMA substitution lacks.
+This narrows exp20's disclosed judgment call: the six filtered-state
+features are largely innocent bystanders in the Kalman-vs-ARIMA gap,
+not (with one partial exception, r/SNR0.1/x1.5) its cause.
+
+Runtime note: unlike exp20 (~8.8h, dominated by a few pathologically
+slow ARIMA MLE fits), this run completed in ~36 minutes -- none of the
+12 cells hit that slow-convergence case this time, consistent with
+the exp20 CHANGELOG entry's characterization of it as an intermittent
+`statsmodels` anomaly rather than a deterministic per-cell cost.
+
+## 2026-07-23 -- exp14/Table 5 reconciliation: calibration-seed bug found and fixed
+
+External review (round 3, "MW2") flagged that exp14's mixed-channel
+`arima_var_cusum` detection rates disagreed with the unweighted average
+of grid_v5_qbreak's per-channel rates by 1.8 SE at SNR 0.1 growing to
+3.8 SE at SNR 2.0, while `raw_var_cusum` agreed within 1 SE throughout
+-- asked to find the actual config difference or the bug.
+
+**Found: `experiments/exp14_mixed_channel.py`'s `arima_var_cusum`
+calibration used `seed0=200_000`** (four lines below `raw_var_cusum`'s
+own calibration call, which correctly used `seed0=100_000`) --
+`200_000` is this repo's EVALUATION seed block (`seeds: evaluation:
+200000` in every grid config; SPEC's calibration/evaluation/far_check/
+feature_scales layout, `experiments/CHANGELOG.md` 2026-07-13), not the
+calibration block every other calibration call in the codebase uses.
+No comment explained the asymmetry; `raw_var_cusum`'s calibration in
+the same script correctly used `100_000`. Compounding it, exp14 also
+calibrated on `n_cal=400` reps against the ladder grid's `n_reps=500`.
+Both differences apply only to the ARIMA arm's calibration, matching
+the reported pattern exactly. Comparing calibrated thresholds directly
+(exp14's original CSV vs. `grid_v5_qbreak_far_calibration.csv`):
+raw_var_cusum was already close (−2.0%/−5.2%/−7.1% at SNR 0.1/0.5/2.0,
+attributable to n=400 vs 500 noise); arima_var_cusum was off by
+−19.0%/−9.2%/−13.3% -- a threshold set 9-19% too low, inflating both
+the ARIMA arm's false-alarm rate and its detection rate.
+
+**Fix:** `seed0=100_000` for both detectors' calibration, `n_cal=500`
+to match the ladder grid exactly (same null DGP/T/n_train per SNR, so
+this reproduces grid_v5_qbreak's own thresholds essentially bit-for-bit
+where the calibration draws coincide). Verified: rerunning
+`exp14_mixed_channel.py` after the fix reproduces
+`grid_v5_qbreak_far_calibration.csv`'s thresholds to full precision
+(128.693/274.798/615.260 raw and 207.308/173.075/170.232 ARIMA at SNR
+0.1/0.5/2.0 -- exact matches, not approximate).
+
+**Result: the discrepancy closes.** Mixed-channel ARIMA detection rate
+vs. the unweighted average of the two single-channel ladder rates is
+now +0.47 SE (SNR 0.1), +0.53 SE (SNR 0.5), +1.53 SE (SNR 2.0) -- down
+from the originally reported 1.8-3.8 SE, and within ordinary Monte
+Carlo noise at every SNR. This was a real bug, not a legitimate
+convention difference between the two experiments.
+
+**Downstream numbers updated in `PAPER_DRAFT.md`** (§10 practical
+recipe, Appendix B summary table): exp14's raw/ARIMA/combined
+detection rates changed at all three SNRs (e.g. SNR 2.0: raw
+0.213->0.183, ARIMA 0.623->0.560, combined 0.457->0.470); the
+"gap widening as SNR rises" framing is dropped since the corrected
+gaps are non-monotone (0.050/0.037/0.090 SE-scaled 1.2/0.9/2.2, not a
+widening trend) and the SNR-0.5 gap is within 1 SE of zero.
+`exp18_pooled_baseline.py` rerun on the corrected `exp14_mixed_channel.csv`:
+always-raw 0.374 (was 0.392), always-ARIMA 0.526 (was 0.567), combined
+0.490 (was 0.480), oracle 0.549 (was 0.579). The qualitative
+conclusions are UNCHANGED (always-ARIMA still beats "run both" and
+"always raw" pooled; ARIMA still wins 2 of 3 SNRs; oracle's edge over
+always-ARIMA still small) but the margins shrank (always-ARIMA's edge
+over the combined statistic: 0.09 -> 0.036, now only ~1.5 SE) --
+"running both is only clearly justified if..." framing is unaffected,
+but the strength of the "always-ARIMA is a stronger fixed rule" claim
+is now stated as modest rather than the 0.09 gap it previously read.
+
+Reproducibility: `experiments/exp14_mixed_channel.py` fix and rerun
+(269s, n_eval=300); `experiments/exp18_pooled_baseline.py` rerun
+(reads the updated CSV, no simulation). Both outputs committed under
+`paper_assets/`.
+
+## 2026-07-23 -- exp22: threshold/argmax diagnostic resolves MW3 (exp21 full table + noisy-substitute question)
+
+External review round 3 ("MW3") asked for (a) the full 12-cell
+exp21_composite_innov5.csv published in the paper, not just the three
+cells previously described only in this CHANGELOG, and (b) a direct
+check, at r x1.5/SNR 0.1 specifically, of whether the ARIMA composite's
+calibrated threshold is substantially higher than the Kalman
+composite's -- which would point to a "noisy substitute" reading (the
+six ARIMA-fed filtered-state-analog features inflate the null score
+distribution) rather than exp21's "destructive substitution... traces
+to the innovation series" framing.
+
+**Table 9 (full exp21 grid) added to PAPER_DRAFT.md**, same treatment
+as Table 8.
+
+**New script `experiments/exp22_composite_threshold_argmax.py`**
+reconstructs both composites with the exact recipe behind Table 8 at
+r x1.5/SNR 0.1 (500 calibration reps, 500 break-path evaluations) and
+reports (i) the calibrated threshold for each and (ii) the
+argmax-feature distribution at alarm time for each, using the same
+`composite_attribution` helper `real_data.py` already uses for
+real-data alarm attribution.
+
+**Result: both readings hold, at different levels of the mechanism.**
+Threshold: ARIMA composite 45.49 vs. Kalman composite 35.28, +28.9% --
+a real, substantial gap, evidence for the noisy-substitute reading (the
+same shared-threshold dilution mechanism already documented in
+Sec 8.3(ii) for a different composite variant). Argmax-at-alarm
+distribution: Kalman composite's 415 alarms (n=500) are 96%
+`variance_pressure` (an innovation-only feature); ARIMA composite's 124
+alarms are 77% `variance_pressure` + 15% `break_pressure` (both
+innovation-only) -- the 6 disputed filtered-state-analog features
+account for only 4-7% of alarms in either composite. So the six extra
+features are rarely what actually FIRES on a true break (supporting
+exp21's innovation-only framing) but do measurably inflate the shared
+null max-score distribution the composite's threshold is calibrated
+against (supporting the noisy-substitute framing) -- both mechanisms
+are real and distinct, operating at different stages (which feature
+detects vs. which features set the bar). PAPER_DRAFT.md's §5 discussion
+updated to state this precisely rather than picking one reading.
+
+Reproducibility: exp22 run once (500 reps, ~200s, no ARIMA-order-search
+pathology hit); outputs committed under paper_assets/
+(exp22_composite_threshold_argmax.csv, exp22_summary.csv,
+exp22_thresholds.csv).
+
+## 2026-07-23 -- exp24: independent GARCH FAR check resolves MW4
+
+External review round 3 ("MW4") noted exp15's GARCH grid was the one
+arm not yet held to the paper's own "empirical FAR re-verified on
+fresh nulls" standard: the disjoint calibration/evaluation seed check
+(2026-07-23 entry above) rules out data-snooping between calibration
+and evaluation but doesn't establish the calibrated threshold delivers
+5% FAR out of sample, which matters more for GARCH given its heavier-
+tailed order-statistic threshold (Sec 8.4's general caveat).
+
+**New script `experiments/exp24_garch_fresh_far_check.py`** reproduces
+each of exp15's cells' exact calibration (seed0=100000, n_reps=500,
+same DGP/T/n_train) then evaluates the resulting threshold on 500
+fresh null draws from the project's standing far_check seed block
+(300000+, disjoint from both calibration and evaluation by
+construction, per the SPEC's seed layout). Since calibration and the
+null-only FAR check depend only on SNR (not channel/vol_mult -- the
+null DGP has no break), computed 3 times (one per SNR) and replicated
+across the 4 channel/vol_mult combinations to match exp15's 12-row
+grid shape.
+
+**Result: no anomaly.** GARCH fresh-draw FAR = 5.4% / 5.0% / 4.8% at
+SNR 0.1/0.5/2.0 (binomial SE ~1.0pp at n=500) -- within 0.6pp of the 5%
+target at every SNR. raw_var_cusum and arima_var_cusum fresh-draw FARs
+also checked in passing (raw: 6.0/6.6/6.0%; arima: 4.4/6.0/4.2%), both
+similarly close to target. PAPER_DRAFT.md's GARCH benchmark discussion
+(Sec 3/Related Work) updated with this result, distinguishing it
+explicitly from the pre-existing tautological same-draw FAR figure.
+
+Reproducibility: exp24 run once (500 reps x 3 SNRs, ~196s total, no
+slow-ARIMA-convergence pathology hit); output committed under
+paper_assets/exp24_garch_fresh_far_check.csv.
+
+## 2026-07-23 -- exp23 + scope decision resolves MW5 (real-data look-ahead boundary, vintage coverage)
+
+External review round 3 ("MW5") asked for two things: (a) print the
+real-data pipeline's actual train/bootstrap/monitor index boundaries
+and confirm the bootstrap DGP is fit on the training prefix only, plus
+run the existing bit-identical perturbation test against the real
+pipeline directly; (b) extend the ALFRED real-time vintage protocol
+beyond INDPRO's GFC/COVID alarms, or explicitly label the other tables
+as revised-data-only.
+
+**(a) New script `experiments/exp23_realdata_lookahead_check.py`.**
+Confirmed by direct code read (`real_data.py:162`, `null =
+fitted_null(Y[:NT])`) that the bootstrap null's AR(1) parameters come
+from the training prefix only, and by computation that this actually
+matters (INDPRO's GFC segment: phi=0.954/q=0.0046 fit train-only vs.
+phi=0.892/q=0.0385 on the full segment -- these are not close). Then
+ran the tests/test_no_lookahead.py-style bit-identical perturbation
+check against the REAL pipeline's per-segment procedure for the first
+time (corrupt the monitored window past a point t, rerun bootstrap-fit
++ calibrate + score, compare to the uncorrupted run): threshold AND
+score-prefix bit-identical for all five real-data detectors on INDPRO
+segment 10 (the GFC segment). The earlier simulated-DGP no-lookahead
+test never exercised the real pipeline's threshold-SETTING step
+specifically; this does, and it passes. PAPER_DRAFT.md's Sec 9 intro
+now states this directly rather than only asserting it from the code's
+structure.
+
+**(b) Vintage coverage: labeled, not extended.** Confirmed by live
+query (2026-07-23) that ALFRED serves vintage histories for GDPC1,
+GS10, and UNRATE (not just INDPRO), so the extension is technically
+available. Did not attempt it this round: a full per-series
+episode/decision-month grid with its own recalibration at three
+different training-window lengths is a materially larger undertaking
+than the checks above, and this project's own history (window-
+anchoring bug in exp13c, GDP quarter/month units mismatch in exp13d,
+both in Supplementary Materials) shows rolling-window protocol
+extensions done under time pressure have twice introduced real bugs
+only caught by a later dedicated check. Chose the paper's other
+option instead: Table 6 and the real-time discussion in Sec 9 now
+explicitly state that only INDPRO's GFC/COVID alarms are vintage-
+verified and everything else (all of GDP/GS10/UNRATE, and Table 7's
+sensitivity variants) is a revised-data illustration. Flagged as a
+well-scoped but not-yet-executed follow-up, not silently deferred.
+
+Reproducibility: exp23 run once (light -- Kalman-only detectors, no
+ARIMA order search, <10s); output committed at
+paper_assets/exp23_realdata_lookahead_check.txt.
+
+## 2026-07-23 -- exp25: ICSS benchmark added, resolving the "missing experiment" item
+
+Peer review round 3 (Missing Experiments) flagged ICSS (Inclan & Tiao
+1994) as the conspicuously missing variance-changepoint counterpart to
+the existing PELT (mean-shift) benchmark in Sec 8.5 -- the paper
+already documents PELT's mean-shift cost model performing poorly on
+variance breaks (0.00-0.20 localization), which invites the "wrong
+tool" objection without a purpose-built alternative to check.
+
+**New `lsc.benchmarks.changepoint.icss_breakpoints`**: the standard
+ICSS recursive search (D_k = C_k/C_T - k/T, C_k = cumsum(seg**2)[k],
+partition at argmax|D_k| when it exceeds a threshold, recurse on both
+halves). Threshold (`crit`) calibrated by simulation to a target FAR
+via bisection, the same calibrated-parity convention as PELT's `pen`
+-- not Inclan-Tiao's asymptotic critical value, since the threshold is
+set empirically anyway and the raw D_k statistic is already scale-free.
+
+**New `experiments/exp25_icss_benchmark.py`**, mirroring exp08's
+design exactly: offline localization (full standardized post-training
+segment, not a causal delay comparison, same exclusion as PELT per
+SPEC Sec 4.1), same arenas/seeds/window (+-25 obs) as exp08, restricted
+to the variance scenarios (both channels: r/"variance" and
+q/"state_var") since ICSS has no mean-shift claim. n=500 (vs. exp08's
+300 -- ICSS has no per-replicate model fit, cheap enough that matching
+the rest of the paper's standard n_reps cost nothing; full 12-cell run
+took 5s).
+
+**Result: ICSS clears PELT's ceiling but is still dominated by the
+causal detector.** ICSS localizes up to 1.00 on variance breaks
+(vs. PELT's 0.00-0.20 on the same scenarios) -- confirming the earlier
+PELT gap was specifically its mean-shift cost model, not offline
+methods generally. But despite an unfair advantage (full 375-obs
+post-training segment visible at once, no causal constraint), ICSS is
+dominated by the causal raw_var_cusum in 11 of 12 cells, tying only at
+r x3/SNR 0.1 (both at ceiling) -- e.g. r x1.5: ICSS 0.74/0.06/0.00 vs.
+raw_var_cusum 0.996/0.560/0.102 over SNR 0.1/0.5/2.0. The SNR-dependent
+collapse pattern matches Outcome C's already-documented mechanism
+(state-driven autocorrelation swamping a shrinking noise-variance
+signal as SNR rises), and ICSS is hit by it even harder than the
+causal CUSUM. Table 5b added to PAPER_DRAFT.md (Sec 8.5, immediately
+after Table 5/PELT) with full discussion; Appendix C updated.
+
+Reproducibility: exp25 run once (500 reps/cell, 5s total, no
+per-replicate model fit); outputs committed under
+paper_assets/exp25_icss_results.csv,
+paper_assets/exp25_icss_far_calibration.csv.
+
+## 2026-07-23 -- exp26 + exp27: known-parameter variance ladder and windowed variance statistic (final two Missing Experiments)
+
+Peer review round 3 (Missing Experiments) asked for two more additions
+beyond ICSS: a known-parameter column throughout the variance ladder
+(exp10 only ever checked one level-shift cell), and a windowed
+variance statistic to close the one gap the existing MOSUM-style
+mean-shift fix leaves open (Sec 7's var_up_down second-event miss).
+
+**exp26 (known-parameter variance ladder).** New
+`lsc.benchmarks.variance.known_raw_var_cusum_score` (standardize by
+the DGP's analytic stationary SD, sqrt(q/(1-phi^2)+r), instead of the
+training-prefix sample SD) and `known_kalman_var_cusum_score` (the
+same three-arm CUSUM on `lsc.theory.steady_state_innovations` instead
+of an MLE-fit KalmanModel's innovations). Run across the identical
+12-cell grid Table 3/5 uses (`experiments/exp26_known_param_variance.py`,
+n=500, ~50s total, no ARIMA fits). Result: 10/12 raw-rung and 9/12
+Kalman/ARIMA-rung cells show known >= estimated (negative cells all
+within MC noise, near ceiling). Two findings worth flagging: (1) r
+x1.5/SNR0.5 -- squarely on Outcome C's SNR-collapse curve -- nearly
+closes under known parameters (0.560->0.964, the largest gap in the
+table), while SNR 2.0 still collapses even known (0.102->0.168) --
+so Outcome C's autocorrelation-masking mechanism explains the SNR-2.0
+floor but not the full steepness of the SNR-0.5 midpoint, which is
+substantially an estimation artifact; (2) q-channel Kalman/ARIMA gaps
+are large and one-sided (+0.05 to +0.56) -- AIC-order-selection/MLE
+noise contributes to arima_var_cusum's underperformance on top of the
+model-class gap exp07's ARMA(1,1) equivalence already predicts is zero
+on the null path. Table 2b added to PAPER_DRAFT.md Sec 5.
+
+**exp27 (windowed variance statistic).** New
+`lsc.benchmarks.variance.windowed_raw_var_score` /
+`lsc.eval.detectors.make_windowed_raw_var_cusum_detector`: a
+two-window log-variance-ratio statistic (log(test_var/ref_var)
+rescaled by its delta-method SE, sqrt(4/window)), the variance-channel
+mirror of the existing mean-shift windowed_raw_cusum_score. Tested on
+the EXACT var_up_down scenario exp04 already uses (obs-noise x3 at
+t=200, x1/3 at t=350, 150-obs spacing, same arena/seeds/re-arm
+protocol; `experiments/exp27_windowed_variance.py`, n=500, 12s).
+Result: closes the gap. raw_var_cusum (fixed-baseline): recall_break1
+0.998 / recall_break2 0.000 (never drains, as already documented).
+windowed_raw_cusum (existing mean-shift fix): 0.000/0.000 (no mean
+signal at either break for a mean-comparison statistic to see).
+windowed_raw_var (new): recall_break1=0.932, recall_break2=0.948,
+F1=0.958, precision=0.997 -- both events well detected, no
+first/second asymmetry. Sec 7 rewritten: the "closing that gap needs a
+windowed variance statistic... left to future work" sentence is now a
+reported result, not an open problem; the double-dip failure mode is
+reframed as "wrong bounded-memory statistic for the channel," not a
+structural limit.
+
+Reproducibility: both scripts run once at their stated n_reps; outputs
+committed under paper_assets/exp26_known_param_variance.csv,
+paper_assets/exp27_windowed_variance.csv,
+paper_assets/exp27_windowed_variance_far.csv.

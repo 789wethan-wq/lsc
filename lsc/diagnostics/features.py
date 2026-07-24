@@ -341,6 +341,16 @@ COMPOSITE_ROBUST2 = [
     "break_pressure", "tail_exceedance", "tail_shortfall",
     "innovation_ac", "state_shift_pressure",
 ]
+# exp21: the 5/11 COMPOSITE_V1 features that act on `innovations` alone
+# (no filtered-state dependence) — exp20's disclosed DIRECT-substitution
+# subset, isolated here to test whether the Kalman-vs-ARIMA composite gap
+# already opens on the innovation series alone or only once the six
+# filtered-state features (level_change, slope, acceleration,
+# instability, persistence, state_shift_pressure) are added back.
+COMPOSITE_INNOV5 = [
+    "break_pressure", "variance_pressure", "variance_pressure_slow",
+    "variance_quiet", "innovation_ac",
+]
 
 
 def compute_features(est: StateEstimate, window: int = 20,

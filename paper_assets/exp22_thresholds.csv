@@ -1,0 +1,2 @@
+threshold_kalman,threshold_arima,threshold_ratio_arima_over_kalman,empirical_far_kalman,empirical_far_arima
+35.27645805462219,45.48662022415511,1.2894327472934917,0.05,0.05

@@ -173,6 +173,21 @@ def make_raw_var_cusum_detector(n_train: int) -> ScoreFn:
     return score_fn
 
 
+def make_windowed_raw_var_cusum_detector(n_train: int, window: int = 60) -> ScoreFn:
+    """Bounded-memory, MOSUM-style counterpart of
+    make_raw_var_cusum_detector (peer review round 3, Missing
+    Experiments) — the variance-channel analog of
+    make_windowed_raw_cusum_detector, which fixes second-event misses
+    for MEAN shifts but not variance ones (exp04's var_up_down: 0.00
+    recall on the second event)."""
+    from lsc.benchmarks.variance import windowed_raw_var_score
+
+    def score_fn(Y: np.ndarray) -> np.ndarray:
+        return windowed_raw_var_score(Y, n_train=n_train, window=window)
+
+    return score_fn
+
+
 def make_arima_var_cusum_detector(n_train: int) -> ScoreFn:
     """Whitening-ladder middle rung: the identical variance statistic
     on the frozen training-prefix ARIMA model's residuals."""

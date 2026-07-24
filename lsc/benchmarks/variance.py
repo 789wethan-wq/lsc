@@ -73,3 +73,70 @@ def raw_var_arm_at(Y: np.ndarray, n_train: int, t: int) -> str:
     mu, sd = training_moments(Y, n_train)
     arms = variance_cusum_arms((Y - mu) / sd)
     return max(arms, key=lambda a: np.nan_to_num(arms[a][t], nan=-np.inf))
+
+
+def known_raw_var_cusum_score(Y: np.ndarray, phi: float, q: float, r: float,
+                              n_train: int) -> np.ndarray:
+    """Known-parameter counterpart of raw_var_cusum_score (peer review
+    round 3, Missing Experiments -- the Table 2 flagship level-shift
+    cell's known-vs-estimated ablation, exp10, extended to the variance
+    ladder): standardize by the DGP's analytic stationary mean (0) and
+    SD (sqrt(q/(1-phi^2) + r), the AR(1) state's stationary variance
+    plus the observation-noise variance) instead of the training-prefix
+    SAMPLE mean/SD. Isolates how much of raw_var_cusum's estimation gap
+    (if any) comes from using a finite-sample moment estimate rather
+    than the true population one."""
+    Y = np.asarray(Y, dtype=float)
+    sd = float(np.sqrt(q / max(1.0 - phi**2, 1e-12) + r))
+    return _max_over_arms(Y / max(sd, 1e-12), n_train)
+
+
+def known_kalman_var_cusum_score(Y: np.ndarray, phi: float, q: float,
+                                 r: float, n_train: int) -> np.ndarray:
+    """Known-parameter counterpart of the Kalman/latent variance rung:
+    the same three-arm max-CUSUM on the STEADY-STATE (true-parameter)
+    Kalman innovations (lsc.theory.steady_state_innovations) instead
+    of innovations from an MLE-fit KalmanModel. The natural "known"
+    reference point for arima_var_cusum's estimated whitening."""
+    from lsc.theory import steady_state_innovations
+
+    e = steady_state_innovations(np.asarray(Y, dtype=float), phi, q, r)
+    return _max_over_arms(e, n_train)
+
+
+def windowed_raw_var_score(Y: np.ndarray, n_train: int,
+                           window: int = 60) -> np.ndarray:
+    """Bounded-memory, MOSUM-style variance-changepoint statistic --
+    the variance-channel counterpart of
+    lsc.benchmarks.changepoint.windowed_raw_cusum_score (which fixes
+    the second-event miss for MEAN shifts, exp04/CHANGELOG P2
+    2026-07-16, but leaves the variance-channel second event
+    undetected: "Windowed-CUSUM fix, level->var / var->var 2nd event:
+    no improvement" -- because that fix's two-window statistic
+    compares window MEANS, which a pure variance change does not move).
+
+    Two sliding windows of standardized Y (frozen training-prefix
+    moments, same convention as raw_var_cusum_score); statistic is a
+    log-variance-ratio z-score, log(test_var/ref_var) rescaled by its
+    delta-method SE (Var(log(sample_var)) ~= 2/window under the null
+    for each window, so the ratio's SE ~= sqrt(4/window)) -- the
+    natural windowed analog of an F-test on two variance estimates.
+    Both windows slide together, so `window` obs after a permanent
+    variance shift both windows sit inside the new regime and the
+    statistic returns to its null level (drains), the same mechanism
+    windowed_raw_cusum_score uses for mean shifts."""
+    Y = np.asarray(Y, dtype=float)
+    mu, sd = training_moments(Y, n_train)
+    z = (Y - mu) / sd
+    T = len(z)
+    out = np.full(T, np.nan)
+    se = 2.0 / np.sqrt(window)
+    for t in range(n_train, T):
+        if t - n_train - 2 * window + 1 < 0:
+            continue
+        test = z[t - window + 1: t + 1]
+        ref = z[t - 2 * window + 1: t - window + 1]
+        test_var = max(float(np.mean(test**2)), 1e-12)
+        ref_var = max(float(np.mean(ref**2)), 1e-12)
+        out[t] = abs(np.log(test_var / ref_var)) / se
+    return out

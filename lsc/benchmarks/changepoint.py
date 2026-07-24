@@ -64,3 +64,53 @@ def pelt_breakpoints(Y: np.ndarray, pen: float = 10.0, model: str = "l2") -> lis
     algo = rpt.Pelt(model=model).fit(Y)
     bkps = algo.predict(pen=pen)
     return [b for b in bkps if b < len(Y)]
+
+
+def _icss_dmax(seg: np.ndarray) -> tuple[int, float]:
+    """Single-window Inclan-Tiao (1994) D-statistic: D_k = C_k/C_T -
+    k/T, C_k = cumsum(seg**2)[k]; returns (k_star, |D_k*|) for the
+    maximizing k (0-indexed within seg — seg[:k_star+1] is "before")."""
+    n = len(seg)
+    if n < 4:
+        return -1, 0.0
+    csq = np.cumsum(np.asarray(seg, dtype=float) ** 2)
+    CT = csq[-1]
+    if CT <= 0:
+        return -1, 0.0
+    k = np.arange(1, n)
+    Dk = csq[:-1] / CT - k / n
+    idx = int(np.argmax(np.abs(Dk)))
+    return idx, float(np.abs(Dk[idx]))
+
+
+def icss_breakpoints(Y: np.ndarray, crit: float, min_seg: int = 8) -> list[int]:
+    """OFFLINE variance-change-point detection (Inclan & Tiao 1994,
+    "Use of Cumulative Sums of Squares for Retrospective Detection of
+    Changes of Variance"). Recursively partitions the series at the
+    point of maximal normalized cumulative-sum-of-squares deviation,
+    accepting a candidate breakpoint whenever its D-statistic exceeds
+    `crit` and recursing on both halves — the standard ICSS iterative
+    search for possibly-multiple variance breaks. `crit` is calibrated
+    by simulation to a target false-alarm rate (see
+    experiments/exp25_icss_benchmark.py), the same calibrated-parity
+    convention this repo uses for PELT's `pen`, rather than
+    Inclan-Tiao's asymptotic critical value — the raw, scale-free D_k
+    statistic (range roughly [-1, 1]) does not need that rescaling
+    once the threshold itself is set empirically."""
+    Y = np.asarray(Y, dtype=float)
+    breakpoints: list[int] = []
+
+    def recurse(start: int, end: int) -> None:
+        seg = Y[start:end]
+        if len(seg) < min_seg:
+            return
+        k_star, d_max = _icss_dmax(seg)
+        if k_star < 0 or d_max <= crit:
+            return
+        bp = start + k_star + 1  # first index of the "after" segment
+        breakpoints.append(bp)
+        recurse(start, bp)
+        recurse(bp, end)
+
+    recurse(0, len(Y))
+    return sorted(breakpoints)

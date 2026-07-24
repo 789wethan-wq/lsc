@@ -1,0 +1,8 @@
+model,feature,n_alarmed_attrib,frac_of_alarmed
+kalman,variance_pressure,400,0.963855421686747
+kalman,state_shift_pressure,11,0.02650602409638554
+kalman,break_pressure,4,0.00963855421686747
+arima,variance_pressure,96,0.7741935483870968
+arima,break_pressure,19,0.1532258064516129
+arima,instability,7,0.056451612903225805
+arima,state_shift_pressure,2,0.016129032258064516

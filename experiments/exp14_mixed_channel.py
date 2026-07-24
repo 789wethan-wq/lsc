@@ -48,16 +48,27 @@ PHI, R, T, N_TRAIN = 0.95, 1.0, 500, 125
 VOL_MULT = 1.5
 
 
-def run_snr(snr: float, n_eval: int, n_cal: int = 400, seed: int = 555) -> dict:
+def run_snr(snr: float, n_eval: int, n_cal: int = 500, seed: int = 555) -> dict:
     q = snr * (1 - PHI**2) * R
     null_dgp = AR1StateDGP(phi=PHI, q=q, r=R)
     raw_fn = make_raw_var_cusum_detector(N_TRAIN)
     arima_fn = make_arima_var_cusum_detector(N_TRAIN)
 
+    # n_cal/seed0 match grid_v5_qbreak's calibration exactly (n_reps=500,
+    # seeds.calibration=100000 for EVERY method) so a single detector's
+    # threshold here reproduces its ladder-grid threshold. A prior version
+    # of this script calibrated arima_var_cusum from seed0=200_000 (the
+    # project's EVALUATION seed block, per experiments/CHANGELOG.md's
+    # calibration/evaluation/far_check/feature_scales layout) instead of
+    # 100_000 -- an undocumented, asymmetric bug (raw_var_cusum's own
+    # calibration two lines above already used 100_000) that produced an
+    # ARIMA threshold 9-19% too low, found while reconciling this script's
+    # detection rates against Table 5 (see CHANGELOG 2026-07-23 mixed-
+    # channel reconciliation entry).
     det_raw = calibrate("raw_var_cusum", raw_fn, null_dgp, T, n_reps=n_cal,
                          far=0.05, seed0=100_000)
     det_arima = calibrate("arima_var_cusum", arima_fn, null_dgp, T, n_reps=n_cal,
-                           far=0.05, seed0=200_000)
+                           far=0.05, seed0=100_000)
 
     def combined_ratio(Y):
         r = raw_fn(Y) / det_raw.threshold

@@ -1,0 +1,18 @@
+=== MW5 check 1: bootstrap-DGP fit boundary (from code, not description) ===
+Segment 10: train 1998-01..2007-12 (n_train=120), monitor 2008-01..2012-12 (n_monitor=60).
+real_data.py:162 -- `null = fitted_null(Y[:NT])` -- the AR(1) parameters feeding the parametric-bootstrap null (used to set the alarm threshold) are estimated from Y[:NT] ONLY.
+  fitted on train-only (Y[:120]):  phi=0.9535 q=0.004609 r=0.234213
+  counterfactual, fit on FULL segment (Y[:180], NOT what the code does): phi=0.8919 q=0.038459 r=0.329736
+  (shown only to confirm the two differ -- if the pipeline silently used the second, this check would catch it; it does not.)
+
+=== MW5 check 2: bit-identical perturbation test on the REAL pipeline ===
+Perturbing Y[151:] (inside the monitored window, 2010-07 is the last untouched month) with the same arbitrary corruption tests/test_no_lookahead.py uses.
+  null DGP params identical after perturbation: phi True, q True, r True
+  lsc_composite    threshold bit-identical=True (a=14.298925 b=14.298925) | scores[:t+1] bit-identical=True  [OK]
+  lsc_tail_cusum   threshold bit-identical=True (a=5.680000 b=5.680000) | scores[:t+1] bit-identical=True  [OK]
+  lsc_kalman_cusum threshold bit-identical=True (a=11.140673 b=11.140673) | scores[:t+1] bit-identical=True  [OK]
+  raw_cusum        threshold bit-identical=True (a=23.780653 b=23.780653) | scores[:t+1] bit-identical=True  [OK]
+  raw_var_cusum    threshold bit-identical=True (a=51.000847 b=51.000847) | scores[:t+1] bit-identical=True  [OK]
+
+All detectors pass (threshold AND score-prefix bit-identical under a future-only perturbation): True
+This directly checks the thing MW5 flagged as unverified: that the bootstrap-calibrated ALARM THRESHOLD, not just the filtered estimate, is causal -- the earlier tests/test_no_lookahead.py test covers filtered estimates/innovations/features/simulated-DGP detector scores but never exercised the real-data pipeline's per-segment threshold-setting step specifically.
