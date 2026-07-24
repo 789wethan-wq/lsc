@@ -33,10 +33,17 @@ the protocol's edges: offline PELT matches raw CUSUM on level breaks
 but not variance breaks, and a bounded-memory statistic fixes raw
 CUSUM's blindness to a second level break, though not a second
 variance break. Read together, the results are deflationary for the
-latent layer's detection power: a raw or ARIMA-whitened benchmark
-matches or beats the state-aware detector on every break type studied,
-and what filtering buys instead is breadth and attribution, not power
-(§10).
+latent layer's detection power: a raw or ARIMA-whitened *single-feature*
+benchmark matches or beats the state-aware detector on every break type
+studied, and what filtering buys instead is breadth and attribution,
+not power (§10) — with one qualification: feeding the same 11-feature
+composite ARIMA inputs instead of Kalman ones (§5) shows that, away
+from the detection ceiling, the composite built on the genuine filtered
+state decisively beats the same composite built on ARIMA's fitted-value
+analog (e.g. 0.818 vs. 0.226 at the flagship r-channel subtle-break,
+SNR 0.1 cell) — the "raw vs. whitened, not the state" reading holds
+exactly for the single innovation-series statistic (a proven identity)
+but not for the full composite, where the state does buy real power.
 
 **JEL classification:** C12, C22, C52.
 **Keywords:** structural change; sequential change detection; CUSUM;
@@ -155,15 +162,38 @@ with the fixed fitted parameters, and run through the same three-arm
 max-CUSUM used for the raw and ARIMA rungs on its standardized residuals
 (`experiments/garch_detector.py`, `experiments/exp15_garch_benchmark.py`).
 Calibrated at n_reps = 500 matching the published grid (empirical FAR
-0.050 in every cell checked), GARCH sits at the false-alarm floor on
-both variance channels at every SNR tested — r-channel ×1.5: 0.098
-(SNR 0.5), 0.096 (SNR 2.0); q-channel ×1.5: 0.066 (SNR 0.5), 0.098
-(SNR 2.0) — against raw's 0.56/0.10/0.21/0.23 and ARIMA's
-0.94/0.87/0.10/0.16 on the same four cells (§5, Table 3). This is not
-merely "GARCH is dominated": on this DGP it contributes nothing over
-chance. The likely mechanism is a generative mismatch — GARCH(1,1) is
-built for conditional heteroskedasticity (volatility clustering driven
-by squared past shocks), a different assumption than this paper's DGP
+0.050 in every cell checked), we report the full 2×2×3 grid — both
+variance channels, subtle (×1.5) and coarse (×3) breaks, SNR ∈
+{0.1, 0.5, 2.0} — rather than the four-cell subtle-break-only subset
+originally checked, and the fuller grid changes the finding:
+
+| channel | vol_mult | SNR 0.1 | SNR 0.5 | SNR 2.0 |
+|---|---|---|---|---|
+| r | ×1.5 | 0.498 | 0.098 | 0.096 |
+| r | ×3 | 0.962 | 0.708 | 0.548 |
+| q | ×1.5 | 0.038 | 0.066 | 0.098 |
+| q | ×3 | 0.186 | 0.344 | 0.338 |
+
+GARCH is at the false-alarm floor (all within a few points of the
+5% target) *only* for the subtle ×1.5 break at moderate-to-high SNR —
+q-channel throughout (0.038–0.098) and r-channel at SNR 0.5/2.0
+(0.096–0.098); against raw's 0.56/0.10/0.21/0.23 and ARIMA's
+0.94/0.87/0.10/0.16 on those same four cells (§5, Table 3), GARCH
+contributes nothing over chance there, as originally reported. But
+at the coarse ×3 break GARCH is never at the floor — it clears it
+substantially at every SNR on both channels (r: 0.55–0.96; q: 0.19–
+0.34) — and even at the subtle ×1.5 break, r-channel/SNR 0.1 shows
+real power (0.498). GARCH is nonetheless dominated by raw and/or
+ARIMA in all 12 cells of the grid (never the best of the three), so
+the qualitative recommendation is unchanged — but "GARCH contributes
+nothing over chance on this DGP" was true only of the four originally-
+checked cells, not the DGP in general: a large enough or low-enough-
+SNR variance break is visible to GARCH's own conditional-variance
+estimate, just less efficiently than the purpose-built calibrated
+variance-CUSUM rungs. The likely mechanism for the *subtle, moderate-
+SNR* floor result is a generative mismatch — GARCH(1,1) is built for
+conditional heteroskedasticity (volatility clustering driven by
+squared past shocks), a different assumption than this paper's DGP
 (a permanent step change in noise variance layered on a highly
 persistent φ = 0.95 latent state) — but we have not isolated the
 mechanism beyond this scope note, and do not rule out an
@@ -517,8 +547,14 @@ root artifact — those orders approximate the ARMA(1,1) closely enough to
 preserve ρ̄ ≥ 0.95 — reported in full in Appendix B.) The practical
 consequence: the ladder is really **raw vs. whitened**, and "does the
 *state estimate* help beyond ARIMA whitening?" has the answer *no, by
-construction*. What remains is the genuinely empirical question — when
-does whitening help at all? — which turns out to depend on *which
+construction* — for the single break-pressure statistic built directly
+on the innovation series, which is all the equivalence above concerns.
+Whether the same holds for the full 11-feature composite, several of
+whose features are built from the Kalman *filtered state* rather than
+the innovation series, is a separate empirical question with a
+different, more qualified answer — taken up directly at the end of
+this section. What remains here is the genuinely empirical question —
+when does whitening help at all? — which turns out to depend on *which
 variance channel* breaks.
 
 **Table 3. The ladder, both channels** (detection rate at T = 500, 5%
@@ -615,27 +651,46 @@ visible* the residual raw advantage is on the marginal, subtle break.
 
 | φ | Amplification 1/(1−φ²) | Δ, subtle ×1.5 (raw − ARIMA) | Δ, coarse ×3 (raw − ARIMA) |
 |---|---|---|---|
-| 0.10 | 1.01 | 0.000 | 0.344 |
-| 0.50 | 1.33 | 0.016 | 0.526 |
-| 0.70 | 1.96 | 0.038 | 0.528 |
-| 0.85 | 3.60 | 0.104 | 0.204 |
-| 0.95 | 10.26 | 0.112 | 0.168 |
-| 0.99 | 50.25 | 0.074 | 0.302 |
+| 0.10 | 1.01 | 0.000 (0.014) | 0.344 (0.024) |
+| 0.50 | 1.33 | 0.016 (0.014) | 0.526 (0.024) |
+| 0.70 | 1.96 | 0.038 (0.014) | 0.528 (0.023) |
+| 0.85 | 3.60 | 0.104 (0.015) | 0.204 (0.018) |
+| 0.95 | 10.26 | 0.112 (0.018) | 0.168 (0.018) |
+| 0.99 | 50.25 | 0.074 (0.018) | 0.302 (0.025) |
 
 *Table 4. Raw's detection-rate advantage over the ARIMA rung (Δ),
 swept over φ at fixed q, r (`grid_v8_phiqbreak`). On the subtle break Δ
 tracks the amplification factor and peaks at φ = 0.95 before receding
 at the unit-root edge; on the coarse break Δ stays large at every φ,
 including φ = 0.1 where amplification is negligible. Each Δ is a
-difference of two detection rates at n_reps = 500; without the paired
-per-replicate covariance we report the conservative
-(independence-assuming) bound SE(Δ) ≤ 0.032 for every cell in this
-table. Read against that bound, the subtle-break "recedes at the
-unit-root edge" claim (0.112 at φ = 0.95 vs. 0.074 at φ = 0.99, a
-difference of 0.038) is not clearly distinguishable from Monte Carlo
-noise between those two adjacent points — the qualitative shape is
-supported by the broader sweep, but the specific 0.95-vs-0.99 ordering
-should not be read as a precise, noise-free finding.*
+difference of two detection rates at n_reps = 500; SEs in parentheses
+are the TRUE paired-per-replicate SE(Δ), not the conservative
+independence-assuming bound cited in an earlier draft. Raw and ARIMA
+are scored on the SAME simulated path per replicate, so the pairing
+matters: `experiments/exp19_paired_se_grid_v8.py` reconstructs the
+per-replicate detection outcomes (not retained by the grid runner,
+which only persists the aggregated rate) by re-running both detectors
+through the identical config and seeds used to produce this table —
+both are deterministic given Y, so this reproduces the published
+detect_rate numbers in this table exactly (verified cell-by-cell, all
+12 reproduced bit-for-bit) rather than approximating them — and
+reports SE(d̄) where d = 1{raw detects} − 1{ARIMA detects} per
+replicate. The paired SEs (0.014–0.025) run 40–55% below the old
+independence-assuming worst-case bound of 0.032 used previously, and
+15–30% below an independence bound computed from the actual observed
+rates rather than the worst-case p = 0.5 — consistent with positive
+correlation between the two detectors' per-replicate outcomes (an
+easy-to-detect path tends to be easy for both). Re-reading the
+subtle-break "recedes at the unit-root edge" claim against the PAIRED
+SEs: 0.112 (φ = 0.95, SE 0.018) vs. 0.074 (φ = 0.99, SE 0.018), a
+difference of 0.038 against a combined SE of
+√(0.018² + 0.018²) ≈ 0.025 — about 1.5 SE, tighter than the ≈0.8 SE
+the old conservative bound implied, but still short of a conventional
+significance threshold. The qualitative shape is supported by the
+broader sweep, but the specific 0.95-vs-0.99 ordering should still not
+be read as a precise, noise-free finding — now a better-characterized
+"suggestive but not conclusive" rather than "indistinguishable from
+noise."*
 
 ![**Figure 2.** The φ × q cross-grid (`grid_v8_phiqbreak`). Left: raw's
 advantage Δ = detect(raw) − detect(ARIMA) against φ; the subtle ×1.5
@@ -676,6 +731,89 @@ and §8.3: there the raw rung catches the low-SNR case (0.32 at SNR 0.1,
 where noise dominates) while the whitened rungs and composite sit at
 chance, and only the standalone exceedance detector recovers it at
 moderate SNR.
+
+**Does the state help beyond whitening — for the full composite, not
+just the innovation series?** The ARMA(1,1) equivalence above proves
+"no" for the single break-pressure statistic on the innovation series.
+It says nothing about the 11-feature composite: 5 of its features
+(`break_pressure`, `variance_pressure`, `variance_pressure_slow`,
+`variance_quiet`, `innovation_ac`) act on the innovation series and
+inherit the equivalence directly, but 6 (`level_change`, `slope`,
+`acceleration`, `instability`, `persistence`, `state_shift_pressure`)
+act on the Kalman *filtered state*, which has no innovation-series
+analog. We test this directly (`lsc.models.ARIMAModel`,
+`experiments/exp20_composite_on_arima.py`): feed the SAME 11-feature
+computation and composite machinery
+(`lsc.diagnostics.features.compute_features`,
+`lsc.eval.detectors.make_composite_detector`) an ARIMA model's
+one-step-ahead fitted value in place of the Kalman filtered state
+(direct substitution for the 5 innovation-based features, a disclosed
+judgment call for the 6 state-based ones — an ARIMA model has no state
+distinct from the series it fits, so "filtered-state slope" becomes
+"one-step-ahead-forecast slope"), same calibration pipeline, same
+seeds, same per-time standardization, same max-score rule.
+
+**Table 8. Composite built on ARIMA inputs vs. the Kalman composite**
+(detection rate, T = 500, 5% calibrated FAR;
+`paper_assets/exp20_composite_on_arima.csv`).
+
+| channel | break | detector | SNR 0.1 | SNR 0.5 | SNR 2.0 |
+|---|---|---|---|---|---|
+| **r** | ×1.5 | raw | 0.996 | 0.560 | 0.102 |
+|   |   | ARIMA-CUSUM | 0.900 | 0.942 | 0.868 |
+|   |   | composite (Kalman) | 0.818 | 0.868 | 0.910 |
+|   |   | composite (ARIMA) | **0.226** | **0.416** | **0.632** |
+| **r** | ×3 | raw | 1.000 | 0.998 | 0.852 |
+|   |   | ARIMA-CUSUM | 0.980 | 0.998 | 0.998 |
+|   |   | composite (Kalman) | 0.990 | 0.992 | 0.976 |
+|   |   | composite (ARIMA) | 0.978 | 0.990 | 0.984 |
+| **q** | ×1.5 | raw | 0.094 | 0.212 | 0.230 |
+|   |   | ARIMA-CUSUM | 0.032 | 0.100 | 0.158 |
+|   |   | composite (Kalman) | 0.064 | 0.106 | 0.234 |
+|   |   | composite (ARIMA) | 0.044 | 0.104 | **0.096** |
+| **q** | ×3 | raw | 0.724 | 0.962 | 0.960 |
+|   |   | ARIMA-CUSUM | 0.262 | 0.794 | 0.996 |
+|   |   | composite (Kalman) | 0.438 | 0.760 | 0.976 |
+|   |   | composite (ARIMA) | 0.248 | **0.380** | 0.964 |
+
+The answer is *not* "no, by construction," and it is not uniform. Where
+the r-channel subtle ×1.5 break leaves room to differ (i.e. away from
+the ceiling), the Kalman composite decisively beats the ARIMA
+composite — 0.818 vs. 0.226 (SNR 0.1), 0.868 vs. 0.416 (SNR 0.5), 0.910
+vs. 0.632 (SNR 2.0); at n = 500 with a conservative independence-
+assuming SE bound these gaps are 11–23 combined SEs, not noise. The
+same pattern holds, smaller in magnitude, on the q-channel coarse ×3
+break at SNR 0.1/0.5 (0.438 vs. 0.248; 0.760 vs. 0.380) and at q ×1.5
+SNR 2.0 (0.234 vs. 0.096). Only in the near-ceiling cells — r ×3 at
+every SNR, q ×3 at SNR 2.0 — do the two composites converge (within
+0.01–0.02), and that convergence is because there is almost no room
+left for either to differ, not evidence of equivalence. A second,
+sharper anti-result: in every r ×1.5 cell and at q ×3/SNR 0.5, the
+ARIMA composite is not just worse than the Kalman composite but worse
+than the *single* ARIMA-CUSUM statistic feeding it (e.g. r ×1.5 SNR
+0.1: composite 0.226 vs. the same ARIMA rung's own single-feature
+statistic at 0.900) — bolting the other 10 features onto ARIMA inputs
+is actively counterproductive there, a stronger form of the
+max-over-features dilution already documented for a different
+composite variant (COMPOSITE_ROBUST2, §8.3(ii)): the composite's
+calibrated threshold is set by whichever feature has the heaviest null
+tail, and the ARIMA-based state-analog features evidently have
+worse-behaved null distributions than their Kalman counterparts,
+taxing the whole composite's FAR budget more heavily.
+
+**This narrows §5's headline claim.** "The ladder is really raw vs.
+whitened" is exactly true for the single innovation-series statistic —
+that is a proven identity, not an estimate. It is only an
+*approximation*, and a poor one away from the detection ceiling, for
+the full composite: the state-based features carry real, state-specific
+information that ARIMA's fitted-value analog does not reproduce, and
+losing it costs far more detection power than the innovation-series
+equivalence would suggest. The honest summary is not "the state adds
+nothing beyond whitening" but "the state adds nothing beyond whitening
+*for the single break-pressure statistic*; for the richer composite it
+adds a large, measured amount, concentrated exactly in the subtle-break
+regime where detection is hardest and the practical stakes are
+highest."
 
 ## 6. Dynamics: near the information floor
 
@@ -1299,7 +1437,27 @@ The mechanics behind that verdict are summarized in four points.
   under real channel uncertainty, ARIMA was the better single choice
   in two of the three SNRs tested here; running both is only clearly
   justified if the analyst has a specific reason to think the channel
-  mix is skewed toward the regime where raw wins (low SNR). Use the
+  mix is skewed toward the regime where raw wins (low SNR). That
+  per-SNR comparison is itself an oracle a real practitioner facing
+  *unknown* SNR cannot make after the fact — the practically relevant
+  question is what a FIXED rule scores, pooled across the SNR range
+  tested. Pooling exp14's three per-SNR rates under an explicit
+  equal-thirds weighting (the simplest defensible default absent a
+  claimed population mix of SNRs, not a derived ground truth;
+  `experiments/exp18_pooled_baseline.py`) gives always-raw 0.392
+  (SE 0.016), always-ARIMA 0.567 (SE 0.017), the jointly-calibrated
+  combined statistic 0.480 (SE 0.017), and an oracle that picks
+  whichever of raw/ARIMA is better *at each SNR* 0.579 (SE 0.016; by
+  construction this oracle rate is ≥ both fixed rules at every one of
+  the three SNRs, confirmed exactly). Two things follow: (1) pooled,
+  always-ARIMA beats the jointly-calibrated combined statistic by 0.09
+  and always-raw by 0.17 — under channel uncertainty with this SNR
+  mix, simply always running ARIMA is a stronger fixed rule than
+  either "run both" or "always raw"; (2) always-ARIMA already captures
+  all but 0.012 of the oracle's advantage, so knowing the SNR in
+  advance (on top of not knowing the channel) buys almost nothing here
+  — the earlier per-SNR "ARIMA wins in two of three" reading and the
+  pooled fixed-rule reading agree. Use the
   exceedance-indicator variant under heavy tails and the composite for
   breadth. Calibrate everything on matched nulls at a common FAR (a common
   ARL₀) and report empirical FARs.
@@ -1313,14 +1471,20 @@ The mechanics behind that verdict are summarized in four points.
   switching-SSM (Kim filter) model layer; formalizing the
   persistence-break mechanisms; a vol-regime reference set for scoring
   the exceedance detector on real data; a plain GARCH(1,1) benchmark
-  is now reported (Related Work) and sits at the false-alarm floor on
-  both variance channels, contributing nothing over chance on this
-  DGP; a break-aware GARCH variant (allowing its own parameters to
-  shift, in the spirit of Bai & Perron 2003) and a full
-  stochastic-volatility state-space comparison remain open — the
-  plain-GARCH result rules out the most obvious "just use GARCH"
-  objection without resolving whether a purpose-built regime-shift
-  volatility model would fare differently.
+  is now reported over the full 2×2×3 channel×break-size×SNR grid
+  (Related Work): it is dominated by raw and/or ARIMA in all 12
+  cells, sits at the false-alarm floor specifically at the subtle
+  ×1.5 break and moderate-to-high SNR, but is NOT at the floor
+  elsewhere — it clears it substantially at the coarse ×3 break on
+  both channels (0.19–0.96) and at low-SNR subtle r-channel breaks
+  (0.50) — so "GARCH contributes nothing over chance" holds only for
+  the originally-checked subset, not the DGP in general; a
+  break-aware GARCH variant (allowing its own parameters to shift, in
+  the spirit of Bai & Perron 2003) and a full stochastic-volatility
+  state-space comparison remain open — the fuller plain-GARCH grid
+  rules out the "just use GARCH" objection at every break size and
+  SNR tested (dominated everywhere) without resolving whether a
+  purpose-built regime-shift volatility model would fare differently.
 
 ---
 
@@ -1500,6 +1664,16 @@ their own 5% each). The recommendation as originally stated did not
 hold up — running both loses to the single better detector at every
 SNR tested, with the gap widening from 0.06 (SNR 0.1) to 0.166 (SNR
 2.0) — and §10's practical-recipe bullet has been revised accordingly.
+A follow-up, `exp18` (`experiments/exp18_pooled_baseline.py`), pools
+those three per-SNR rates (equal-thirds weighting, disclosed as an
+assumption) into fixed always-raw / always-ARIMA rules a practitioner
+facing *unknown* SNR could actually follow, alongside an oracle that
+picks the better of raw/ARIMA at each SNR: always-raw 0.392,
+always-ARIMA 0.567, jointly-calibrated combined 0.480, oracle 0.579 —
+always-ARIMA is the strongest fixed rule (beating both "run both" and
+always-raw) and already captures all but 0.012 of the oracle's
+advantage, so not knowing the channel costs more here than not knowing
+the SNR.
 A seventh addition, `exp15` (`experiments/exp15_garch_benchmark.py`,
 `experiments/garch_detector.py`), fits a GARCH(1,1) on the training
 prefix only (via the `arch` package), causally forward-filters
@@ -1507,11 +1681,17 @@ conditional variance over the full series with the fixed fitted
 parameters, and runs the same three-arm max-CUSUM used for the raw and
 ARIMA rungs on the standardized residuals — reported in Related Work
 rather than left deferred. Calibrated at n_reps = 500 (empirical FAR
-0.050 confirmed in every cell), GARCH sits at the false-alarm floor on
-both variance channels at every SNR tested, contributing nothing over
-chance on this DGP — a materially stronger negative result than a
-prior placeholder estimate had suggested, and reported at its measured
-value rather than softened. An eighth addition, `exp16`
+0.050 confirmed in every cell) over the full 2×2×3 channel × break-size
+× SNR grid — extended from an initial four-cell (subtle-break-only)
+subset — GARCH sits at the false-alarm floor only on that subtle-break,
+moderate-to-high-SNR subset; it clears the floor substantially at the
+coarse ×3 break on both channels and at low-SNR subtle r-channel
+breaks, while remaining dominated by raw and/or ARIMA in all 12 cells.
+The floor result on the original four cells stands, but "contributes
+nothing over chance" does not generalize to the full grid — a
+materially more nuanced finding than the initial four-cell check
+suggested, reported at its measured value rather than left
+underspecified. An eighth addition, `exp16`
 (`experiments/exp16_aic_order_frequencies.py`,
 `paper_assets/exp16_aic_order_frequencies.csv`), quantifies Appendix B's
 near-unit-root AIC order-selection claim across the same 12 (φ, SNR)
@@ -1526,7 +1706,24 @@ windows from both the hit count and the resampling universe (not just
 the hit count, which would compare a restricted numerator against an
 unrestricted denominator) drops raw_cusum and lsc_kalman_cusum from
 4/9 to 1/9 hits each and collapses their significance to p = 0.1474 —
-see §9. 98 tests include
+see §9. A tenth, `exp19`
+(`experiments/exp19_paired_se_grid_v8.py`), replaces Table 4's
+conservative, independence-assuming SE(Δ) bound with the true paired
+per-replicate SE — raw and ARIMA are scored on the same simulated path
+per replicate, not independent draws, so pairing was expected to
+tighten the bound; it reconstructs the per-replicate outcomes (not
+retained by the grid runner) by re-running both detectors through the
+config and seeds that produced Table 4, verified to reproduce every
+published cell's detect_rate exactly. An eleventh, `exp20`
+(`experiments/exp20_composite_on_arima.py`, `lsc.models.ARIMAModel`),
+tests whether the composite's power over plain ARIMA-CUSUM is fully
+explained by the ARMA(1,1) innovation-series equivalence (§5) or
+whether the 6 of 11 composite features built on the Kalman filtered
+state carry something state-specific: away from the detection ceiling
+it does not generalize — the Kalman composite decisively beats the
+same composite built on ARIMA's fitted-value analog, narrowing §5's
+"raw vs. whitened, not the state" framing to the single innovation-
+series statistic it was proven for. 98 tests include
 bit-identical no-lookahead checks for every feature and detector
 (including the raw and ARIMA variance rungs, the two windowed
 statistics, and a training-freeze check), DGP ground-truth checks
@@ -1589,6 +1786,17 @@ the four-series circular-shift extension above: a separate fresh
 clone reproduces the export step's window-bounds validation and the
 exact enumeration results for all four series bit-for-bit, including
 GDP's exact tie with the Bonferroni threshold.
+A fourth round (2026-07-23) added the exp15 full 2×2×3 GARCH grid,
+`exp18` (pooled exp14 baselines), `exp19` (paired SE for Table 4), and
+`exp20` (composite-on-ARIMA, `lsc/models/arima_model.py`) — full test
+suite still green (98 passed) and `exp19` self-verifies by reproducing
+all 12 published Table-4 detect_rate cells exactly from the original
+config and seeds, but this round has NOT yet been run through the
+fresh-clone reproducibility-check protocol the other rounds above have
+(`exp20`'s ~8.8-hour wall-clock, driven by a handful of pathologically
+slow ARIMA fits documented in `experiments/CHANGELOG.md`, made a full
+re-verification pass impractical within this session) — flagged here
+rather than silently assumed to meet the same bar.
 
 ## Appendix B. Theory: statements and proofs
 
@@ -1721,6 +1929,8 @@ cells).
 | **r**-break ×1.5: ARIMA rung, T=500 | 0.90 / 0.94 / 0.87 (SNR 0.1/0.5/2.0) | grid_v4_varbench |
 | **r**-break ×1.5 t₅ (raw/ARIMA/composite), SNR 0.5 | 0.43 / 0.74 / 0.16 | grid_v4_varbench, v2_misspec |
 | ARMA≡Kalman innovation ρ̄ (estimated / true params) | 0.99 / 1.000 (max\|Δ\|≈10⁻⁹) | exp07 |
+| Composite-on-Kalman vs. composite-on-ARIMA, r ×1.5 (SNR 0.1/0.5/2.0) | 0.818/0.868/0.910 (Kalman) vs. 0.226/0.416/0.632 (ARIMA) — decisive away from ceiling | exp20_composite_on_arima |
+| Composite-on-ARIMA vs. its own single ARIMA-CUSUM feature, r ×1.5 | 0.226/0.416/0.632 (composite) < 0.900/0.942/0.868 (single feature) — composite is counterproductive on ARIMA inputs | exp20_composite_on_arima |
 | **q**-break ×1.5: raw rung, T=500 | 0.09 / 0.21 / 0.23 (SNR 0.1/0.5/2.0) | grid_v5_qbreak |
 | **q**-break ×1.5: ARIMA rung, T=500 | 0.03 / 0.10 / 0.16 (SNR 0.1/0.5/2.0) | grid_v5_qbreak |
 | Pre-registered decision rule (§5) resolved | Outcome B2 (r-channel-specific) | §5, CHANGELOG |
@@ -1731,6 +1941,7 @@ cells).
 | ARL₀ at 5% window-FAR (L=375) | ≈ 7300 obs | arl_table |
 | φ×q: ×1.5 raw edge, φ-swept = SNR-swept | Δ 0.11=0.11 (SNR 0.5) | grid_v8 vs grid_v5 |
 | φ×q: subtle Δ at φ→0 / Spearman(amp,Δ) | 0.00 / 0.83; ×3 falsified (−0.60) | grid_v8_phiqbreak |
+| φ×q Table 4: paired vs. conservative SE(Δ), 12 cells | paired 0.014–0.025 vs. old worst-case bound 0.032 (all cells reproduced exactly); φ=0.95-vs-0.99 subtle-Δ gap now ≈1.5 SE (was ≈0.8 SE) | exp19_paired_se_grid_v8 |
 | Variance ×1.5 across T = 200/500/2000 | 0.11 / 0.87 / 0.99 | grid_v2_T |
 | t₅ collapse and repair (×1.5) | 0.16 → 0.75 (tail_cusum) | grid_v2_misspec, v3c |
 | Quieting ×⅔ (only tail_cusum) | 0.41 / 0.33 | grid_v3c |
@@ -1746,9 +1957,10 @@ cells).
 | Circular-shift joint test, GDP | 6 vs. null mean 1.50, max 6 (240 shifts, exact) — p=0.0125, exact tie with the threshold, half the hits from one synchronized co-firing; §9 | exp13d_all_series_circular_shift |
 | Circular-shift joint test, GS10 | 4 vs. null mean 1.30, max 6 (720 shifts, exact) — p=0.076, does not survive; §9 | exp13d_all_series_circular_shift |
 | Circular-shift joint test, UNRATE | 14 vs. null mean 3.57, max 16 (780 shifts, exact) — p=0.0115, nominally survives, but 64% of hits (9/14) sit in the same φ-clipped windows already flagged in §9; §9 | exp13d_all_series_circular_shift |
-| GARCH(1,1) benchmark vs. raw/ARIMA rungs, ×1.5, SNR 0.5/2.0 (n_reps=500) | r-channel: 0.098/0.096 (GARCH) vs. 0.56/0.10 (raw), 0.94/0.87 (ARIMA); q-channel: 0.066/0.098 (GARCH) vs. 0.21/0.23 (raw), 0.10/0.16 (ARIMA) — GARCH at the FAR floor throughout | exp15_garch_benchmark |
+| GARCH(1,1) benchmark, full 2×2×3 grid (channel × ×1.5/×3 × SNR, n_reps=500) | r ×1.5: 0.498/0.098/0.096; r ×3: 0.962/0.708/0.548; q ×1.5: 0.038/0.066/0.098; q ×3: 0.186/0.344/0.338 (SNR 0.1/0.5/2.0) — floor only at ×1.5 + moderate/high SNR; dominated by raw/ARIMA in all 12 cells | exp15_garch_benchmark |
 | AIC order-selection frequency at φ=0.95 (SNR 0.1/0.5/2.0), n=500/cell | (1,0,1): 12.0%/9.4%/7.8%; (1,0,0) dominant at SNR 0.1 (43.0%), (0,1,1) dominant at SNR 0.5-2.0 (64.8%/68.6%) | exp16_aic_order_frequencies |
 | UNRATE φ-gated permutation test (raw_cusum, lsc_kalman_cusum) | 4/9→1/9 hits after excluding clipped-φ windows from both numerator and resampling universe (540/780 months); p=0.1474 (both), vs. ungated 0.0002-0.0004; §9 | exp17_unrate_phi_gated |
 | Mixed-channel (raw+ARIMA run jointly, unknown channel), SNR 0.1/0.5/2.0 | combined loses to single-better detector at every SNR: 0.493 vs 0.553 / 0.490 vs 0.560 / 0.457 vs 0.623 | exp14_mixed_channel |
+| Pooled fixed-rule baselines (equal-thirds over SNR 0.1/0.5/2.0), unknown channel AND SNR | always-raw 0.392, always-ARIMA 0.567, combined 0.480, oracle-best-per-SNR 0.579 — always-ARIMA nearly matches the oracle (gap 0.012) | exp18_pooled_baseline |
 | GFC real-time | 2008-09 data, known 2008-12 | rd_realtime |
 | COVID real-time | data 2020-03, ~2 mo before NBER | rd_realtime |

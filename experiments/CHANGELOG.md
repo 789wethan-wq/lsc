@@ -1057,3 +1057,106 @@ bounded-memory property, including the one that caught the first,
 wrong design). `make all` reproduces every pre-existing artifact
 byte-identically except the already-documented BLAS-epsilon noise in
 `m2_param_recovery.csv`.
+
+## 2026-07-23 — four referee-hardening follow-ups: exp15 full grid, paired SE (exp19), pooled exp14 baselines (exp18), composite-on-ARIMA ablation (exp20)
+
+**exp15 GARCH grid extension.** Only ran the subtle ×1.5 break at
+SNR ∈ {0.5, 2.0}, on both channels (4 of a 2×2×3 channel × break-size ×
+SNR cross). Extended `exp15_garch_benchmark.py` to the full 12-cell
+grid, reusing the 4 already-computed cells. **Finding changed, not
+just extended**: GARCH is at the false-alarm floor only on the
+originally-checked subset (subtle break, moderate/high SNR); it clears
+the floor substantially at the coarse ×3 break on both channels
+(0.19–0.96) and at r-channel/SNR 0.1 even at ×1.5 (0.498), while
+remaining dominated by raw and/or ARIMA in all 12 cells. "GARCH
+contributes nothing over chance on this DGP" does not generalize past
+the originally-checked cells — Related Work, §10, and Appendix C
+updated to the qualified claim.
+
+**exp19 — paired SE for Table 4.** Table 4's Δ = raw − ARIMA advantage
+cited a conservative, independence-assuming SE(Δ) ≤ 0.032 bound, but
+raw and ARIMA are scored on the same simulated path per replicate
+(paired, not independent). `lsc.eval.runner.run` does not persist
+per-replicate outcomes (only the aggregated rate), so
+`exp19_paired_se_grid_v8.py` reconstructs them by re-running both
+detectors (both deterministic given Y — no random restarts in either)
+through the identical config/seeds that produced Table 4 — verified to
+reproduce all 12 published detect_rate cells exactly, not an
+approximation. True paired SEs are 0.014–0.025, 15–55% below the old
+bound; the φ=0.95-vs-0.99 subtle-break gap moves from ≈0.8 SE
+(indistinguishable from noise) to ≈1.5 SE (suggestive, still not
+conventionally significant).
+
+**exp18 — pooled always-raw/always-ARIMA baselines for exp14.** exp14
+compared the jointly-calibrated combined statistic against whichever of
+raw/ARIMA is best *at each SNR* — an oracle a practitioner facing
+unknown SNR cannot use. `exp18_pooled_baseline.py` pools exp14's
+existing per-SNR rates under an explicit equal-thirds weighting (no new
+simulation): always-raw 0.392, always-ARIMA 0.567, combined 0.480,
+oracle-best-per-SNR 0.579 (oracle ≥ both fixed rules at every SNR,
+confirmed). Always-ARIMA is the strongest fixed rule and already
+captures all but 0.012 of the oracle's advantage — §10's practical
+recipe updated.
+
+**exp20 — composite-on-ARIMA ablation.** The ARMA(1,1) equivalence
+(exp07) is proven for the innovation series only; 6 of the composite's
+11 features are built from the Kalman filtered state, which has no
+innovation-series analog. Added `lsc.models.ARIMAModel` (fit-on-prefix
+ARIMA wrapped as a `Model`: `fittedvalues` as the state analog,
+standardized residuals as the innovations analog) so the EXISTING
+`compute_features`/`make_composite_detector` machinery runs unmodified
+on ARIMA inputs. Judgment call, disclosed in the script docstring: 5
+innovation-based features are a direct, already-precedented
+substitution; 6 state-based features are a real interpretive
+narrowing (ARIMA has no state distinct from the series it fits). Ran
+the same r/q × ×1.5/×3 × SNR{0.1,0.5,2.0} grid Table 3 uses. **Result:
+falsifies the naive extrapolation of the innovation-series equivalence
+to the full composite.** Away from the detection ceiling the Kalman
+composite decisively beats the ARIMA composite (e.g. 0.818 vs. 0.226 at
+r ×1.5/SNR 0.1, 11–23 combined SEs); in several cells the ARIMA
+composite is even worse than its own single ARIMA-CUSUM feature
+(stronger than the previously-documented max-over-features dilution,
+§8.3(ii) — there the diluted feature still beat its own null-Adjusted
+threshold; here the whole composite underperforms one of its own
+inputs). §5 gained a new subsection, the abstract's closing sentence
+was qualified, Table 8 added, Appendix C updated. "The ladder is really
+raw vs. whitened" now explicitly scoped to the single innovation-series
+statistic it was proven for, not extended to the composite.
+
+**Circular-import bug found and fixed while adding `ARIMAModel`.**
+`lsc/models/__init__.py` importing `arima_model.py` at module load time
+created a cycle: `lsc.diagnostics.features` imports
+`lsc.models.base.StateEstimate`, which runs `lsc.models/__init__.py`,
+which (with the naive top-level import) imported
+`lsc.benchmarks.arima`, which imports back into
+`lsc.diagnostics.features` — `ImportError: cannot import name
+'break_pressure' from partially initialized module`. Fixed with the
+same deferred-import pattern already used by `lsc.eval.detectors` and
+`lsc.benchmarks.variance` for this exact `benchmarks.arima` ↔
+`diagnostics.features` edge: the `from lsc.benchmarks.arima import
+fit_arima_prefix` import moved inside `ARIMAModel.fit()`.
+
+**Runtime anomaly, noted not chased.** `exp20`'s grid took ~8.8 hours
+wall-clock, dominated by 3 of 12 cells (q-channel, SNR 0.5/2.0 at
+×1.5, and SNR 0.1/0.5 at ×3) each taking 1.5–2.5 hours versus ~2
+minutes for every other cell, with `ps` CPU-time accounting showing the
+process was NOT continuously CPU-bound during the slow stretches —
+consistent with a pathologically slow `statsmodels` ARIMA MLE
+convergence on a small subset of the 1,550 per-cell prefix fits
+(calibration + scale-estimation + FAR-check + eval), not a hang (every
+cell completed with a sane result) and not process contention (no
+other heavy process was running concurrently, checked via `ps aux`
+mid-run). Unresolved; flagged for anyone rerunning this script that a
+per-fit timeout or a faster/bounded optimizer setting may be worth
+adding if this recurs.
+
+**Reproducibility.** All four new/modified scripts
+(`exp15_garch_benchmark.py`, `exp18_pooled_baseline.py`,
+`exp19_paired_se_grid_v8.py`, `exp20_composite_on_arima.py`) and the
+new `lsc/models/arima_model.py` are added to the repo; 98 tests still
+pass (no new tests added — none of this touched code paths already
+covered by the no-lookahead/regression suite, `ARIMAModel` reuses
+`fit_arima_prefix`/`ARIMA(...).filter` already exercised by
+`lsc.benchmarks.arima`'s own tests). Run strictly one experiment at a
+time throughout (lesson from the R1 round's contention bug); no
+overlapping heavy sims this round.
