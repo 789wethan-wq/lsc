@@ -1547,3 +1547,35 @@ Reproducibility: both scripts run once at their stated n_reps; outputs
 committed under paper_assets/exp26_known_param_variance.csv,
 paper_assets/exp27_windowed_variance.csv,
 paper_assets/exp27_windowed_variance_far.csv.
+
+## 2026-07-23 -- fixed a real gap: four verified citations never added, one used but missing from References
+
+External review round 3 supplied six verified citations. Four (Aue &
+Horvath 2013, Aue & Kirch 2024, Andreou & Ghysels 2002, Berkes/Gombay/
+Horvath/Kokoszka 2004) were never added to the paper at all -- no task
+in the round-3 punch list covered them explicitly, and they were
+missed. A fifth, Inclan & Tiao (1994), was used in-text (added this
+same round, for the ICSS benchmark, Sec 8.5) but never added to the
+References list -- a citation with no bibliography entry. Caught by
+the external reviewer re-checking the pushed commit, not by this
+repo's own process.
+
+Fixed all six, each with a real in-text citation (not just a
+reference-list entry):
+- Aue & Kirch (2024) and Aue & Horvath (2013): added to the "Quickest
+  detection and SPC" Related Work paragraph (Sec 1) -- the former as
+  the direct survey of the CUSUM family this paper uses throughout,
+  the latter as the broader structural-break literature survey.
+- Berkes, Gombay, Horvath & Kokoszka (2004) and Andreou & Ghysels
+  (2002): added to the GARCH Related Work paragraph (Sec 1), as
+  existing break-aware/multiple-break GARCH literature the paper's
+  "remains open" sentence had no citation for.
+- Harvey & Koopman (1992): added to Sec 9's UNRATE model-fit-check
+  paragraph, as the classical diagnostic-checking-of-unobserved-
+  components reference justifying why per-window (not just
+  on-average) parameter/residual checks are the right diagnostic.
+- Inclan & Tiao (1994): added to the References list (in-text
+  citation already present from the ICSS addition).
+
+All six now appear both in-text and in the alphabetized References
+list, in the paper's existing citation format.

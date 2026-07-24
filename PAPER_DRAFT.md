@@ -106,7 +106,14 @@ literatures.
 **Quickest detection and SPC.** Sequential change detection descends
 from Page's (1954) CUSUM and the quickest-detection tradition (Lorden
 1971; Moustakides 1986); we use the CUSUM as the common statistic across
-information sets rather than proposing a new stopping rule. That
+information sets rather than proposing a new stopping rule. Aue &
+Kirch (2024) survey seven decades of CUSUM-based sequential
+changepoint testing specifically — the family of statistics this paper
+uses throughout, on progressively more processed information sets
+rather than a new member of that family — and Aue & Horváth (2013)
+survey the broader structural-break-in-time-series literature this
+paper's application (§9) sits inside, independent of any particular
+test statistic. That
 literature also supplies the evaluation currency we adopt: the average
 run length (ARL), with methods compared at a matched in-control ARL₀ —
 the statistical-process-control convention (Page 1954; Montgomery 2013).
@@ -230,7 +237,14 @@ persistent φ = 0.95 latent state) — but we have not isolated the
 mechanism beyond this scope note, and do not rule out an
 implementation-specific cause. A break-aware GARCH variant (allowing
 its own parameters to shift) and the full stochastic-volatility
-comparison remain open.
+comparison remain open; this is not unstudied ground in general —
+Berkes, Gombay, Horváth & Kokoszka (2004) give a sequential
+change-point test for GARCH(p,q) models directly, and Andreou &
+Ghysels (2002) detect multiple breaks in financial-market volatility
+dynamics with a related-but-distinct retrospective approach — but we
+have not benchmarked either against this paper's calibrated-FAR
+protocol, and doing so (rather than the plain, non-break-aware
+GARCH(1,1) benchmarked above) is the natural next step.
 
 **Offline changepoint detection.** Offline changepoint methods (PELT,
 Killick et al. 2012) solve a retrospective segmentation problem; our
@@ -1637,7 +1651,11 @@ alarm.)
 **Unemployment rate (UNRATE, monthly).** Table 6's raw_cusum and
 lsc_kalman_cusum results on UNRATE look like the strongest association
 in the real-data application — 4/4 hits, zero strays, p=0.0002–0.0004
-— but a model-fit check (`experiments/exp09_real_data_fit_check.py`)
+— but a model-fit check (`experiments/exp09_real_data_fit_check.py`,
+in the spirit of Harvey & Koopman's (1992) diagnostic-checking
+program for unobserved-components/state-space models — parameter
+estimates and filter residuals should be checked, not just used, on
+every window separately, not only on average across windows)
 complicates that reading. In three of the four windows producing these
 hits (the 1974, 2001, and 2008 recessions), the AR(1) MLE fits a
 *negative* φ (−0.82, −0.19, −0.41) before the pipeline's clipping to
@@ -1881,12 +1899,27 @@ The mechanics behind that verdict are summarized in four points.
 Adams, R. P., and D. J. C. MacKay (2007). "Bayesian Online Changepoint
 Detection." *arXiv preprint* arXiv:0710.3742.
 
+Andreou, E., and E. Ghysels (2002). "Detecting Multiple Breaks in
+Financial Market Volatility Dynamics." *Journal of Applied
+Econometrics* 17(5), 579–600.
+
+Aue, A., and L. Horváth (2013). "Structural Breaks in Time Series."
+*Journal of Time Series Analysis* 34(1), 1–16.
+
+Aue, A., and C. Kirch (2024). "The State of Cumulative Sum Sequential
+Changepoint Testing 70 Years After Page." *Biometrika* 111(2),
+367–391.
+
 Bai, J., and P. Perron (2003). "Computation and Analysis of Multiple
 Structural Change Models." *Journal of Applied Econometrics* 18(1),
 1–22.
 
 Basseville, M., and I. V. Nikiforov (1993). *Detection of Abrupt
 Changes: Theory and Application*. Englewood Cliffs, NJ: Prentice-Hall.
+
+Berkes, I., E. Gombay, L. Horváth, and P. Kokoszka (2004). "Sequential
+Change-Point Detection in GARCH(p,q) Models." *Econometric Theory*
+20(6), 1140–1167.
 
 Bollerslev, T. (1986). "Generalized Autoregressive Conditional
 Heteroskedasticity." *Journal of Econometrics* 31(3), 307–327.
@@ -1910,6 +1943,14 @@ University Press.
 
 Harvey, A. C. (1989). *Forecasting, Structural Time Series Models and
 the Kalman Filter*. Cambridge: Cambridge University Press.
+
+Harvey, A. C., and S. J. Koopman (1992). "Diagnostic Checking of
+Unobserved-Components Time Series Models." *Journal of Business &
+Economic Statistics* 10(4), 377–389.
+
+Inclán, C., and G. C. Tiao (1994). "Use of Cumulative Sums of Squares
+for Retrospective Detection of Changes of Variance." *Journal of the
+American Statistical Association* 89(427), 913–923.
 
 Killick, R., P. Fearnhead, and I. A. Eckley (2012). "Optimal Detection
 of Changepoints with a Linear Computational Cost." *Journal of the
