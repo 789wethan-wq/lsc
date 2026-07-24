@@ -1160,3 +1160,45 @@ covered by the no-lookahead/regression suite, `ARIMAModel` reuses
 `lsc.benchmarks.arima`'s own tests). Run strictly one experiment at a
 time throughout (lesson from the R1 round's contention bug); no
 overlapping heavy sims this round.
+
+## 2026-07-23 (follow-up) — external review of the above: two claims tightened
+
+An external review of the four additions above (full transcript
+outside this repo) surfaced two overclaims in the write-up, not in the
+underlying computation, and requested one direct check before the
+GARCH-grid finding went into the paper as clean.
+
+**exp15: the "empirical FAR = 0.050 in every cell" figure is
+tautological.** It is computed on the same calibration draws the
+threshold was set from (`(det.null_max_scores >= det.threshold).mean()`),
+so it equals the target by construction — true of all 12 cells, old
+and new, not a property the grid extension changed or weakened.
+`PAPER_DRAFT.md` no longer cites it as if it were an independent check.
+The question that actually matters — did the ×3 GARCH reversal come
+from scoring detection on the same draws used for calibration — was
+checked directly: `run_cell()`'s calibration block draws 500 paths
+from a null DGP (no break) at seeds 100000–100499; detection is
+evaluated on 500 paths from a break-containing DGP at seeds
+200000–200499. Confirmed structurally (disjoint seed sets, different
+DGP instances) AND empirically (no calibration path byte-identical to
+any evaluation path in a direct sample; substituting a calibration
+seed into the evaluation DGP produces a different array than the real
+evaluation draw). No data-snooping in the GARCH grid extension.
+
+**exp19: "reproduces the original pairing" overstated what was
+verified.** No per-replicate log or column survives from the original
+`grid_v8_phiqbreak` run anywhere on disk (confirmed: `grid_v8_
+phiqbreak_results.csv` has only aggregate columns, `lsc.eval.runner.
+run` discards the per-replicate `outcomes` list after reducing it).
+So `exp19_paired_se_grid_v8.py`'s check that the reconstruction
+"reproduces the published detect_rate exactly" is a real, verified
+claim about the AGGREGATE rate, cell by cell — not a direct check of
+the original individual-replicate pairing, which has nothing to check
+it against. The pairing claim rests on a determinism argument
+(identical seed + code path -> bit-identical Y and bit-identical
+scores), itself verified directly (same detector called twice on the
+same Y, and Y re-drawn twice from the same seed, both bit-identical)
+rather than merely inferred from reading the code. Docstring, inline
+comments, and `PAPER_DRAFT.md`'s Table 4 caption all rewritten to
+state this precisely: aggregate reproduction is checked; pairing
+reproduction is a checked-mechanism argument, not a checked outcome.

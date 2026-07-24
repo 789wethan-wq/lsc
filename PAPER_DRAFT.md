@@ -161,11 +161,25 @@ causally forward-filtered for conditional variance over the full series
 with the fixed fitted parameters, and run through the same three-arm
 max-CUSUM used for the raw and ARIMA rungs on its standardized residuals
 (`experiments/garch_detector.py`, `experiments/exp15_garch_benchmark.py`).
-Calibrated at n_reps = 500 matching the published grid (empirical FAR
-0.050 in every cell checked), we report the full 2×2×3 grid — both
-variance channels, subtle (×1.5) and coarse (×3) breaks, SNR ∈
-{0.1, 0.5, 2.0} — rather than the four-cell subtle-break-only subset
-originally checked, and the fuller grid changes the finding:
+Calibrated at n_reps = 500 matching the published grid, we report the
+full 2×2×3 grid — both variance channels, subtle (×1.5) and coarse
+(×3) breaks, SNR ∈ {0.1, 0.5, 2.0} — rather than the four-cell
+subtle-break-only subset originally checked, and the fuller grid
+changes the finding. (The "empirical FAR = 0.050 in every cell"
+figure this script prints is a tautology, not an independent check —
+it is computed on the same calibration draws the threshold was set
+from, and equals the target by construction; this applies to all 12
+cells, old and new, not something introduced by the extension. What
+*was* checked directly: calibration and detection-rate evaluation use
+disjoint seed blocks (100000–100499 vs. 200000–200499) drawn from two
+different DGP instances — a null DGP with no break for calibration, a
+break-containing DGP for evaluation — confirmed both structurally and
+by direct simulation (no calibration path is byte-identical to any
+evaluation path; substituting a calibration seed into the evaluation
+DGP produces a different path than the real evaluation draw), so the
+grid extension, including the ×3 GARCH reversal below, is not an
+artifact of scoring detection on the same draws used to set the
+threshold.)
 
 | channel | vol_mult | SNR 0.1 | SNR 0.5 | SNR 2.0 |
 |---|---|---|---|---|
@@ -668,14 +682,23 @@ are the TRUE paired-per-replicate SE(Δ), not the conservative
 independence-assuming bound cited in an earlier draft. Raw and ARIMA
 are scored on the SAME simulated path per replicate, so the pairing
 matters: `experiments/exp19_paired_se_grid_v8.py` reconstructs the
-per-replicate detection outcomes (not retained by the grid runner,
-which only persists the aggregated rate) by re-running both detectors
-through the identical config and seeds used to produce this table —
-both are deterministic given Y, so this reproduces the published
-detect_rate numbers in this table exactly (verified cell-by-cell, all
-12 reproduced bit-for-bit) rather than approximating them — and
-reports SE(d̄) where d = 1{raw detects} − 1{ARIMA detects} per
-replicate. The paired SEs (0.014–0.025) run 40–55% below the old
+per-replicate detection outcomes (not persisted by the original run;
+`lsc.eval.runner.run` computes them but only writes the aggregated
+rate to disk, so no per-replicate ground truth exists to check the
+individual pairing against). Per-replicate outcomes were not persisted
+by the original run; the paired SE instead relies on a determinism
+argument — identical seed and code path reproduce a bit-identical
+simulated path and bit-identical detector scores, verified directly
+rather than assumed (independently re-running the same detector on the
+same path twice, and re-drawing the same seed, both confirmed
+bit-identical) — and the resulting aggregate rates match the published
+values exactly (all 12 cells). That is a real, checkable claim about
+the aggregate and about the mechanism that should make the
+reconstructed pairing correct; it is not a direct empirical check of
+the original individual-replicate pairing, because no such record
+survives to check it against. SE(d̄) is reported, where
+d = 1{raw detects} − 1{ARIMA detects} per replicate. The paired SEs
+(0.014–0.025) run 40–55% below the old
 independence-assuming worst-case bound of 0.032 used previously, and
 15–30% below an independence bound computed from the actual observed
 rates rather than the worst-case p = 0.5 — consistent with positive

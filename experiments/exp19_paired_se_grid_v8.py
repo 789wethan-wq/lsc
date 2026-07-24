@@ -21,14 +21,30 @@ code path (`lsc.eval.runner.build_dgp` / `build_detector`,
 `lsc.diagnostics.alarms.calibrate`) with the SAME config
 (`configs/grid_v8_phiqbreak.yaml`) and the SAME seed bases (calibration
 100_000+i, evaluation 200_000+i) as the original run -- not a rerun
-with a fresh seed, which would not reproduce the original pairing.
-Both detectors are deterministic given Y (raw_var_cusum has no fitting
-step at all; arima_var_cusum's `ARIMA(...).fit()` has no random
-restarts or seeded search -- see `lsc/benchmarks/arima.py`), so this
-reconstruction is bit-for-bit the same computation that produced the
-published detect_rate numbers, not an approximation of it -- verified
-below by comparing the reproduced aggregate rates against the
-already-published `grid_v8_phiqbreak_results.csv`.
+with a fresh seed, which would trivially fail to reproduce the
+original pairing.
+
+IMPORTANT SCOPE OF THE VERIFICATION BELOW: no per-replicate ground
+truth from the ORIGINAL run survives anywhere (see above), so there is
+nothing to check the reconstructed pairing against directly. What this
+script verifies empirically is that the reconstructed AGGREGATE
+detect_rate matches the published aggregate detect_rate exactly, cell
+by cell, against `grid_v8_phiqbreak_results.csv`. The stronger claim --
+that the reconstruction also reproduces the original REPLICATE-LEVEL
+pairing, not just a same-aggregate substitute -- rests on a
+determinism argument, not a direct empirical check: both detectors are
+deterministic given Y (raw_var_cusum has no fitting step at all;
+arima_var_cusum's `ARIMA(...).fit()` has no random restarts or seeded
+search -- see `lsc/benchmarks/arima.py`), and `AR1StateDGP.sample`
+draws from `np.random.default_rng(seed)` with no shared/offset state
+across calls, so the same (seed, code) pair reproduces a bit-identical
+Y and a bit-identical score path. This determinism was itself checked
+directly (not merely read off the code): calling the same detector
+twice on the same Y, and re-drawing Y from the same seed twice, both
+verified bit-identical. That is real evidence for the mechanism that
+SHOULD make the reconstructed pairing correct -- it is not the same as
+an empirical check of the original pairing itself, because no such
+record exists to check it against.
 
 Usage: python experiments/exp19_paired_se_grid_v8.py
 Output: prints, per cell, the reproduced rates (vs. published, as a
