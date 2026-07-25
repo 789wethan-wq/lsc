@@ -1579,3 +1579,239 @@ reference-list entry):
 
 All six now appear both in-text and in the alphabetized References
 list, in the paper's existing citation format.
+
+## 2026-07-24 — R2 M1 PRE-REGISTERED: φ = 0.99 as a second operating point (r-channel + known-parameter), before any new grid cell runs
+
+Registered before implementing `configs/grid_v9_r_phi99.yaml` or the
+φ = 0.99 known-parameter script (verified: neither file exists at
+commit time). The paper's headline body arena uses φ = 0.95
+throughout; φ = 0.99 is a substantially more persistent, arguably more
+empirically realistic operating point (§4's `grid_v6_phisweep` already
+sweeps φ ∈ {0.5, 0.8, 0.95, 0.99} for the level-shift innovation-CUSUM,
+and `grid_v8_phiqbreak` already has a φ = 0.99 row for the q-channel
+raw-vs-ARIMA ladder at fixed q = 0.04875, r = 1.0). Two cells have
+never been run at φ = 0.99: (i) the r-channel (observation-noise)
+whitening ladder — raw_var_cusum vs arima_var_cusum, ×1.5 and ×3
+obs-noise breaks, SNR ∈ {0.1, 0.5, 2.0} via q = SNR·(1−φ²)·r (the
+grid_v4 convention; at φ = 0.99 this gives q ∈ {0.00199, 0.00995,
+0.0398}, matching the q values already used in `grid_v6_phisweep`'s
+φ = 0.99 row) — and (ii) the known-parameter counterpart
+(`known_raw_var_cusum_score` / `known_kalman_var_cusum_score`, exp26's
+method) for BOTH channels at φ = 0.99, extending Table 3's
+known-vs-estimated ablation the same way exp26 did at φ = 0.95. The
+q-channel estimated ladder at φ = 0.99 is NOT rerun — `grid_v8_phiqbreak`
+already covers it (arena `ar1_phi0.99`, q = 0.04875 fixed, induced
+SNR ≈ 2.45) and is pulled into the comparison table directly.
+
+**Pre-registered prediction (falsifiable).** The paper's trichotomy —
+(a) r-breaks: raw is SNR-dependent and whitening rescues it; (b)
+q-breaks: raw matches or beats whitening, an inverted ordering; (c)
+known parameters narrow but do not close the estimated-rung gaps —
+holds QUALITATIVELY at φ = 0.99: raw_var_cusum's r-channel detection
+rate still falls with SNR, arima_var_cusum stays flatter, and the
+q-channel ordering (raw ≥ ARIMA) still holds at ×3. **Falsifiers:**
+the r-channel SNR-dependence reverses sign or vanishes at φ = 0.99; the
+q-channel ordering inverts back (ARIMA beats raw) at ×3; known
+parameters close an estimated-rung gap that was open at φ = 0.95 (or
+vice versa) at φ = 0.99. A φ-dependent qualifier is explicitly an
+acceptable, publishable outcome per Proposition 1 (μ∞ and the
+fast-or-never boundary are both φ-dependent) — not a failure to be
+smoothed over. Same protocol as grid_v4/grid_v8: n_reps = 500,
+T = 500, far_target = 0.05, train_frac = 0.25, identical seed blocks.
+Outcome logged with numbers when resolved.
+
+## 2026-07-24 — R2 M1 RESOLVED: CONFIRMED IN PART, FALSIFIED IN PART (honest mixed, same pattern as M7)
+
+`configs/grid_v9_r_phi99.yaml` (r-channel, φ=0.99, both break sizes,
+three SNRs) + `experiments/exp28_known_param_phi99.py` (known-parameter
+counterpart, both channels) + `experiments/phi99_robustness_table.py`
+(assembler). Full numbers: `paper_assets/grid_v9_r_phi99_results.csv`,
+`paper_assets/exp28_known_param_phi99.csv`,
+`paper_assets/phi99_robustness_{estimated,known}.csv`. Table 3b added
+to PAPER_DRAFT.md (§5, after Figure 2/Table 4).
+
+**Falsified**: the subtle ×1.5 r-break's estimated-rung ordering does
+NOT survive φ=0.99 — ARIMA is not flatter than raw as predicted, it's
+lower and non-monotone (0.58/0.20/0.27 vs raw 0.98/0.24/0.07 across
+SNR 0.1/0.5/2.0), losing to raw at 2 of 3 SNRs. **Confirmed**: the
+coarse ×3 r-break ordering (ARIMA >= raw) and the q-channel ordering
+(raw >= ARIMA) both survive, the latter more decisively than its
+closest φ=0.95 comparator (q x3: raw 0.58 vs ARIMA 0.28 at φ=0.99,
+vs. raw 0.96 vs ARIMA 1.00 — ARIMA winning — at φ=0.95/SNR2.0).
+
+The known-parameter ablation (exp28, same method as exp26) diagnoses
+the subtle r-break falsifier as estimation, not mechanism: known-Kalman
+stays flat at 0.984 across SNR at BOTH φ (matching φ=0.95's
+0.986/0.984/0.984) -- whitening's POPULATION-level case for the r
+channel is intact, if anything strengthened, since known-raw itself
+now falls sharply with SNR at φ=0.99 (0.990/0.390/0.062) where it was
+roughly flat at φ=0.95 (0.988/0.964/0.168). The known/estimated ARIMA
+gap at φ=0.99 (+0.40 to +0.78) dwarfs the largest φ=0.95 gap (+0.40,
+exp26) -- near-unit-root AIC order-selection / MLE difficulty (already
+flagged as a "benign" artifact at φ=0.95 in the exp07 ARMA-equivalence
+discussion) is not benign at φ=0.99. Same diagnosis on the coarse
+r-break (raw's estimated decline at SNR2.0, 0.56 vs known-raw's
+near-ceiling 0.97, is also mostly estimation) and the q channel
+(known-Kalman beats known-raw at BOTH φ -- the population-level q-story
+was never "raw wins"; the φ=0.99 estimated advantage for raw is driven
+even more by ARIMA's near-unit-root fragility than the ARMA-θ-shift
+mechanism Table 3 credits at φ=0.95).
+
+Headline: the r-channel "prewhitening wins" claim in Table 3 is an
+ESTIMATED-rung statement, not a population-level one, and specifically
+fragile near the unit root because ARIMA order-selection/estimation
+degrades there -- not because whitening stops helping. Publishable
+scope qualifier, not a result to smooth over; matches the falsifier
+clause pre-registered above almost exactly (the r-channel SNR-dependence
+did not reverse sign, but the whitening advantage it was paired with
+did, at the subtle break specifically).
+
+## 2026-07-24 — R2 M2 PRE-REGISTERED: AR(2)+noise as a second DGP, before any implementation
+
+Registered before writing `AR2StateDGP` (verified: no such class exists
+in `lsc/dgp/` at commit time). The paper's entire theoretical apparatus
+(Propositions 1–2, the ARMA(1,1) equivalence, exp07) is derived for
+AR(1)+noise specifically. AR(2)+noise — S_t = φ₁S_{t-1} + φ₂S_{t-2} + w_t,
+Y_t = S_t + v_t, same additive observation noise — is a minimal but
+genuine generalization test: a second-order persistence structure
+reducible in principle to a closed-form ARMA representation, but not
+the same one-to-one identity Prop. 1/exp07 prove for AR(1), so it tests
+whether the empirical trichotomy (level: raw wins; r-breaks: whitening
+wins; q-breaks: raw wins) survives outside the exact algebraic
+correspondence the paper leans on.
+
+Two parameterizations, chosen for real vs. complex characteristic
+roots (qualitatively different persistence regimes, run and reported
+separately, not pooled): (i) real, well-separated roots — e.g.
+φ₁ = 1.4, φ₂ = −0.45 (roots ≈ 0.5, 0.9, both real, stationary since
+both |root| < 1); (ii) complex roots — e.g. φ₁ = 1.6, φ₂ = −0.9 (complex
+roots with modulus ≈ 0.949, giving oscillatory/quasi-cyclical
+persistence). Both stationarity-checked (roots of 1 − φ₁z − φ₂z² = 0
+outside the unit circle) before use. **Disclosed modeling choice, not
+a default:** the q-channel ("state-innovation variance") break for
+AR(2) scales the SD of the single shock w_t by `vol_mult` — unambiguous,
+since there is one shock — but AR(2) has TWO autoregressive
+coefficients, so "which channel counts as the state-innovation one"
+is a real choice, not a natural extension of the AR(1) definition; we
+use the innovation-variance definition (scales w_t's SD) because it is
+the direct structural analogue of AR1StateDGP's q-break and requires
+no further choice about which φ to perturb (a `persistence`-type break
+on one of φ₁/φ₂ is a DIFFERENT, unimplemented question, left open).
+
+One representative SNR and break size per parameterization (not the
+full grid): SNR 0.5, ×1.5 (r/q channels) or 1σ (level), matching the
+paper's most-discussed subtle-break cells. Core trichotomy comparisons
+only: level-shift raw CUSUM vs. innovation CUSUM; r-break raw_var_cusum
+vs. arima_var_cusum; q-break raw_var_cusum vs. arima_var_cusum.
+
+**Pre-registered prediction (falsifiable).** The qualitative ordering
+from the AR(1) trichotomy holds under both AR(2) parameterizations:
+raw beats/matches innovation-CUSUM on the level break; arima_var_cusum
+beats raw_var_cusum on the r-break; raw_var_cusum matches or beats
+arima_var_cusum on the q-break. **Falsifiers:** any of the three
+orderings flips sign under either parameterization. A flip is an
+honest scope-limit finding (the AR(1)-specific machinery not
+generalizing), reported the same way as a confirmation, not smoothed
+over. Same protocol conventions as the rest of the paper: n_reps = 500,
+T = 500, far_target = 0.05, train_frac = 0.25, seed blocks disjoint
+from all published grids (calibration 110000+, evaluation 210000+, to
+avoid seed collision with any existing arena). Outcome logged with
+numbers when resolved.
+
+## 2026-07-24 — R2 M2 RESOLVED: fully CONFIRMED, no falsifiers
+
+New `AR2StateDGP` (`lsc/dgp/continuous.py`; registered in
+`lsc/dgp/__init__.py` and `lsc.eval.runner.DGP_CLASSES`), new `'ar2'`
+`KalmanModel` spec (`lsc/models/kalman.py`, `UnobservedComponents(...,
+autoregressive=2)`), tests `tests/test_ar2.py` + AR2 entries added to
+`tests/test_dgp.py::ALL_DGPS` (stationarity of both parameterizations,
+sigma_ref vs. empirical variance on a 20k-step path, level/variance/
+state_var break conventions carried over unchanged from AR1StateDGP).
+`experiments/exp29_ar2_trichotomy.py` runs the core comparison; full
+numbers `paper_assets/exp29_ar2_trichotomy.csv`. Table 6 added to
+PAPER_DRAFT.md §8.6.
+
+All six pre-registered cells confirm the AR(1)-derived ordering: level
+(raw_cusum beats innovation_cusum, real roots 0.376 vs 0.156, complex
+roots 0.928 vs 0.760), r-channel (arima_var_cusum beats raw_var_cusum,
+real roots 0.968 vs 0.660, complex roots 0.938 vs 0.810), q-channel
+(raw_var_cusum beats arima_var_cusum, real roots 0.276 vs 0.184,
+complex roots 0.420 vs 0.280). No falsifiers triggered. The only one of
+this round's three extensions (R2 M1's φ=0.99, this, Appendix A's
+cross-environment check) to come back clean with no qualification
+needed. Scope caveat (not a falsifier): one cell per parameterization
+at one SNR/break-size is an existence check that the ordering survives
+leaving AR(1), not a characterization of how it varies across the
+AR(2) parameter space.
+
+## 2026-07-24 — R2 M3: cross-environment reproduction (design registered and resolved together — infrastructure check, not a falsifiable hypothesis, same category as the m6x real-data extension's design registration)
+
+Registered and run in the same session: build a container (`Dockerfile.repro`,
+`.dockerignore`, colima + Docker on the author's machine) deliberately
+different from the development environment on OS (Linux/Debian vs.
+macOS), C library (glibc vs. libc/Accelerate), and Python minor version
+(3.12 vs. 3.14 host), installing dependencies ONLY from
+`pyproject.toml`, then run `make all` with zero manual intervention and
+diff every output against the committed `paper_assets/`. Explicitly
+scoped as CROSS-ENVIRONMENT, not third-party: still the author's own
+tooling, just a different container — labeled that way throughout
+rather than left to imply the stronger claim. Full writeup: PAPER_DRAFT.md
+Appendix A, "A cross-environment reproduction" (new subsection).
+
+**Three real bugs found and fixed before a clean run, each a genuine
+gap a same-machine check cannot surface:**
+1. `pyproject.toml` declared `requires-python = ">=3.11"` but pinned
+   `numpy==2.5.1` needs Python >=3.12 -- first build failed outright.
+   Fixed: `requires-python` corrected to `>=3.12`.
+2. `experiments/m2_param_recovery.py`'s `to_latex()` needs `jinja2`
+   (pandas 3.x routes it through `Styler`) -- undeclared; only "worked"
+   on the host because jinja2 was present from an unrelated, unrecorded
+   install (`pip show jinja2` on host: `Required-by:` empty). Fixed:
+   added `jinja2==3.1.6` to dependencies.
+3. First `Dockerfile.repro` piped `make all | tee`, whose exit code
+   (always 0) masked make's real failure -- container reported success
+   while make had actually failed (paper_assets/ excluded from the
+   build context via `.dockerignore`, so there was nowhere to write).
+   Fixed: paper_assets/ now copied into the image (matching a real
+   `git clone`, which make then overwrites in place); run redirects to
+   a log file instead of piping through tee, so failures now surface
+   as the container's real exit code.
+
+**Result after fixes: clean run (`make all` exit 0), diffed file-by-file
+against committed paper_assets/** (excluding m2_param_recovery.csv,
+already-documented BLAS-thread-order nondeterminism, lesson 11). 18/23
+`*_results.csv` files byte-identical; the other 5 show detect_rate
+differences of at most 0.006 (3/500 reps), confined to MLE-fit-dependent
+methods (lsc_composite, lsc_state_cusum, ARIMA rungs) -- raw_cusum and
+other closed-form statistics are exact everywhere. Mechanism: almost
+certainly a different BLAS/LAPACK backend (macOS Accelerate vs.
+container OpenBLAS) under identical pinned numpy/statsmodels versions,
+nudging iterative-optimizer convergence by ~1 ULP-class amounts -- the
+same nondeterminism class as lesson 11, evidently larger (but still
+small relative to any reported effect size) across a genuine library
+change rather than repeated runs on one machine. exp29_ar2_trichotomy.csv
+(R2 M2) and grid_v9_r_phi99's results (R2 M1) -- the two genuinely
+fresh, non-cached computations this round added -- are BYTE-IDENTICAL
+end-to-end: the strongest single piece of evidence, a full
+simulate->fit->detect->calibrate pipeline reproduced to the last bit
+across OS/libc/Python version. exp28_known_param_phi99.csv shows only
+last-digit CSV string-formatting differences on rows its own
+`_already_done` cache reused unchanged -- a serialization artifact, not
+a value difference.
+
+Confound noted for transparency, not correctness: mid-run, host CPU
+load spiked to 50 (other processes on the author's own machine,
+unrelated to this container) and the run slowed ~20-30x for about 90
+minutes before easing -- affects wall-clock only.
+
+Honest scope of the claim: closed-form statistics reproduce to the
+literal bit across environments; MLE-dependent ones reproduce the
+substantive finding (detect_rate within 0.006, an order of magnitude
+below any effect size this paper calls meaningful) but not literal
+bit-identity -- floating-point optimizer convergence is not portable
+across BLAS backends even with every package version pinned. Real,
+disclosed limit, not smoothed over. Separately: this is still NOT a
+third-party reproduction (independent person, cold clone, README only)
+-- none has been performed; flagged as the more credible addition if a
+labmate/advisor becomes available before submission, per the
+scoping decision made when this round began.

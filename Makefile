@@ -9,9 +9,9 @@
 PY := .venv/bin/python
 ASSETS := paper_assets
 
-.PHONY: all venv test figures recovery exp01 exp02 exp03 exp04 exp05 exp06 exp08 grid grid_v2 grid_v4 fred paper clean
+.PHONY: all venv test figures recovery exp01 exp02 exp03 exp04 exp05 exp06 exp08 grid grid_v2 grid_v4 grid_v9 exp29 fred paper clean
 
-all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06 grid_v4 exp07 grid_v5 grid_v6 grid_v7 grid_v8 exp08 arl
+all: test figures recovery exp01 exp02 exp03 exp04 grid grid_v2 exp05 exp06 grid_v4 exp07 grid_v5 grid_v6 grid_v7 grid_v8 exp08 arl grid_v9 exp29
 	@echo "== repro pack complete (run 'make fred' separately: needs network) =="
 
 venv:
@@ -101,6 +101,19 @@ grid_v4:
 	$(PY) -m lsc.eval.runner configs/grid_v4_varbench_core.yaml
 	$(PY) -m lsc.eval.runner configs/grid_v4_varbench_T.yaml
 	$(PY) experiments/varbench_ladder.py
+
+# R2 M1 (persistence robustness round): r-channel ladder + known-parameter
+# ablation at phi=0.99, second operating point alongside the phi=0.95 body
+# arena (decision rule pre-registered in CHANGELOG before first run)
+grid_v9:
+	$(PY) -m lsc.eval.runner configs/grid_v9_r_phi99.yaml
+	$(PY) experiments/exp28_known_param_phi99.py 500
+	$(PY) experiments/phi99_robustness_table.py
+
+# R2 M2 (persistence robustness round): AR(2)+noise core trichotomy check
+# (decision rule pre-registered in CHANGELOG before first run)
+exp29:
+	$(PY) experiments/exp29_ar2_trichotomy.py 500
 
 fred:
 	$(PY) experiments/m6_fred.py 200

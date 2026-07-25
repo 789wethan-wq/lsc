@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from lsc.dgp import AR1StateDGP, BreakSpec, LocalLevelDGP
+from lsc.dgp import AR1StateDGP, AR2StateDGP, BreakSpec, LocalLevelDGP
 from lsc.diagnostics.alarms import calibrate, empirical_far
 from lsc.eval.detectors import (
     make_arima_cusum_detector,
@@ -31,7 +31,8 @@ from lsc.eval.detectors import (
 from lsc.eval.metrics import detection_outcome, summarize_detection
 from lsc.models import KalmanModel
 
-DGP_CLASSES = {"AR1StateDGP": AR1StateDGP, "LocalLevelDGP": LocalLevelDGP}
+DGP_CLASSES = {"AR1StateDGP": AR1StateDGP, "AR2StateDGP": AR2StateDGP,
+               "LocalLevelDGP": LocalLevelDGP}
 
 
 def build_dgp(arena_cfg: dict, breaks: list[BreakSpec]) -> object:

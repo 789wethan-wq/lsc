@@ -1,0 +1,49 @@
+# Cross-environment reproduction image (SPEC R2 M3 / Appendix A).
+#
+# Deliberately different from the author's development environment
+# (macOS/arm64, Homebrew Python 3.14) on every axis that's cheap to
+# vary: Linux (Debian, via the official python image) instead of
+# macOS, glibc instead of the host's libc, and Python 3.12 (the
+# package's minimum supported version, per pyproject.toml
+# requires-python -- corrected from an incorrectly-declared >=3.11
+# after this exact build caught that pinned numpy==2.5.1 requires
+# Python >=3.12; see CHANGELOG SPEC R2 M3) instead of the host's 3.14.
+# Dependencies are pinned exactly in pyproject.toml, so this tests
+# whether "pinned seeds reproduce exactly" survives a change of
+# OS/interpreter, not just a repeated run on the same machine.
+#
+# This is a CROSS-ENVIRONMENT reproduction, not a third-party one —
+# still run by the author's own tooling, just in a different container.
+# See PAPER_DRAFT.md Appendix A for what this does and does not claim.
+FROM python:3.12-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /repro/lsc
+COPY pyproject.toml ./
+COPY lsc ./lsc
+COPY tests ./tests
+COPY experiments ./experiments
+COPY configs ./configs
+COPY Makefile ./Makefile
+# committed paper_assets, matching what a real `git clone` would give
+# `make all` to overwrite in place -- omitting it (as an earlier
+# version of this Dockerfile did) starts from a directory that doesn't
+# exist, which is not what a fresh clone looks like and breaks the
+# very first `figures` target.
+COPY paper_assets ./paper_assets
+
+RUN python -m venv .venv \
+    && .venv/bin/pip install --no-cache-dir -e ".[dev]"
+
+# make all (everything except `fred`, which needs network) — no manual
+# intervention beyond this single command. Makefile already points PY
+# at .venv/bin/python. No shell pipe to `tee`: piping into tee makes
+# the container's exit code that of `tee` (always 0), silently masking
+# a `make` failure -- caught by the first run of this exact image,
+# which exited 0 despite `make all` actually failing on a missing
+# paper_assets/ directory (see CHANGELOG SPEC R2 M3). Redirecting
+# instead preserves `make`'s real exit code for `docker ps -a`.
+CMD ["sh", "-c", "make all > /repro/make_all.log 2>&1"]

@@ -19,11 +19,12 @@ class KalmanModel(Model):
     'llevel'  — random-walk level + noise
     'lltrend' — local linear trend + noise
     'ar1'     — stationary AR(1) state + observation noise
+    'ar2'     — stationary AR(2) state + observation noise (SPEC R2 M2)
     """
 
     def __init__(self, spec: str = "llevel"):
-        if spec not in ("llevel", "lltrend", "ar1"):
-            raise ValueError("spec must be 'llevel', 'lltrend' or 'ar1'")
+        if spec not in ("llevel", "lltrend", "ar1", "ar2"):
+            raise ValueError("spec must be 'llevel', 'lltrend', 'ar1' or 'ar2'")
         self.spec = spec
         self.name = f"kalman_{self.spec}"
         self._params: np.ndarray | None = None
@@ -32,6 +33,9 @@ class KalmanModel(Model):
         if self.spec == "ar1":
             return UnobservedComponents(Y, level=False, irregular=True,
                                         autoregressive=1)
+        if self.spec == "ar2":
+            return UnobservedComponents(Y, level=False, irregular=True,
+                                        autoregressive=2)
         return UnobservedComponents(Y, level=self.spec)
 
     def fit(self, Y_train: np.ndarray) -> "KalmanModel":

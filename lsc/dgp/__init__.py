@@ -2,6 +2,7 @@ from .base import DGP, DGPSample
 from .breaks import BreakSpec
 from .continuous import (
     AR1StateDGP,
+    AR2StateDGP,
     LocalLevelDGP,
     LocalLinearTrendDGP,
     TimeVaryingVolDGP,
@@ -16,6 +17,7 @@ __all__ = [
     "LocalLevelDGP",
     "LocalLinearTrendDGP",
     "AR1StateDGP",
+    "AR2StateDGP",
     "TimeVaryingVolDGP",
     "MarkovSwitchingDGP",
     "matched_null",

@@ -151,6 +151,77 @@ class AR1StateDGP(DGP):
 
 
 @dataclass
+class AR2StateDGP(DGP):
+    """S_t = phi1*S_{t-1} + phi2*S_{t-2} + w_t;  Y_t = S_t + v_t.
+
+    Second-order-persistence generalization test (SPEC R2 M2): the
+    paper's theory (Propositions 1-2, exp07's ARMA(1,1) equivalence) is
+    derived for AR(1)+noise specifically. AR(2)+noise is not covered by
+    that exact algebraic correspondence, so it tests whether the
+    empirical trichotomy survives outside it.
+
+    Stationary iff both roots of x^2 - phi1*x - phi2 = 0 (the companion
+    matrix's eigenvalues) lie inside the unit circle; NOT enforced at
+    construction (see CHANGELOG SPEC R2 M2 for the two parameterizations
+    used — real roots ~{0.5, 0.9} vs a complex pair of modulus ~0.95).
+
+    Break conventions reuse the AR(1) machinery unchanged: 'level'
+    shifts the state additively (not fed back into the recursion, so it
+    does not decay); 'variance' scales the observation-noise SD;
+    'state_var' scales the SD of the single shock w_t (the q-channel
+    convention here is the direct structural analogue of AR1StateDGP's
+    q-break — disclosed explicitly, since AR(2) has two AR coefficients
+    and a persistence-type break on phi1/phi2 is a different, separate
+    question this DGP does not implement).
+
+    A burn-in of ``burn_in`` steps (pure two-lag recursion, no breaks)
+    precedes the recorded T steps so the initial (S_{-2}, S_{-1}) pair
+    is drawn from (approximately) the joint stationary distribution
+    rather than a single scalar draw — unlike AR1StateDGP, the AR(2)
+    state is not Markov in one lag, so there is no closed-form
+    single-draw stationary initializer.
+    """
+
+    phi1: float = 1.4
+    phi2: float = -0.45
+    q: float = 0.5
+    r: float = 1.0
+    breaks: list[BreakSpec] = field(default_factory=list)
+    burn_in: int = 500
+    name: str = "ar2_state"
+
+    @property
+    def sigma_ref(self) -> float:
+        num = self.q * (1.0 - self.phi2)
+        den = (1.0 + self.phi2) * ((1.0 - self.phi2) ** 2 - self.phi1**2)
+        return float(np.sqrt(num / max(den, 1e-12)))
+
+    def sample(self, T: int, seed: int) -> DGPSample:
+        rng = self.rng(seed)
+        w = rng.normal(0.0, np.sqrt(self.q), self.burn_in + T)
+        v = rng.normal(0.0, np.sqrt(self.r), T)
+        shift = combined_level_path(T, self.breaks, self.sigma_ref)
+        q_scale = state_noise_scale_path(T, self.breaks)
+
+        s_m2, s_m1 = 0.0, 0.0
+        for t in range(self.burn_in):
+            s_m2, s_m1 = s_m1, self.phi1 * s_m1 + self.phi2 * s_m2 + w[t]
+
+        S = np.empty(T)
+        for t in range(T):
+            wt = w[self.burn_in + t] * q_scale[t]
+            new = self.phi1 * s_m1 + self.phi2 * s_m2 + wt
+            s_m2, s_m1 = s_m1, new
+            S[t] = new + shift[t]
+        v *= obs_noise_scale_path(T, self.breaks)
+        Y = S + v
+        return DGPSample(Y=Y, S_true=S, break_times=break_times(T, self.breaks))
+
+    def null_version(self) -> "AR2StateDGP":
+        return replace(self, breaks=[])
+
+
+@dataclass
 class TimeVaryingVolDGP(DGP):
     """Constant-mean observations whose noise std follows the break path.
 

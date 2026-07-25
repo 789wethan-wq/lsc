@@ -1,0 +1,7 @@
+parameterization,channel,detector_a,detector_b,detect_a,detect_b,far_a,far_b
+real_roots,level,raw_cusum,innovation_cusum,0.376,0.156,0.05,0.05
+real_roots,r,raw_var_cusum,arima_var_cusum,0.66,0.968,0.05,0.05
+real_roots,q,raw_var_cusum,arima_var_cusum,0.276,0.184,0.05,0.05
+complex_roots,level,raw_cusum,innovation_cusum,0.928,0.76,0.05,0.05
+complex_roots,r,raw_var_cusum,arima_var_cusum,0.81,0.938,0.05,0.05
+complex_roots,q,raw_var_cusum,arima_var_cusum,0.42,0.28,0.05,0.05

@@ -5,6 +5,7 @@ import pytest
 
 from lsc.dgp import (
     AR1StateDGP,
+    AR2StateDGP,
     BreakSpec,
     LocalLevelDGP,
     LocalLinearTrendDGP,
@@ -23,6 +24,14 @@ ALL_DGPS = [
     LocalLinearTrendDGP(),
     AR1StateDGP(phi=0.95, q=0.5, r=1.0),
     AR1StateDGP(phi=0.95, q=0.5, r=1.0, drift_coef=0.1),
+    AR2StateDGP(phi1=1.4, phi2=-0.45, q=0.5, r=1.0),  # real roots ~{0.5, 0.9}
+    AR2StateDGP(phi1=1.6, phi2=-0.9, q=0.5, r=1.0),  # complex roots, modulus ~0.949
+    AR2StateDGP(phi1=1.4, phi2=-0.45, q=0.5, r=1.0,
+               breaks=[BreakSpec("level", 0.5, magnitude=1.0)]),
+    AR2StateDGP(phi1=1.4, phi2=-0.45, q=0.5, r=1.0,
+               breaks=[BreakSpec("variance", 0.5, vol_mult=1.5)]),
+    AR2StateDGP(phi1=1.4, phi2=-0.45, q=0.5, r=1.0,
+               breaks=[BreakSpec("state_var", 0.5, vol_mult=1.5)]),
     TimeVaryingVolDGP(breaks=[BreakSpec("variance", 0.5, vol_mult=3.0)]),
     MarkovSwitchingDGP(means=(0.0, 2.0), sigmas=(1.0, 1.0), persistence=0.98),
     MarkovSwitchingDGP(means=(0.0, 2.0, -2.0), sigmas=(1.0, 2.0, 1.0), persistence=0.95),

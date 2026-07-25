@@ -1,0 +1,7 @@
+T,arena,method,threshold,far_target,far_empirical
+500,ar1_phi99_snr0.1,raw_var_cusum,178.01815947592212,0.05,0.07
+500,ar1_phi99_snr0.1,arima_var_cusum,334.4216198133483,0.05,0.046
+500,ar1_phi99_snr0.5,raw_var_cusum,543.104767698044,0.05,0.078
+500,ar1_phi99_snr0.5,arima_var_cusum,454.1583686858517,0.05,0.036
+500,ar1_phi99_snr2.0,raw_var_cusum,1608.3025070491392,0.05,0.064
+500,ar1_phi99_snr2.0,arima_var_cusum,371.49475662534934,0.05,0.032

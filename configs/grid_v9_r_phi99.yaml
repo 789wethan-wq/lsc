@@ -1,0 +1,40 @@
+# grid_v9 r-channel at phi=0.99 — SPEC R2 M1 (pre-registered in
+# experiments/CHANGELOG.md 2026-07-24 BEFORE this config was run).
+#
+# The published r-channel ladder (Table 3, grid_v4_varbench_core) only
+# ever used phi=0.95. This reruns the SAME whitening-ladder comparison
+# (raw_var_cusum vs arima_var_cusum) at phi=0.99, the paper's more
+# persistence-realistic secondary operating point. SNR held fixed
+# across phi by q = SNR*(1-phi^2)*r, the identical convention
+# grid_v4/grid_v6 use: at phi=0.99, q in {0.00199, 0.00995, 0.0398}
+# for SNR in {0.1, 0.5, 2.0} -- these q values are the SAME ones
+# grid_v6_phisweep already uses for its phi=0.99 row, so this grid's
+# arenas are draw-for-draw comparable to grid_v6 wherever seeds match.
+#
+# Both break sizes (x1.5 subtle, x3 coarse), all three SNRs, per the
+# pre-registered scope -- not the full grid_v4 cross (no t5/level/
+# persistence scenarios; those aren't part of the R2 M1 comparison).
+experiment: grid_v9_r_phi99
+out_dir: paper_assets
+n_reps: 500
+far_target: 0.05
+train_frac: 0.25
+
+seeds:
+  calibration: 100000
+  evaluation: 200000
+  far_check: 300000
+  feature_scales: 900000
+
+T_values: [500]
+
+arenas:
+  ar1_phi99_snr0.1: {dgp: AR1StateDGP, phi: 0.99, q: 0.00199, r: 1.0, kalman_spec: ar1}
+  ar1_phi99_snr0.5: {dgp: AR1StateDGP, phi: 0.99, q: 0.00995, r: 1.0, kalman_spec: ar1}
+  ar1_phi99_snr2.0: {dgp: AR1StateDGP, phi: 0.99, q: 0.0398,  r: 1.0, kalman_spec: ar1}
+
+scenarios:
+  variance_x1.5: {kind: variance, time_frac: 0.5, vol_mult: 1.5}
+  variance_x3: {kind: variance, time_frac: 0.5, vol_mult: 3.0}
+
+methods: [raw_var_cusum, arima_var_cusum]
