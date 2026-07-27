@@ -1,0 +1,3 @@
+scenario,delta_snr_sweep,delta_phi_sweep,bit_identical
+qvar_x1.5,0.11199999999999999,0.11199999999999999,True
+qvar_x3,0.16799999999999993,0.16799999999999993,True

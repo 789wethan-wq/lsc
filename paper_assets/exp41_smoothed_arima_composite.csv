@@ -1,0 +1,4 @@
+channel,snr,vol_mult,n_reps,threshold_composite_smoothed,empirical_far_composite_smoothed,detect_raw,detect_arima_cusum,detect_composite_kalman,detect_composite_arima_onestep,detect_composite_arima_smoothed
+r,0.1,1.5,500,39.34652810962917,0.04,0.996,0.9,0.818,0.226,0.382
+r,0.5,1.5,500,35.99959582487306,0.066,0.56,0.942,0.868,0.416,0.416
+r,2.0,1.5,500,33.29216883792632,0.042,0.102,0.868,0.91,0.632,0.632

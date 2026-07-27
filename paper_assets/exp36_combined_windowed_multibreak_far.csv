@@ -1,0 +1,5 @@
+method,threshold,far_target,far_empirical
+raw_var_cusum,274.7980872735383,0.05,0.066
+windowed_raw_cusum,9.484991526039003,0.05,0.068
+windowed_raw_var,5.167905217585342,0.05,0.046
+windowed_combined,9.484991526039003,0.05,0.068

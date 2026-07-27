@@ -60,12 +60,43 @@ class ARIMAModel(Model):
         Y = np.asarray(Y, dtype=float)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            res = ARIMA(Y, order=self._order).filter(self._params)
-        filtered = np.asarray(res.fittedvalues, dtype=float)
+            if compute_smoothed:
+                # exp41 (SPEC R7 D): .smooth() (not .filter()) runs the
+                # fixed-interval (two-sided) Kalman smoother over the
+                # SAME frozen training-prefix (order, params) fit --
+                # .filter() alone leaves smoother_results empty. NOT
+                # causal -- conditions on the whole series, past and
+                # future -- an oracle-status state proxy, the same
+                # caveat already given to exp37's break-aware GARCH
+                # refit and lsc.benchmarks.variance.known_*_var_cusum_score.
+                res = ARIMA(Y, order=self._order).smooth(self._params)
+            else:
+                res = ARIMA(Y, order=self._order).filter(self._params)
         innov = np.asarray(res.standardized_forecasts_error, dtype=float).ravel()
+        if compute_smoothed:
+            filtered = np.asarray(res.smoother_results.smoothed_forecasts,
+                                  dtype=float).ravel()
+        else:
+            filtered = np.asarray(res.fittedvalues, dtype=float)
         return StateEstimate(
             filtered=filtered,
             innovations=innov,
             loglik=float(res.llf),
             params=dict(order=self._order),
         )
+
+
+class SmoothedARIMAModel(ARIMAModel):
+    """exp41 (SPEC R7 D): identical fit to ARIMAModel, but `fit_filter`
+    always requests the smoothed (two-sided) state proxy in place of
+    the one-step-ahead `fittedvalues` -- so it can drop into
+    `make_composite_detector`'s `model_factory` slot unchanged. NOT
+    causal (see ARIMAModel.filter's compute_smoothed docstring); for
+    the composite-on-ARIMA gap ablation only, not a deployable
+    detector."""
+
+    name = "smoothed_arima"
+
+    def fit_filter(self, Y: np.ndarray, n_train: int,
+                   compute_smoothed: bool = False) -> StateEstimate:
+        return super().fit_filter(Y, n_train, compute_smoothed=True)

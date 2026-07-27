@@ -55,3 +55,30 @@ def arima_cusum_score(Y: np.ndarray, n_train: int, k: float = 0.5) -> np.ndarray
     score = break_pressure(innov, k=k)
     score[:n_train] = np.nan
     return score
+
+
+def fit_arima_prefix_fixed_order(Y: np.ndarray, n_train: int,
+                                 order: tuple = (1, 0, 1)) -> np.ndarray:
+    """Order-known counterpart of fit_arima_prefix (exp30, SPEC R3 M1):
+    skip the AIC search over ORDER_GRID and fit ONLY the true DGP order
+    (1,0,1) by MLE on the training prefix, exactly as fit_arima_prefix
+    otherwise does. Isolates order-selection error from coefficient
+    (MLE) error in the ARIMA rung's known-vs-estimated gap."""
+    train = np.asarray(Y, dtype=float)[:n_train]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        res = ARIMA(train, order=order).fit()
+    return np.asarray(res.params)
+
+
+def arima_standardized_residuals_fixed_order(Y: np.ndarray, n_train: int,
+                                             order: tuple = (1, 0, 1)) -> np.ndarray:
+    """Order-known counterpart of arima_standardized_residuals: same
+    causal forward-filter over the full series, fixed order instead of
+    AIC-selected."""
+    Y = np.asarray(Y, dtype=float)
+    params = fit_arima_prefix_fixed_order(Y, n_train, order)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        full = ARIMA(Y, order=order).filter(params)
+        return np.asarray(full.standardized_forecasts_error).ravel()

@@ -1815,3 +1815,468 @@ third-party reproduction (independent person, cold clone, README only)
 -- none has been performed; flagged as the more credible addition if a
 labmate/advisor becomes available before submission, per the
 scoping decision made when this round began.
+
+## 2026-07-25 — R3 PRE-REGISTERED: order-known ARIMA rung (M1) + formal paired test for the phi-sweep/SNR-sweep equivalence (M2), before either script is run
+
+Two reviewer-requested gaps, registered together before implementation
+(verified: no exp30/exp31 files exist at commit time).
+
+**Correction to the requested seed convention (M1), flagged before
+running rather than silently substituted.** The request specified a
+fresh disjoint seed block (300000+) for exp30's order_known condition.
+That block is already reserved, project-wide, for a DIFFERENT purpose:
+`experiments/CHANGELOG.md` (2026-07-13) fixes the standing layout
+calibration=100000, evaluation=200000, far_check=300000,
+feature_scales=900000 -- reused IDENTICALLY across every grid
+specifically so cells are draw-for-draw comparable (stated explicitly
+in grid_v4/v5/v8's config headers; exp19 reconstructs per-replicate
+pairing by rerunning with these SAME seed bases, verified against
+published aggregates). exp30's own stated sanity check --
+`gap_order_selection + gap_coefficient_noise` should equal the
+published `detect(known) - detect(estimated)` -- REQUIRES order_known
+to be evaluated on the identical simulated paths as `estimated`
+(grid_v5's arima_var_cusum) and `known` (exp26's known_kalman rung):
+using a fresh, unrelated seed block would make the three conditions
+independent Monte Carlo estimates rather than a decomposition, so the
+sanity check could fail (or pass by chance) for reasons having nothing
+to do with order-selection vs. coefficient noise. exp30 therefore
+reuses the standing calibration=100000/evaluation=200000 blocks (same
+as exp26/grid_v5), and uses far_check=300000 ONLY for the requested
+fresh-null FAR re-verification, exactly matching exp24's convention
+(itself built on the identical standing layout) -- not a new block.
+
+**M1 design.** Three-way decomposition on all 6 published q-channel
+Table 3 cells (channel=q, vol_mult in {1.5, 3.0}, SNR in {0.1, 0.5,
+2.0}, phi=0.95, T=500, n_train=125, n_reps=500, 5% calibrated FAR):
+`estimated` (existing, AIC order + MLE coefficients, grid_v5's
+arima_var_cusum), `order_known` (NEW: order fixed at true (1,0,1), MLE
+coefficients -- `order_known_var_cusum_score`,
+`lsc/benchmarks/arima.py::fit_arima_prefix_fixed_order`), `known`
+(existing, exp26's known_kalman_var_cusum_score). Falsifiable check:
+gap_order_selection + gap_coefficient_noise should equal the published
+known-minus-estimated gap to within rounding; a real mismatch would
+indicate a seed/protocol divergence between exp30 and exp26, not a
+substantive finding, and will be reported as such rather than folded
+into the headline numbers.
+
+**M2 design.** Formal test for "the phi-sweep and SNR-sweep are one
+experiment" (currently a two-decimal eyeball match) at the two matched
+induced-SNR points already cited in the text. Point 1 (SNR=0.5): NOT
+run fresh -- grid_v5's `ar1_snr0.5` arena (phi=0.95, q=0.04875, r=1.0)
+and grid_v8's `ar1_phi0.95` arena (phi=0.95, q=0.04875, r=1.0) are
+VERIFIED IDENTICAL by construction (same DGP parameters, same
+calibration/evaluation seed bases; grid_v8's own config header states
+the phi=0.95 anchor was chosen to reproduce the SNR=0.5 body arena) --
+checked directly against the committed CSVs: detect_rate and
+mean_delay_censored are bit-identical for both q-channel scenarios at
+this point. This is not "two experiments that happen to agree," it is
+the same computation appearing in both grids; no hypothesis test
+applies, and the writeup will say so plainly rather than present it as
+independent confirming evidence. Point 2 (SNR=2.0 vs. grid_v8's
+induced SNR=2.45 at phi=0.99): genuinely different DGP parameterizations
+(different phi AND q) -- the requested shared-seed pairing does not
+apply here (identical seed integers feed different (phi, q) transition
+dynamics, so they do not produce exchangeable pairs), so this point
+uses the permutation-test fallback: reconstruct per-replicate detection
+outcomes for both cells by rerunning raw_var_cusum/arima_var_cusum
+through the ORIGINAL seed bases (exp19's methodology, verified against
+published aggregates before trusting the reconstruction), pool the
+2 x n_reps outcomes, permute the cell-A/cell-B labels n_perm = 20,000
+times (matching exp12's convention), and report the two-sided
+permutation p-value for |Delta_A - Delta_B|.
+
+Seeds: M1 as specified above (100000/200000 for the three-way
+comparison; 300000 for the fresh FAR check). M2 uses NO new random
+draws for either matched point (both are reconstructions of published
+grids through their original seed bases) except the permutation
+labels themselves, seeded at 20260725 (distinct from exp12's
+2026-07-20-derived draw, avoiding any accidental correlation between
+the two permutation studies).
+
+## 2026-07-25 — R4 PRE-REGISTERED: GARCH mechanism (M1), composite paired SE (M4), combined windowed statistic (M5), before any of the three scripts is run — plus three items resolved from EXISTING data, no new run
+
+Six reviewer-requested items registered together; three require no new
+simulation at all, found by locating existing outputs rather than
+assumed absent -- reported here rather than silently rerun.
+
+**No new run needed (M2, M3, Question 3) -- table-number mismatch
+flagged.** The request's "Table 5" and "Table 7" do not match this
+draft's actual numbering (verified: PAPER_DRAFT.md's Table 5 is the
+PELT localization table, Table 7 is INDPRO's FAR-target sensitivity;
+the content described -- the phi=0.95-vs-0.99 Delta note and the
+Kalman-vs-ARIMA composite gaps -- is actually Table 4 (Sec 4) and Table
+8 (Sec 5) respectively). Content matched by the cited numbers, not the
+label, before proceeding:
+  - **M2 (phi=0.95 vs phi=0.99 paired SE)**: `exp19_paired_se_grid_v8.csv`
+    already contains both per-phi paired SEs for the qvar_x1.5 cell
+    (phi=0.95: Delta=0.112, SE=0.0181; phi=0.99: Delta=0.074,
+    SE=0.0175) -- and PAPER_DRAFT.md already reports the combined
+    unpaired SE and the "~1.5 SE" conclusion from them (Sec 5, the
+    Table 4 discussion). Unpaired, not paired, is the correct
+    combination here for the same reason as R3 M2's Point 2: phi=0.95
+    and phi=0.99 are different DGP parameterizations, so shared seed
+    integers do not produce exchangeable pairs. No new experiment;
+    the answer already exists and is already correctly stated.
+  - **M3 (four-corner sidedness x parameter-knowledge)**: re-reading
+    `experiments/exp10_cusum_ablation.py` -- it ALREADY computes all
+    four corners in one run (two_sided_estimated, one_sided_estimated,
+    two_sided_known, one_sided_known), not the two the request assumed
+    existed. `paper_assets/exp10_cusum_ablation.csv` has all four:
+    a=0.554 (SE 0.0223), b=0.636 (SE 0.0215), c=0.970 (SE 0.0076),
+    d=0.990 (SE 0.0045). Only (b) one-sided/estimated=0.636 is missing
+    from the current prose (Sec 4 only cites a, c, d). No new
+    experiment; the fourth corner already exists in the committed CSV,
+    just not yet in the narrative text.
+  - **Question 3 (fresh-draw FAR for the plain ARIMA rung)**:
+    `lsc.eval.runner.run` computes `empirical_far` via the standing
+    far_check=300000 block for EVERY method in EVERY grid it runs, not
+    just the ones a script explicitly highlights -- `arima_var_cusum`'s
+    fresh-draw FAR is already in every grid_v4/v5/v9 `*_far_calibration.csv`.
+    grid_v4_varbench_core: 4.4% / 6.0% / 4.2% at SNR 0.1/0.5/2.0 (5%
+    target, phi=0.95). No new experiment; already computed as a
+    byproduct of the standard runner, just not previously surfaced in
+    the FAR-check narrative the way GARCH's was (exp24).
+
+**New runs (M1, M4, M5), pre-registered before implementation:**
+  - **exp32 (M1)**: does GARCH's fitted conditional-variance path
+    sigma2_t track the true pre/post-break regime, or is it flat in the
+    floor cells specifically? Spearman correlation + AUC (Mann-Whitney
+    U, rank-based) between sigma2_t (or raw/ARIMA's z_t^2 baseline) and
+    the true regime indicator, pooled across all post-training time
+    points x n_reps=500 replicates, same 2x2x3 grid as exp15. NEW
+    evaluation-only seed block (400000+) -- no calibration/threshold
+    needed for this diagnostic (unlike M2 above, there is no downstream
+    paired-decomposition requirement here, so a fresh block costs
+    nothing). Falsifiable prediction: if GARCH's floor result is a
+    generative mismatch (GARCH structurally can't see a permanent
+    variance step), sigma2_t's correlation/AUC should be near-chance
+    specifically in the four already-identified floor cells (q-channel
+    all SNR, r-channel SNR 0.5/2.0, all x1.5) while raw/ARIMA's z_t^2
+    baseline is clearly above chance there; if instead sigma2_t tracks
+    the regime about as well as the baselines even in the floor cells,
+    the CUSUM wrapper being underpowered is the better explanation.
+  - **exp35 (M4)**: paired SE/z-statistic for Table 8's Kalman-vs-ARIMA
+    composite gaps, exp19's methodology applied to composite_kalman
+    (published in grid_v1/grid_v5, method=lsc_composite) vs
+    composite_arima (published in exp20_composite_on_arima.csv) --
+    both use the standing calibration=100000/evaluation=200000 blocks
+    with the same arena, so they ARE scored on the same simulated
+    paths and a true pairing applies (unlike M2's cross-phi
+    comparison). Reconstruction verified against BOTH published
+    aggregates (composite_kalman AND composite_arima) before trusting
+    any paired SE, same discipline as exp19. Three cells: r x1.5/SNR0.1
+    (largest gap, 0.818 vs 0.226), r x1.5/SNR2.0 (0.910 vs 0.632),
+    q x3/SNR0.1 (0.438 vs 0.248, q-channel analog) -- covers the
+    required largest gap plus two more, per the request's discretion
+    clause.
+  - **exp36 (M5)**: new `make_combined_windowed_detector`
+    (lsc/eval/detectors.py, max of windowed_raw_cusum_score and
+    windowed_raw_var_score in one score path, one calibrated
+    threshold), tested on a mixed-channel two-event sequence in both
+    orderings (level-then-variance, reusing exp04's own
+    level_then_var breaks but with the new detector set since exp04
+    never tested windowed_raw_var or the combined detector on it;
+    variance-then-level, new) -- identical arena/protocol to exp04/exp27
+    (spec-SNR 0.5, rearm_frac=0.5/refractory=20, match window=100,
+    standing seed blocks). Reports recall_break1/recall_break2/
+    precision/F1 for raw_var_cusum (reference), windowed_raw_cusum
+    (mean-only), windowed_raw_var (variance-only), and the new combined
+    detector, both orderings.
+
+Seeds: exp32 evaluation-only 400000+ (justified above); exp35 and
+exp36 reuse the standing calibration=100000/evaluation=200000/
+far_check=300000 layout (both require draw-for-draw comparability with
+already-published numbers, same reasoning as R3 M1's correction).
+n_reps=500 throughout except where noted. Outcomes logged with numbers
+when resolved.
+
+## 2026-07-26 — R5 M1 PRE-REGISTERED: full r-channel phi-sweep, before grid_v9b is run
+
+Registered before implementing `configs/grid_v9b_r_phi_lo.yaml` (verified:
+no such file exists at commit time). Table 3b's phi=0.99 r-channel
+extension (R2 M1) is a single point; this brings it to the same
+phi in {0.5, 0.8, 0.95, 0.99} sweep Table 4/Fig. 2 already runs for the
+level-shift case. phi=0.95 (grid_v4_varbench_core) and phi=0.99
+(grid_v9_r_phi99, R2) are already published -- only phi in {0.5, 0.8}
+are new (`configs/grid_v9b_r_phi_lo.yaml`, q values identical to
+grid_v6_phisweep's phi=0.5/0.8 rows for draw-for-draw comparability).
+`experiments/r_phi_sweep_analyze.py` assembles all four phi values into
+one table and reports Spearman(amplification, raw-minus-arima
+advantage) per break size, matching phiqbreak_analyze.py's convention
+(Table 4's own assembler) applied to the r channel instead of the q
+channel. Same protocol throughout: n_reps=500, T=500, far_target=0.05,
+train_frac=0.25, standing calibration=100000/evaluation=200000 blocks.
+Falsifiable question: does the r-channel's "prewhitening wins"
+ordering hold uniformly across the full sweep, or does R2 M1's
+phi=0.99 estimated-rung breakdown (ARIMA losing to raw at the subtle
+break near the unit root) appear gradually as phi rises, or only at
+the endpoint? Either answer is reportable; a gradual onset would
+sharpen R2 M1's finding into a genuine phi-dependent boundary rather
+than a phi=0.99-specific anomaly.
+
+## 2026-07-26 — R5 M2 PRE-REGISTERED: GARCH oracle break-aware diagnostic, before exp37 is run (design revised after a real problem was found in the original spec, confirmed with the user before building)
+
+The original request ("fit GARCH separately pre/post the break, CUSUM
+the result, compare to exp15's plain-GARCH grid") was found to be
+self-defeating before implementation: a correctly-refit model's post-
+break residuals are z ~ N(0,1) by construction -- there is nothing left
+for a CUSUM to detect once the model is told the truth. A model that
+adapts, by definition, stops looking anomalous. Flagged to the user
+with a proposed resolution; confirmed before building anything.
+
+**Revised design**: explicit ORACLE / mechanism-diagnostic (same status
+as exp10/exp26/exp30's known-parameter columns -- not a new entry in
+exp15's calibrated-FAR table). New `garch_detector.oracle_two_regime_
+residuals`: z_single (exp15/exp32's existing single-regime construction,
+unchanged) paired with z_oracle (identical pre-break, refit on the TRUE
+post-break segment Y[break_time:] from break_time on). `experiments/
+exp37_garch_oracle_break_aware.py` reports, per exp15/exp32's 2x2x3
+grid: post-break mean(z^2) under each construction (z_oracle near 1.0
+CONFIRMS the self-defeat property directly, rather than leaving it
+assumed) and whether each construction's max CUSUM score crosses
+exp15's ALREADY-CALIBRATED threshold. The informative comparison is
+NOT "does the oracle detect better" (it structurally cannot) -- it is
+z_single's post-break z^2 elevation over 1.0, which IS the exact signal
+the plain-GARCH CUSUM is weakly accumulating: a small elevation means
+little signal was ever available to extract (a wrapper-agnostic
+finding); a large elevation the calibrated CUSUM still fails to convert
+into alarms sharpens "the wrapper is the bottleneck," since perfect
+break-knowledge cannot add power beyond what z_single already carries --
+it only consumes the same signal that produced z_single's departure in
+the first place. This distinguishes "GARCH's underperformance is a
+wrapper problem" from "it's partly a fit-quality problem too, masked by
+online estimation" -- the user's reframing of the original request,
+sharper than the original spec.
+
+Seeds: evaluation-only 400000+, IDENTICAL to exp32's block (reproduces
+exp32's z_single bit-for-bit on the same replicates -- a self-
+consistency check -- and there is no downstream paired-decomposition
+requirement that would demand a fresh block, unlike R3 M1's exp30).
+
+## 2026-07-26 — R5 M3 PRE-REGISTERED and PARTIALLY CORRECTED: ALFRED vintage extension to GS10/UNRATE, GDP deferred
+
+Sec 9's existing text already flags this exact extension as deliberately
+deferred ("a materially larger undertaking... this project's own
+history shows that rolling-window protocol extensions done quickly
+have twice introduced real bugs") -- re-read before touching any code,
+confirmed with the user, and scoped down accordingly: GDP is quarterly
+(n_train=60/n_monitor=20 per real_data.py's SERIES config, a materially
+different decision-month grid, not a parameter swap) and is NOT
+attempted here, deferred as its own follow-up. GS10 and UNRATE are
+monthly with IDENTICAL n_train=120/n_monitor=60 windows to INDPRO's
+existing protocol -- mechanical extensions.
+
+New `experiments/realtime_check_multi.py` (realtime_check.py itself
+left untouched, same convention as real_data.py/m6_fred.py):
+parameterized by series config (fred_id, transform, episodes) instead
+of INDPRO's hardcoded values. VERIFIED against the published
+`paper_assets/rd_realtime.csv` before trusting any new series: run
+with series="indpro", reproduces every published alarm month/data
+month/vintage exactly, cell for cell.
+
+Episodes drawn from each series' own existing event list
+(real_data.py's SERIES dict): unrate reuses INDPRO's gfc (2007-12) and
+covid (2020-02) episodes (UNRATE's own event list IS NBER_PEAKS); gs10
+uses its own three events (1979-10 Volcker, 2008-12 ZLB, 2022-03).
+
+**Correction found during the run, not before it**: the gs10 "volcker"
+(1979-10) episode fails outright -- direct ALFRED queries confirm GS10's
+vintage history does not extend that far back (404 at vintage dates
+1979/1990/1994/1996-06, first 200 response at 1997-01-15). This is a
+genuine data-availability limit, not a bug in the generalization (the
+INDPRO verification run had already ruled out a code bug). It also
+corrects Sec 9's own existing "-checked 2026-07-23: ALFRED serves
+vintage histories for all three series" note, which had confirmed
+EXISTENCE of vintage data for GDPC1/GS10/UNRATE in general, not
+coverage back to 1979 specifically for GS10 -- the earlier check's
+scope was narrower than the sentence implied, caught here rather than
+carried forward silently. gs10's EPISODES dict corrected to drop
+"volcker", keeping "zlb" and "hike2022" (both well within confirmed
+coverage). Outcomes (unrate, gs10) logged with numbers when the reruns
+complete.
+
+## 2026-07-26 — Two scope decisions made by the author (not silently picked), to be implemented in the Major-Weakness-1 restructuring pass, not as standalone edits
+
+**Major Weakness 2 (DGP scope)**: author chose to scope the title/
+abstract explicitly to scalar linear-Gaussian AR(1) state-space models
+rather than build a second DGP class through the full grid. Rationale
+recorded: the existing single-cell AR(2) check (R2 M2) already shows
+the trichotomy surviving one departure from AR(1); a full second-DGP-
+class grid (new generative model, new detector calibration against it,
+a repeated 2x2x3+ grid) is a materially larger undertaking than a
+revision-cycle addition. No new simulation from this decision --
+title/abstract wording only.
+
+**Minor Weakness 4 (GS10 placement)**: author chose to move GS10 to a
+clearly separated exploratory subsection rather than drop it -- keeps
+the real, already-disclosed content (Volcker/ZLB/2022 findings,
+including this round's rd_realtime_gs10.csv) while being honest about
+its weaker evidentiary basis (partly-author-selected events) than the
+NBER/McConnell-Perez-Quiros-dated series. The corrected multiple-
+testing family (currently 39) shrinks to exclude GS10's tests once this
+lands. No new simulation from this decision -- Sec 9 restructuring only.
+
+Both deferred to the Major Weakness 1 restructuring pass (Task tracked
+separately) since both are structural/placement edits of the same kind
+that pass already needs to make, not standalone changes.
+
+## 2026-07-26 — R6 PRE-REGISTERED: raw_cusum FAR-precision check (M1, design corrected after a premise check), phi-peak joint test (M2), systematic paired SEs across Tables 3/3b/3c/4 (M3) -- before any of the three scripts is run
+
+**M1 premise correction (found before writing any code, not after)**:
+the request assumed raw_cusum's Table 2 threshold is "a single pooled
+threshold" shared across SNRs. Checked directly:
+`paper_assets/grid_v1_far_calibration.csv` has three DISTINCT raw_cusum
+thresholds (27.49/103.19/213.89 at SNR 0.1/0.5/2.0) -- `lsc.eval.runner.
+run` already calls `calibrate()` once per (arena, method), so raw_cusum
+is calibrated separately at each SNR from that SNR's own null, and has
+been since M5. There is no pooled-threshold confound to remove.
+
+The real, well-posed version of the concern, given the architecture
+already separates by SNR: is the empirical-FAR drift (4.0%/6.2%/8.2%
+at SNR 0.1/0.5/2.0, Table 1) a finite-sample threshold-ESTIMATION
+artifact that inflates the detection-rate advantage, rather than a
+pooling bug? `experiments/exp38_raw_cusum_far_correction.py`:
+recalibrates raw_cusum at each SNR with n_reps=5000 (calibration
+seed0=100000, a strict superset of the original 500 draws -- same
+draw sequence, not a different one), checks each threshold's
+out-of-sample FAR on 2000 fresh far_check=300000 draws, and rescoves
+detection rate at BOTH thresholds on the SAME n_reps=500 evaluation
+draws (seed0=200000) Table 2 itself uses. lsc_kalman_cusum included at
+n_reps=500 only (Table 1 already shows it calibrating close to 5% at
+every SNR, no drift to investigate there).
+
+**M2**: adds phi in {0.90, 0.97} to the existing subtle x1.5 phi-sweep
+(now {0.5, 0.8, 0.90, 0.95, 0.97, 0.99}), same q=SNR*(1-phi^2)*r
+convention as grid_v6/v9b, all three SNRs. Tests the peak-shape claim
+JOINTLY (Delta(0.95) > both Delta(0.90) and Delta(0.99) simultaneously)
+via a permutation test on the paired per-replicate raw-minus-kalman
+differences at all three phi values, not just the pairwise 0.95-vs-0.99
+gap already reported. Seeds: standard blocks, phi=0.90/0.97 cells are
+genuinely new draws (no published cell exists at these phi values).
+
+**M3**: systematic paired-SE reconstruction across every cell in Tables
+3/3b/3c/4 where both compared rungs share a seed base (true for
+essentially all of them per the paper's draw-for-draw convention).
+Reuses exp19/33's exact methodology: rerun through the ORIGINAL
+config/seed bases, verify the reconstructed aggregate matches the
+published rate exactly before trusting the pairing, per-replicate
+difference -> paired SE, reported alongside the independence-bound SE
+already implicitly used. Single output CSV (table, row identifier,
+Delta, paired SE, independence-bound SE) rather than inline per-table
+edits, per the request's own preference given the volume. Falsifiable
+per the request: some cells may NOT tighten under pairing (raw and the
+compared rung could be negatively correlated per-replicate in
+principle) -- reported as found, not assumed uniform.
+
+## 2026-07-27 — R7 PRE-REGISTERED: smoothed-ARIMA composite (D), non-CUSUM GARCH alarm rule (E), paired SEs for Table 2b (F) -- before any of the three scripts is run
+
+**D (smoothed ARIMA state-proxy for the composite comparison).** exp20
+already showed the composite-on-ARIMA gap (0.818 vs 0.226 at the
+flagship r x1.5/SNR0.1 cell) is attributable to 6/11 features acting on
+ARIMA's one-step-ahead `fittedvalues` as the state analog -- a
+disclosed judgment call, not a controlled substitution. This asks
+whether a two-sided (fixed-interval-smoother) state estimate closes any
+of that gap. Design: `ARIMAModel.filter(Y, compute_smoothed=True)`
+(new) returns `smoother_results.smoothed_forecasts[0]` from the SAME
+frozen training-prefix (order, params) fit `filter()` already uses --
+statsmodels' built-in Kalman smoother applied post-hoc, so this is
+explicitly NOT causal (it conditions on the whole series, both past and
+future, the same oracle-status caveat already given to exp37's
+break-aware GARCH refit and `known_*_var_cusum_score`) -- fed into the
+existing unmodified 11-feature composite machinery in place of
+`fittedvalues`. Grid: r-channel, x1.5 vol_mult only (the flagship cell
+and its two SNR neighbors, not the full 12-cell cross -- this is a
+targeted follow-up on one already-published gap, not a new benchmark),
+SNR in {0.1, 0.5, 2.0}, n_reps=500, same seeds as exp20. Any outcome
+(closes/partially closes/doesn't touch the gap) is reportable as
+requested.
+
+**E (non-CUSUM alarm rule on the existing GARCH fit).** exp32 showed
+GARCH's own conditional-variance path sigma2_t tracks the true regime
+(AUC 0.522-0.628) even at cells where its calibrated CUSUM-on-
+standardized-residuals alarm sits at the FAR floor -- consistent with
+"this specific wrapper is underpowered" rather than "GARCH structurally
+can't represent the break." Design: an exceedance-indicator CUSUM --
+the SAME construction as `tail_exceedance`/`tail_shortfall`
+(lsc.diagnostics.features, the exp05b heavy-tail repair already used
+elsewhere in the paper, Sec 8.3) -- applied to log(sigma2_t) directly
+(an up-arm at its own training-prefix q=0.90 quantile, a down-arm at
+its q=0.10 quantile, max of the two one-sided CUSUMs), in place of a
+CUSUM on GARCH-standardized residuals. Same 2x2x3 grid as exp15/exp32
+(channel r/q x vol_mult 1.5/3 x SNR 0.1/0.5/2.0), n_reps=500, same
+calibrated 5% FAR, same seeds. Reported alongside the existing
+garch_var_cusum rate at all 12 cells, with particular attention to
+exp32's 5 floor cells.
+
+**F (paired SEs for Table 2b known-vs-estimated gaps).** exp40 covered
+Tables 3/3b/3c/4 (raw-vs-ARIMA) but not Table 2b (known-vs-estimated,
+exp26's 12 cells), where some 0.01-0.02 gaps are called "within MC
+noise" without the same paired-SE treatment. Design: identical
+methodology to exp40 -- reconstruct both rungs (known_raw_var_cusum /
+known_kalman_var_cusum from exp26, plus raw_var_cusum / arima_var_cusum
+reconstructed through their original grid_v4/grid_v5 config and seed
+bases) through the SAME evaluation draws, verify each reconstruction
+matches its published aggregate exactly before trusting the pairing,
+per-replicate difference -> paired SE, reported alongside the
+independence-bound SE already implicitly used for the "within MC noise"
+calls. Same 12 cells as Table 2b, same CSV shape as exp40 (config,
+cell, Delta, paired SE, independence-bound SE, tightens_under_pairing).
+
+## 2026-07-27 — DGP-scope reviewer conflict resolved by the author: hold the line
+
+A new reviewer's Major Weakness 2 / Missing Experiments #1 asked for a
+genuine multivariate or regime-switching DGP through the full grid, as
+an alternative to the existing title/abstract scoping to scalar
+linear-Gaussian AR(1) state-space models. This directly conflicts with
+a previous reviewer's explicit endorsement of that scoping decision
+("the more honest of the two possible fixes... I accept it"). Put to
+the author directly (not decided silently): **hold the line** --
+keep the AR(1) scoping, no new DGP class, no new simulation. Rationale:
+the scoping was already litigated in an earlier round (2026-07-26 "Two
+scope decisions made by the author") and independently endorsed by a
+subsequent reviewer since; a genuine second-DGP-class undertaking
+(new generative model, new detector calibration against it, a repeated
+2x2x3+ grid) is a materially larger scope addition than a revision
+cycle should absorb, and the paper already has a single-cell AR(2)
+departure check (R2 M2) showing the trichotomy surviving one deviation
+from AR(1). To be implemented as a short Discussion/limitations note
+responding to this specific reviewer, not a structural change.
+
+## 2026-07-27 — R7 RESOLVED: D, E, F all run at n_reps=500, folded into PAPER_DRAFT.md
+
+**D**: at the flagship r×1.5/SNR0.1 cell, the smoothed-proxy composite
+partially closes the one-step gap (0.226 -> 0.382, vs. Kalman's 0.818);
+at SNR 0.5 and 2.0 the calibrated threshold and detection rate are
+bit-identical to the one-step composite (thresholds 35.9996/33.2922,
+matching exp20 to full precision) -- confirmed as a real mechanism, not
+a bug: 5 of 11 composite features read `est.innovations` (the filter's
+one-step forecast error, unchanged by `.smooth()`), only 6 read
+`est.filtered` (which the smoother does change), and exp22's own
+attribution data shows those 6 features drive only 7% of alarms at the
+one cell where smoothing helped and are presumably even less binding at
+higher SNR. Written up in Sec 5, directly after the exp22 diagnostic
+paragraph it narrows.
+
+**E**: exceedance-indicator CUSUM on log(sigma2_t) does NOT rescue
+exp32's 5 floor cells (AUC 0.522-0.628) -- stays within 0.01-0.07 of
+the 5% FAR target at all five (q SNR0.1/0.5/2.0: 0.058/0.052/0.120; r
+SNR0.5/2.0: 0.050/0.088). Large real gains instead appear at the two
+coarse x3/SNR2.0 cells, already well above the floor under the plain
+wrapper (r: 0.548->0.688; q: 0.338->0.746) -- a genuine finding, but at
+cells that were never the ones motivating the experiment. Folded into
+the Sec 10 Discussion bullet that previously called this "untested."
+
+**F**: all 12 Table 2b cells reconstructed and reproduced exactly. Of
+the 6 negative known-minus-estimated gaps the existing prose called
+"within MC noise," only 1 (raw r x1.5/SNR0.1, 1.4 paired SE) actually
+is; the other 5 are 2.1-3.0 paired SEs from zero -- small in absolute
+magnitude (|gap| <= 0.018, both compared rates >= 0.95) but not
+attributable to noise alone. Corrected "within MC noise" to a precise
+paired-SE characterization in Sec 4, and fixed an adjacent miscount
+("Ten of 12 raw-rung cells" -> "Nine of 12", verified by direct
+recount against Table 2b). Pairing tightens the SE in 17/24 rung-cell
+combinations tested; the other 7 go the other way, reported as found.
+
+**DGP-scope conflict**: put to the author directly (AskUserQuestion,
+not decided silently) -- hold the line confirmed. Discussion bullet
+added (see entry above).

@@ -1,0 +1,9 @@
+series,episode,method,decision_month,data_month,vintage
+gs10,zlb,lsc_composite,none,none,
+gs10,zlb,lsc_tail_cusum,none,none,
+gs10,zlb,raw_cusum,none,none,
+gs10,zlb,raw_var_cusum,none,none,
+gs10,hike2022,raw_var_cusum,2022-11,2022-10,2022-11-15
+gs10,hike2022,lsc_composite,none,none,
+gs10,hike2022,lsc_tail_cusum,none,none,
+gs10,hike2022,raw_cusum,none,none,

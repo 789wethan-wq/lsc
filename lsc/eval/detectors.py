@@ -199,6 +199,24 @@ def make_arima_var_cusum_detector(n_train: int) -> ScoreFn:
     return score_fn
 
 
+def make_combined_windowed_detector(n_train: int, window: int = 60) -> ScoreFn:
+    """Combined windowed statistic (exp36, SPEC R4 M5): max of the
+    mean-shift MOSUM (windowed_raw_cusum_score) and the variance-ratio
+    MOSUM (windowed_raw_var_score), the two bounded-memory second-event
+    fixes exp04/exp27 developed and tested SEPARATELY -- one detector,
+    for the mixed-channel two-event case (a level break followed by a
+    variance break, or the reverse) neither was tested against alone."""
+    from lsc.benchmarks.changepoint import windowed_raw_cusum_score
+    from lsc.benchmarks.variance import windowed_raw_var_score
+
+    def score_fn(Y: np.ndarray) -> np.ndarray:
+        mean_score = windowed_raw_cusum_score(Y, n_train=n_train, window=window)
+        var_score = windowed_raw_var_score(Y, n_train=n_train, window=window)
+        return np.fmax(mean_score, var_score)
+
+    return score_fn
+
+
 def make_plain_hmm_detector(n_train: int, n_regimes: int = 2) -> ScoreFn:
     def score_fn(Y: np.ndarray) -> np.ndarray:
         return plain_hmm_flip_score(Y, n_train=n_train, n_regimes=n_regimes)

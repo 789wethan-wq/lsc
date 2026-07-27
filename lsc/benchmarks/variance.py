@@ -67,6 +67,22 @@ def arima_var_cusum_score(Y: np.ndarray, n_train: int) -> np.ndarray:
     return _max_over_arms(z, n_train)
 
 
+def order_known_var_cusum_score(Y: np.ndarray, n_train: int,
+                                order: tuple = (1, 0, 1)) -> np.ndarray:
+    """Order-known ARIMA rung (exp30, SPEC R3 M1): the identical
+    statistic on an ARIMA model's standardized one-step residuals, with
+    the order FIXED at the true DGP order (1,0,1) instead of AIC-
+    selected -- coefficients still fit by MLE on the training prefix.
+    Sits between arima_var_cusum_score (order AND coefficients
+    estimated) and known_kalman_var_cusum_score (order AND coefficients
+    known), isolating order-selection error from coefficient noise."""
+    from lsc.benchmarks.arima import arima_standardized_residuals_fixed_order
+
+    z = arima_standardized_residuals_fixed_order(np.asarray(Y, dtype=float),
+                                                 n_train, order)
+    return _max_over_arms(z, n_train)
+
+
 def raw_var_arm_at(Y: np.ndarray, n_train: int, t: int) -> str:
     """Which arm is maximal at time t (alarm attribution, real data)."""
     Y = np.asarray(Y, dtype=float)
