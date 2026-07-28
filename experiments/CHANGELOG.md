@@ -4516,6 +4516,5 @@ concern. Every fix in every round was independently verified against
 merely adopted on a reviewer's word; the full test suite (121 tests)
 was re-run after every substantive change and stayed green throughout.
 PAPER_DRAFT.md is now considered final for this revision round.
-`LSC_FINAL_DRAFT.md` (created 2026-07-28, before this R9 round) is
-now a stale snapshot of the pre-R9 state and should be re-synced if a
-new final snapshot is wanted.
+`LSC_FINAL_DRAFT.md` re-synced to this state (3,269 lines, opus-round-2
+R9-approved, 8/10) verbatim.
