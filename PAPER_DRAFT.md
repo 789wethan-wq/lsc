@@ -842,7 +842,7 @@ below is attributed to ARIMA's estimation fragility specifically, and
 whether est_kalman also degrades there is not established by this
 check and is not asserted either way.)
 
-**Table 3. The ladder, both channels** (detection rate at T = 500, 5%
+*Table 3. The ladder, both channels* (detection rate at T = 500, 5%
 calibrated FAR; MC SEs ≤ 0.023 (worst-case √(p(1−p)/500), matching
 Table 2's convention) in `paper_assets/ladder_table.csv`,
 `break_channel` column). Rounded to 2 decimals here to match this
@@ -1147,7 +1147,7 @@ distinct from the series it fits, so "filtered-state slope" becomes
 "one-step-ahead-forecast slope"), same calibration pipeline, same
 seeds, same per-time standardization, same max-score rule.
 
-**Table 4. Composite built on ARIMA inputs vs. the Kalman composite**
+*Table 4. Composite built on ARIMA inputs vs. the Kalman composite*
 (detection rate, T = 500, 5% calibrated FAR;
 `paper_assets/exp20_composite_on_arima.csv`).
 

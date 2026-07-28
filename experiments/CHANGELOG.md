@@ -4449,3 +4449,73 @@ principle, conditional on compression — no further correctness work
 required, entirely editorial/structural").** Not yet the required 8+.
 Sending back for another opus round with the compression pass applied
 and independently verified above.
+
+## 2026-07-28 — Opus final-gate round 2 (post-R9): RATING 8/10 — LOOP COMPLETE
+
+Opus assessed whether the compression pass (round 1's relocation plan,
+executed and independently verified above) actually resolved its own
+concern, rather than re-litigating length in the abstract. Its
+findings:
+
+- **Structural fix judged real, not cosmetic.** Spot-checked three
+  Appendix D subsections (D.1 whitening-ladder detail, D.3 §4 detail,
+  D.4 GARCH detail) against their body pointers: each retains the
+  headline conclusion in the body with the per-cell autopsy correctly
+  relocated; no dangling pointers found (D.1×8, D.2×3, D.3×3, D.4×2,
+  D.5×1, all resolve). Body reads coherently, not gutted.
+- **Abstract judged fixed.** The restructured lead ("The answer
+  depends on whether parameters are known or estimated") resolves the
+  round-1 tension between the deflationary framing and the estimation-
+  dependence finding — now properly subordinated rather than competing
+  in a buried closing clause.
+- **Independent numeric re-audit across both relocated and untouched
+  content** (exp20, exp26, exp30, exp32, exp42, exp44 +
+  exp44_innovation_tails, r_phi_sweep_full/Table 3c, rd_eval/Tables
+  7-7b, exp52b's 54.3%/477-of-500 claim, arl_table, exp46's 24/24 FAR
+  parity, circular-shift artifacts) — every value reconciled exactly;
+  the 39-test multiplicity arithmetic also re-checked clean. This was
+  specifically checking for the failure mode "mechanical relocation
+  edits corrupt a number in transit" — did not occur.
+- On falling short of the ~13,000-14,000 aggressive body-length target
+  (landed at ~21,740): opus's own explicit call, since it set the
+  target — judged the underlying concern (an undifferentiated
+  mega-body with no supplementary tier) as fixed in kind, with the
+  remaining word count being a matter of degree that does not block
+  acceptance for a venue (MDPI *Stats*) with no hard main-text limit.
+- Two purely cosmetic notes, both non-blocking: Tables 3 and 4 used a
+  bold pre-table header instead of the italic post-table `*Table N.*`
+  caption convention every other table follows (fixed here — converted
+  to italic, matching Table 2's style); and two circular-shift result
+  artifacts coexist on disk (an abandoned MC computation and the
+  current exact-enumeration one, values agree within resampling noise
+  — not an error, flagged only as a repo-hygiene note, not acted on
+  this round since it doesn't touch the paper text).
+
+**RATING: 8/10, minor revision — "accept in principle." This satisfies
+the standing `/goal` loop's stop condition ("stop once opus gives an
+8+/10 rating") on its own.**
+
+**Loop summary (R9 external review through this final gate):** the
+external review's 5/10 weak-reject score led to: (1) two parallel
+verification forks independently re-checking all 10 major and 11
+minor weaknesses + specific comments against source before any edit;
+(2) a real internal contradiction fixed (§5's stated mechanism vs. the
+paper's own exp30 data); (3) the missing exp44/46/52/52b files
+committed and pushed to the public replication repo, closing the
+"availability claim is false" finding; (4) one genuine new real-data
+experiment run to resolve a confound (Table 7b's train=180/monitor=60
+isolation) rather than merely caveated; (5) three sonnet rounds (7, 8,
+8 — the required 2-consecutive-≥8 pair) catching a numeric range
+error, undefined acronyms, a terminology collision, and two citation
+gaps; (6) two opus rounds, the first making manuscript length the sole
+blocker again (as a prior opus round once had) with a specific
+relocation plan, the second confirming that plan — once executed and
+independently re-verified for correctness — actually resolved the
+concern. Every fix in every round was independently verified against
+`paper_assets/*.csv` or primary source before being applied, not
+merely adopted on a reviewer's word; the full test suite (121 tests)
+was re-run after every substantive change and stayed green throughout.
+PAPER_DRAFT.md is now considered final for this revision round.
+`LSC_FINAL_DRAFT.md` (created 2026-07-28, before this R9 round) is
+now a stale snapshot of the pre-R9 state and should be re-synced if a
+new final snapshot is wanted.
