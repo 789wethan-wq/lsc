@@ -4255,3 +4255,68 @@ round.
 sub-loop, not yet qualifying (need 2 consecutive ≥8 rounds before
 escalating to opus).** All three findings verified and fixed above;
 sending back for a second sonnet round.
+
+## 2026-07-28 — Sonnet review round 2 (post-R9): RATING 8/10, six fixes applied
+
+Re-verified all three round-1 fixes from primary sources (not the
+CHANGELOG's account) — all confirmed correct: the §4 φ=0.99 range
+(0.30–0.63, re-derived exactly from `grid_v6_phisweep_muinf.csv`), full
+end-to-end reference-list alphabetization (not just the local
+neighborhood), and the §10 GLR-benchmark disclosure. Then ran an
+independent numerical audit covering essentially every quantitative
+table in the paper (Tables 1-7b, GARCH benchmark + exp32/exp42,
+exp26/exp30/exp44/exp44_innovation_tails, exp27/exp36, exp39) against
+source CSVs — zero discrepancies found, a meaningful result after 17
+prior review rounds. Six new (all minor) issues found and fixed, each
+re-verified before fixing:
+
+1. "LSC" never defined despite being load-bearing terminology
+   throughout (method-name prefix, "LSC detectors," "LSC CUSUMs").
+   Fixed: expanded at first use (§2, "Calibration parity" paragraph) —
+   "LSC (Latent-State Structural Change...)" per README.md's own
+   definition.
+2. "SPC" (§1 subsection heading and 6 further uses) never expanded on
+   first use. Fixed: heading now reads "Quickest detection and SPC
+   (statistical process control)."
+3. "GFC" (15 uses from the Introduction onward) and "ZLB" (used
+   throughout §9, only ever in abbreviated form) never expanded at
+   first use. Fixed both.
+4. "Flagship" terminology collision: consistently means the
+   level-shift benchmark cell (SNR 0.5/φ=0.95/3σ) in §2/§4/§10, but
+   §5's Experiment D paragraph reused it for a different cell (r×1.5,
+   SNR 0.1). Fixed: disambiguated in the Experiment D paragraph
+   ("this section's own headline cell, not the level-shift 'flagship'
+   cell of §2/§4").
+5. One attribution gap: §5's "Finer resolution around the peak"
+   paragraph (φ=0.90/0.97 joint bootstrap, p=0.149) never cited its
+   source script, unlike every other empirical claim in the paper.
+   Traced to `experiments/exp39_phi_peak_joint_test.py` /
+   `paper_assets/exp39_phi_peak_joint_test.csv`; numbers re-verified
+   exactly (deltas 0.082/0.112/0.110/0.074, p=0.1489→0.149). Fixed:
+   added the citation. (Checked whether exp39 needed adding to the
+   Appendix results-index table too — exp38, which the reviewer
+   confirmed IS properly cited in-text, is also absent from that
+   table, so the table is evidently not meant to be an exhaustive
+   experiment index; no further action needed there.)
+6. Minor formula inexactness: §3 states the persistence-sweep SNR
+   formula as q = SNR·(1−φ²), §5 as the fuller q = SNR(1−φ²)r; only
+   consistent because r≡1 throughout the base DGP (confirmed via
+   `lsc/dgp/continuous.py`), which wasn't stated at §3's formula.
+   Fixed: added the r≡1 clarification and forward-reference to §5 at
+   §3's first mention.
+
+Also fixed as a byproduct: the abstract's "(§1)" inline section
+cross-reference (added during the R9 "fast or never" fix, flagged by
+the reviewer as unusual in an abstract) — removed; the sentence reads
+fine without it.
+
+Remaining flagged issue, not new: manuscript length vs. target-venue
+(MDPI *Stats*) format — abstract ~350 words vs. the venue's customary
+~200-word norm, ~30,500 words total. Already known from prior opus
+rounds; not treated as blocking this round, tracked for submission
+prep.
+
+**RATING: 8/10, minor revision — first QUALIFYING round of the
+required 2-consecutive-≥8 pair.** All six findings verified and fixed
+above; sending back for a third sonnet round to confirm a second
+consecutive ≥8 before escalating to opus.

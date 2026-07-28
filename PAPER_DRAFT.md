@@ -11,8 +11,7 @@ dominates at every SNR, and the innovation CUSUM's post-break drift
 decays geometrically to an asymptote that sorts detection across a
 persistence sweep (Spearman 0.94) — the μ∞ mechanism we prove
 analytically, though the "fast or never" shape it motivates does not
-hold cleanly at the paper's own flagship arena when tested directly
-(§1).
+hold cleanly at the paper's own flagship arena when tested directly.
 (ii) Observation-noise variance changes: yes, but the advantage is
 prewhitening, not the state estimate — at true parameters the
 observable is exactly ARMA(1,1), so ARIMA and Kalman whitening are
@@ -107,13 +106,13 @@ answerable. Our contributions are as follows.
   and an in-composite variant diluted below its standalone form (§8.3).
 - Contribution 4 (application discipline): attribution, permutation
   tests, sensitivity, pinned data snapshots, and real-time vintages for
-  the real-data claims — including a self-correction on the headline GFC
-  timing.
+  the real-data claims — including a self-correction on the headline
+  GFC (Global Financial Crisis, 2008) timing.
 
 **Related work.** The paper sits at the intersection of several
 literatures.
 
-**Quickest detection and SPC.** Sequential change detection descends
+**Quickest detection and SPC (statistical process control).** Sequential change detection descends
 from Page's (1954) CUSUM and the quickest-detection tradition (Lorden
 1971; Moustakides 1986); we use the CUSUM as the common statistic across
 information sets rather than proposing a new stopping rule. Aue &
@@ -324,7 +323,9 @@ automatically.
 
 **Calibration parity.** Threshold = the (1 − FAR)-quantile of the
 per-replication maximum score over matched-null draws; identical routine,
-budgets, and seed layout for LSC detectors and benchmarks (raw-Y CUSUM,
+budgets, and seed layout for LSC (Latent-State Structural Change,
+the filtered-state detector family this paper studies) detectors and
+benchmarks (raw-Y CUSUM,
 ARIMA+CUSUM, plain-HMM regime flips). Calibration, evaluation, FAR-check,
 and feature-scale seeds are disjoint by construction.
 
@@ -460,7 +461,10 @@ to exceed.
 
 Arenas: AR(1) latent state (φ = 0.95) at spec-SNR (stationary state
 variance / observation variance) ∈ {0.1, 0.5, 2.0}, with a persistence
-sweep φ ∈ {0.5, 0.8, 0.95, 0.99} (SNR held fixed by q = SNR·(1−φ²))
+sweep φ ∈ {0.5, 0.8, 0.95, 0.99} (SNR held fixed by q = SNR·(1−φ²),
+the observation variance r ≡ 1 throughout the base DGP; §5 introduces
+r as an independently varying quantity for the variance-channel
+scenarios and states the fuller q = SNR(1−φ²)r)
 used to map the fast-or-never boundary (§4); and a local-level
 (random-walk state) arena, analyzed in §8.4, where — as we now
 demonstrate rather than assert — level detection is degenerate for
@@ -1092,7 +1096,8 @@ be read as a precise, noise-free finding — now a better-characterized
 noise."
 
 **Finer resolution around the peak.** Adding φ = 0.90 and φ = 0.97 to
-the sweep (Δ: φ=0.90 → 0.082, φ=0.95 → 0.112, φ=0.97 → 0.110,
+the sweep (`experiments/exp39_phi_peak_joint_test.py`; Δ: φ=0.90 →
+0.082, φ=0.95 → 0.112, φ=0.97 → 0.110,
 φ=0.99 → 0.074) shows a plateau across φ = 0.95–0.97, not a sharp peak
 at φ = 0.95 specifically — 0.97's value is nearly tied with 0.95's. A
 joint bootstrap test of whether Δ(0.95) exceeds both neighbors
@@ -1478,8 +1483,9 @@ the cost of no longer being causal (`lsc.models.SmoothedARIMAModel`,
 `experiments/exp41_smoothed_arima_composite.py`; NOT a proposed
 deployable rung, the same oracle-status caveat already given to
 exp37's break-aware GARCH refit and the known-parameter scores above).
-Re-running the r×1.5 flagship cell and its two SNR neighbors (n = 500,
-same seeds as exp20):
+Re-running the r×1.5/SNR 0.1 cell (this section's own headline cell,
+not the level-shift "flagship" cell of §2/§4) and its two SNR
+neighbors (n = 500, same seeds as exp20):
 
 | SNR | raw | ARIMA-CUSUM | composite (Kalman) | composite (ARIMA, one-step) | composite (ARIMA, smoothed) |
 |---|---|---|---|---|---|
@@ -1962,7 +1968,7 @@ above. These four series are the
 only ones ever pulled for this section. INDPRO, GDP, and GS10 were
 chosen for the method's signature cases before looking at their
 results (GDP for the 1984Q1 Great Moderation, GS10 for the 1979–82
-Volcker episode and the post-2008 ZLB quieting, `experiments/
+Volcker episode and the post-2008 ZLB (zero-lower-bound) quieting, `experiments/
 CHANGELOG.md` 2026-07-11 design entry). UNRATE was added five days
 later (2026-07-16), after the first three series' results were already
 known — a genuine fourth look, not an a priori design choice, disclosed
