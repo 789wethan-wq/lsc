@@ -30,7 +30,7 @@ def raw_cusum_score(Y: np.ndarray, n_train: int, k: float = 0.5) -> np.ndarray:
 def windowed_raw_cusum_score(Y: np.ndarray, n_train: int,
                              window: int = 60) -> np.ndarray:
     """Bounded-memory, MOSUM-style counterpart of raw_cusum_score
-    (Chu, Stinchcombe & White 1996 fluctuation-test family): a moving
+    (Chu, Hornik & Kuan 1995 MOSUM family): a moving
     two-window mean-shift z-statistic on standardized Y, rather than a
     CUSUM accumulated against the training-prefix baseline. See
     windowed_break_pressure for the full rationale (a naive

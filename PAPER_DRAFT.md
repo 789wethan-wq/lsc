@@ -156,14 +156,17 @@ estimate adds nothing over ARIMA whitening on variances).
 
 **Econometric CUSUM-of-residuals.** In econometrics, sequential
 monitoring of structural change is the CUSUM-of-recursive-residuals line
-and its modern moving-window ("MOSUM") monitoring form (Brown, Durbin &
-Evans 1975; Chu, Stinchcombe & White 1996), alongside the canonical
-unknown-breakpoint testing framework of Andrews (1993), which watch *observable*
-regression residuals; our object is a *latent* state, and the residuals
-we monitor are a filter's innovations. The bounded-memory fix we give
-the multi-break re-arm failure in §7 is in this same MOSUM family: a
-moving two-window mean-shift statistic, rather than a CUSUM accumulated
-against a fixed training-prefix baseline.
+(Brown, Durbin & Evans 1975) and its moving-window ("MOSUM") form (Chu,
+Hornik & Kuan 1995), generalized into an online-monitoring framework by
+Chu, Stinchcombe & White (1996) and Leisch, Hornik & Kuan (2000),
+alongside the canonical unknown-breakpoint testing framework of Andrews
+(1993), which watch *observable* regression residuals; our object is a
+*latent* state, and the residuals we monitor are a filter's
+innovations. The bounded-memory fix we give the multi-break re-arm
+failure in §7 is in this same MOSUM/moving-estimates family (Chu,
+Hornik & Kuan 1995; Leisch, Hornik & Kuan 2000): a moving two-window
+mean-shift statistic, rather than a CUSUM accumulated against a fixed
+training-prefix baseline.
 
 **Regime-switching.** Regime-switching models (Hamilton 1989; Kim &
 Nelson 1999) offer a state-aware alternative whose regime probabilities
@@ -1553,8 +1556,9 @@ above — a fixed-baseline statistic compares every observation against
 the *original* training-prefix reference and so never drains after a
 permanent shift — points to a specific repair: replace the fixed
 reference with a moving one. We build a MOSUM-style two-window
-statistic (the same family as the CUSUM-of-recursive-residuals
-monitoring literature; Chu, Stinchcombe & White 1996) that compares a
+statistic (Chu, Hornik & Kuan 1995; the same family generalized for
+online monitoring by Chu, Stinchcombe & White 1996 and Leisch, Hornik &
+Kuan 2000) that compares a
 trailing window's mean to the window immediately before it, rather
 than to the training baseline, for both the raw-Y and
 innovation-CUSUM channels (`windowed_break_pressure`). On the level→level scenario this closes the
@@ -2653,11 +2657,18 @@ Brown, R. L., J. Durbin, and J. M. Evans (1975). "Techniques for
 Testing the Constancy of Regression Relationships over Time." *Journal
 of the Royal Statistical Society, Series B* 37(2), 149–192.
 
+Chu, C.-S. J., K. Hornik, and C.-M. Kuan (1995). "MOSUM Tests for
+Parameter Constancy." *Biometrika* 82(3), 603–617.
+
 Chu, C.-S. J., M. Stinchcombe, and H. White (1996). "Monitoring
 Structural Change." *Econometrica* 64(5), 1045–1065.
 
 Frisén, M. (2003). "Statistical Surveillance: Optimality and Methods."
 *International Statistical Review* 71(2), 403–434.
+
+Leisch, F., K. Hornik, and C.-M. Kuan (2000). "Monitoring Structural
+Changes with the Generalized Fluctuation Test." *Econometric Theory*
+16(6), 835–854.
 
 Hamilton, J. D. (1989). "A New Approach to the Economic Analysis of
 Nonstationary Time Series and the Business Cycle." *Econometrica*

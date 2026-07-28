@@ -4093,3 +4093,110 @@ contributes 25 distinct tests, not 20), so the Bonferroni threshold
 qualitative conclusions (which rows survive which correction) are
 unchanged by the new family size, verified directly rather than
 assumed.
+
+**Remaining fixes from the external review's Minor Weaknesses / Specific
+Comments, applied to PAPER_DRAFT.md.** ICSS's "we implement it exactly
+as ICSS is specified" overclaim softened to "the standard
+binary-segmentation approximation," disclosing the omitted iterative-
+refinement step and noting Table 5b's ICSS numbers plausibly understate
+the true algorithm as a result (`lsc.benchmarks.changepoint.
+icss_breakpoints` confirmed one-pass recursive, no refinement loop).
+Table 2's unlabeled "variance ×3" row labeled "(r)" after cross-
+checking against Table 3's r×3 composite row (0.99/0.99/0.98, matches;
+Table 3's q×3 composite does not, 0.44/0.76/0.98). Romano & Wolf (2005)
+was in the bibliography but never cited in text; added one sentence in
+§9 noting stepwise procedures would be the principled fix for the
+test-family's non-independence but were not run. §2's ARL₀ derivation
+did not state its constant-per-observation-hazard assumption (a CUSUM
+against a frozen baseline is not actually memoryless); added the
+caveat at the point of definition. §9's permutation-window discussion
+did not disclose that the "caught N months after" delay narratives
+(GDP's ~17-month, Volcker's 4-month) come from `real_data.py`'s
+separate 24-month `_summary.csv` export, not the 12-month window the
+permutation p-values' hit/miss counts use; added a clarifying note
+(the specific numbers already reported were checked and are not
+contradictory — GDP's 17-month GFC delay was already correctly
+excluded from that event's hit count). §4's stratified-permutation
+description overstated what shuffling within SNR×shift strata
+identifies — it rules out SNR and shift size, not μ∞ specifically
+(other φ-monotone quantities like K or 1−φ are not separately ruled
+out); reworded and flagged an iso-μ∞ contour design as the actual
+identification strategy, not run here. UNRATE's provenance sentence
+("chosen... before looking at their results") was checked against
+CHANGELOG dates: UNRATE was added 2026-07-16, five days after the
+2026-07-11 design entry for INDPRO/GDP/GS10, meaning the first three
+series' results plausibly were already known — reworded to disclose
+this timing rather than imply blind a priori selection for all four
+series (already addressed above; noted here for completeness of the
+disposition list). MOSUM citation: PAPER_DRAFT.md attributed "MOSUM"
+to Chu, Stinchcombe & White (1996) in three places (§1 Related Work,
+§7's bounded-memory fix, and a code docstring in `lsc/benkmarks/
+changepoint.py`); the actual MOSUM paper is Chu, Hornik & Kuan (1995,
+Biometrika), with CSW96 and Leisch, Hornik & Kuan (2000) being the
+generalized online-monitoring extensions of that family. Fixed all
+three in-text mentions, the code docstring, and added both missing
+references to the bibliography (Chu, Hornik & Kuan 1995; Leisch,
+Hornik & Kuan 2000) — applied on my own literature knowledge, not
+independently re-derivable from this repo's files alone, so flagged
+here explicitly as a claim resting on general domain knowledge rather
+than a repo-verifiable fact, for the next review round to double-check
+if it has literature access.
+
+**Explicitly not fixed, and why:**
+- MW2 (ARIMA composite control uses `fittedvalues`, not a
+  reconstructed filtered state via Ŝ_t = φŜ_{t-1} + Kν_t): the paper
+  already discloses this as a judgment call (`arima_model.py:16-25`,
+  PAPER_DRAFT.md's Table 4 discussion) more thoroughly than the review
+  credited, and partially mitigates it via exp21/exp41, but the
+  reviewer's specific proposed control is a genuine missing experiment,
+  not implemented. Left as a known gap.
+- MW8 (no GLR/Willsky-Jones 1976 optimality benchmark anywhere): cited
+  but never implemented. Genuine missing experiment requiring new
+  detector code, not a text fix. Left as a known gap.
+- MW4's full resolution (multi-seed `n_scale_reps`/`scale_seed0`
+  sensitivity rerun): a caveat sentence was added, but the actual
+  multi-seed rerun was not performed this round. Left as a known gap.
+- MW3 (abstract rescue-clause wording vs. raw baseline at q/×3/SNR0.1):
+  verified numerically accurate against the correct (Kalman-vs-ARIMA)
+  comparison class already stated nearby; judged defensible as-is, not
+  edited.
+- MW9 (generalize the "known-parameter Kalman filter is an invertible
+  reorg, so 'no' is partly true by construction" framing to all three
+  trichotomy legs in §1, not just leg (ii)): a legitimate structural
+  improvement, not an error; deferred given opus round 4 already
+  pushed back hard on expanding §1's length.
+- Minor 8 (test count "121" vs "98"): re-verified as NOT a
+  contradiction on close reading — "98 passed" is a dated historical
+  log entry about the suite's size at a past checkpoint
+  (2026-07-23), not a current-state claim; "121 tests" (Appendix A) is
+  the current count, confirmed by `pytest --collect-only -q`. No
+  change made.
+- Minor 11 (abstract/paper length): informational only, not an error;
+  left for the resumed review loop to judge, since length was the
+  deciding factor at the prior opus gate and further cuts risk
+  re-litigating settled compression work.
+- SC2 (p<0.00005 "false precision"): REFUTED — the paper already uses
+  "<" not "=", which is the correct floor statement for 0/20000
+  exceedances. No change needed.
+- SC5 (Table 3 rounding inconsistency): already has a full explanatory
+  note; reviewer's complaint is a style preference, not a factual gap.
+  No change made.
+- SC7 (exp14/exp18 "always-ARIMA is a stronger fixed rule" vs. weak SE
+  margins): independently recomputed against `exp14_mixed_channel.csv`
+  / `exp18_pooled_baseline.csv` — the paper's own text already states
+  the exact per-SNR SE gaps (1.2/0.9/2.2 SE) and the pooled 1.5 SE
+  margin, already hedged ("though the margin... is modest"). No
+  misrepresentation found; no change made.
+- MW7 (ARL1 "speed champion" selection bias): already explicitly
+  labeled "conditional on detection" / "conditional on firing" in
+  three places. No misrepresentation found; no change made.
+- Minor 3 pre-check / SC1's p-floor / SC3 (INDPRO coarseness): resolved
+  above as part of other entries.
+
+**Disposition: MW1, MW4(partial), MW6, MW10, Minor 1, 2(with new
+experiment), 4, 5, 6, 7, 9, 10, SC1, SC3, SC4, MOSUM citation — fixed.
+MW2, MW3, MW7, MW8, MW9, Minor 3(low-confidence flag only, see above),
+Minor 8, Minor 11, SC2, SC5, SC7 — reviewed, no action needed or
+flagged as a genuine open gap requiring new experiments not run this
+round. Repo sync (missing exp44/46/52/52b) — fixed and pushed to
+origin/main (commit da37f69).**
