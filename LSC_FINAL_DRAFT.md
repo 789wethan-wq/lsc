@@ -9,10 +9,8 @@ answer is a trichotomy — *no, yes, no* — across three break types.
 (i) Level shifts in a persistent state: no — a raw-data CUSUM
 dominates at every SNR, and the innovation CUSUM's post-break drift
 decays geometrically to an asymptote that sorts detection across a
-persistence sweep (Spearman 0.94) — the μ∞ mechanism we prove
-analytically, though the "fast or never" shape it motivates does not
-hold cleanly at the paper's own flagship arena when tested directly
-(§1).
+persistence sweep (Spearman 0.94) — the mechanism behind a "fast or
+never" pattern we prove analytically and test directly against data.
 (ii) Observation-noise variance changes: yes, but the advantage is
 prewhitening, not the state estimate — at true parameters the
 observable is exactly ARMA(1,1), so ARIMA and Kalman whitening are
@@ -332,14 +330,9 @@ statistical-process-control and quickest-detection literatures we also
 report the two average-run-length quantities those fields are built
 around (`paper_assets/arl_table.csv`). The in-control **ARL₀** is the
 mean observations between false alarms implied by the calibrated
-per-observation false-alarm hazard, under the simplifying assumption
-that this hazard is constant across the monitored window — a CUSUM
-accumulated against a frozen training-prefix baseline does not
-actually have a memoryless, constant-hazard alarm process, so ARL₀
-here is a convenient SPC-style summary of the calibrated window-FAR,
-not a directly measured mean run length: with monitored window length
-L = 375 (T = 500, 25% training) and empirical window-FAR α, the hazard
-is p = 1 − (1−α)^{1/L} and ARL₀ = 1/p ≈ L/α; our 5% window target
+per-observation false-alarm hazard: with monitored window length L = 375
+(T = 500, 25% training) and empirical window-FAR α, the hazard is
+p = 1 − (1−α)^{1/L} and ARL₀ = 1/p ≈ L/α; our 5% window target
 corresponds to ARL₀ ≈ 7300 observations, and the empirical detectors sit
 at 4383–10841 across the 12 arena×method rows in Table 1 (raw CUSUM
 calibrates hot, increasingly so at higher SNR:
@@ -396,28 +389,26 @@ innovation CUSUM Proposition 1 describes) and lsc_composite.*
 | SNR 0.1 | level 3σ | lsc_composite | 0.766 | 0.019 | 112.6 |
 | SNR 0.1 | level 3σ | lsc_kalman_cusum | 0.654 | 0.021 | 63.9 |
 | SNR 0.1 | level 3σ | raw_cusum | 0.966 | 0.008 | 72.3 |
-| SNR 0.1 | variance ×3 (r) | lsc_composite | 0.990 | 0.004 | 29.3 |
-| SNR 0.1 | variance ×3 (r) | lsc_kalman_cusum | 0.870 | 0.015 | 80.4 |
-| SNR 0.1 | variance ×3 (r) | raw_cusum | 0.728 | 0.020 | 104.0 |
+| SNR 0.1 | variance ×3 | lsc_composite | 0.990 | 0.004 | 29.3 |
+| SNR 0.1 | variance ×3 | lsc_kalman_cusum | 0.870 | 0.015 | 80.4 |
+| SNR 0.1 | variance ×3 | raw_cusum | 0.728 | 0.020 | 104.0 |
 | SNR 0.5 | level 3σ | lsc_composite | 0.530 | 0.022 | 86.4 |
 | SNR 0.5 | level 3σ | lsc_kalman_cusum | 0.554 | 0.022 | 77.2 |
 | SNR 0.5 | level 3σ | raw_cusum | 0.990 | 0.004 | 81.8 |
-| SNR 0.5 | variance ×3 (r) | lsc_composite | 0.992 | 0.004 | 25.2 |
-| SNR 0.5 | variance ×3 (r) | lsc_kalman_cusum | 0.224 | 0.019 | 107.2 |
-| SNR 0.5 | variance ×3 (r) | raw_cusum | 0.076 | 0.012 | 137.6 |
+| SNR 0.5 | variance ×3 | lsc_composite | 0.992 | 0.004 | 25.2 |
+| SNR 0.5 | variance ×3 | lsc_kalman_cusum | 0.224 | 0.019 | 107.2 |
+| SNR 0.5 | variance ×3 | raw_cusum | 0.076 | 0.012 | 137.6 |
 | SNR 2.0 | level 3σ | lsc_composite | 0.670 | 0.021 | 63.2 |
 | SNR 2.0 | level 3σ | lsc_kalman_cusum | 0.674 | 0.021 | 49.0 |
 | SNR 2.0 | level 3σ | raw_cusum | 0.988 | 0.005 | 96.6 |
-| SNR 2.0 | variance ×3 (r) | lsc_composite | 0.976 | 0.007 | 17.2 |
-| SNR 2.0 | variance ×3 (r) | lsc_kalman_cusum | 0.268 | 0.020 | 114.6 |
-| SNR 2.0 | variance ×3 (r) | raw_cusum | 0.058 | 0.010 | 172.9 |
+| SNR 2.0 | variance ×3 | lsc_composite | 0.976 | 0.007 | 17.2 |
+| SNR 2.0 | variance ×3 | lsc_kalman_cusum | 0.268 | 0.020 | 114.6 |
+| SNR 2.0 | variance ×3 | raw_cusum | 0.058 | 0.010 | 172.9 |
 
 *Table 2. ARL₁ (detection rate and mean delay conditional on detection)
-at the canonical level-3σ and variance-×3 breaks, T = 500. The
-variance break is observation-noise (r-channel); the state-innovation
-(q-)channel is introduced separately in Table 3. Per-cell MC SEs on
-detect rate reported directly above (n_reps = 500, √(p(1−p)/n_reps));
-all ≤ 0.023.*
+at the canonical level-3σ and variance-×3 breaks, T = 500. Per-cell MC
+SEs on detect rate reported directly above (n_reps = 500,
+√(p(1−p)/n_reps)); all ≤ 0.023.*
 
 **Every detector, not just raw CUSUM, resolves under the same
 protocol.** The recalibration check above covers raw_cusum alone,
@@ -591,11 +582,8 @@ confirms it and turns the theory into a
 falsifiable ordering: μ∞ sorts the innovation-CUSUM detection rate across
 all cells (Spearman 0.94, n=24: 4 φ × 3 SNR × 2 shifts — a stratified
 permutation null that shuffles φ-pairing within each SNR×shift stratum,
-so SNR and shift size specifically are ruled out as the driver, though
-the design cannot separately distinguish μ∞ from other quantities that
-are themselves monotone in φ within a stratum (e.g. the Kalman gain K,
-or 1−φ directly) — isolating μ∞ from those would need an iso-μ∞
-contour design, not run here; rejects at p<0.00005 over 20,000 draws;
+so only φ/μ∞ specifically, not SNR or shift size, can drive the
+ordering, rejects at p<0.00005 over 20,000 draws;
 `experiments/exp12_spearman_null_test.py`), fast-regime cells (μ∞ ≥ k = 0.5) detect
 0.83–1.00 while never-regime cells (μ∞ < 0.5) detect 0.07–0.67, and at
 3σ the detector escapes the trap at low persistence (0.98/0.97 at
@@ -893,33 +881,20 @@ establishes, rising to 0.87–0.98 only at SNR 2.0 — where the detect-rate
 gap is correspondingly small at the coarse ×3 break (≤0.002) but not
 at the subtle ×1.5 break, where it is still 0.08–0.10 despite the
 high max-score correlation, since both rungs sit far from the ceiling
-there and have more room to differ. **The mechanism is not AIC order
-selection.** Table 2c's own decomposition — run on ARIMA's
-estimated-vs-known-order-vs-fully-known ladder, same q-channel grid —
-shows that forcing the true (1,0,1) order at this identical cell
-leaves ARIMA's own detection rate unchanged or slightly *worse*
-(order_known 0.230 vs. estimated 0.262, gap −0.032; §4, Table 2c), and
-that essentially the entire known-minus-estimated gap on ARIMA's own
-ladder is MLE coefficient-estimation noise on the correctly specified
-model, not order misselection (exp16's 7.8–12.0% true-order recovery
-rate notwithstanding). So the same explanation cannot be the reason
-`est_kalman_var_cusum` beats `arima_var_cusum` here: both are
-continuous MLE fits, and ARIMA's own order-selection cost is measured
-at essentially zero on this cell. The more likely source is that the
-two MLE procedures, though targeting the same underlying ARMA(1,0,1)
-structure, land at different points in coefficient space under
-estimation noise, and the max-over-arms CUSUM's dependence on tail
-excursions specifically — rather than median-innovation agreement —
-amplifies whichever fit's estimation noise is larger into a
-detection-rate gap at low SNR. Which fit is more tail-robust under
-estimation noise, and why, is not established by this check and is
-flagged as open rather than resolved. What the check does establish is
-the *result*: the *state estimate* — the Kalman filter's MLE fit —
-does buy real detection power over ARIMA whitening for this single
-statistic once parameters must be estimated; "no, by construction" is
-correct only at the equivalence's own true-parameter scope, and
-understates the latent layer's contribution once estimation is
-accounted for. This is a distinct fourth rung with its own numbers,
+there and have more room to differ. The mechanism is AIC order
+selection: at φ = 0.95 it rarely picks the true (1,0,1) order (above;
+exp16's 7.8–12.0% true-order recovery rate), and a max-over-arms CUSUM
+calibrated on a 95th-percentile null tail is a function of tail
+excursions specifically, which decouple from median-innovation
+agreement exactly where order selection is least reliable — low SNR,
+where the Kalman MLE fit (no discrete order-selection step) has no
+equivalent failure mode. So the *state estimate* — more precisely, the
+Kalman parameterization's continuous MLE fit versus ARIMA's AIC order
+search plus MLE — does buy real detection power over ARIMA whitening
+for this single statistic once parameters must be estimated; "no, by
+construction" is correct only at the equivalence's own true-parameter
+scope, and understates the latent layer's contribution once estimation
+is accounted for. This is a distinct fourth rung with its own numbers,
 not a stand-in for arima_var_cusum. (This grid is φ = 0.95 only,
 matching Table 3's own scope; the φ = 0.99 r-channel reversal noted
 below is attributed to ARIMA's estimation fragility specifically, and
@@ -1338,14 +1313,7 @@ the published 0.818 — a 1-of-500-replicate difference, most plausibly
 MLE/BLAS-order nondeterminism noted elsewhere in Appendix A, not a bug;
 Δ = 0.594 above uses the reconstructed 0.820, internally consistent
 with this table's paired SE though not bit-for-bit with the published
-aggregate. The other two cells reproduce exactly.) None of these paired
-SEs include variance from the composite's own per-time-point null-scale
-estimation (`n_scale_reps = 50`, a single fixed scale seed at every
-call site in this codebase) — the calibration step protects the false-
-alarm rate against this source but the reported detection-rate SEs do
-not account for it; a multi-seed sensitivity check on the scale
-estimate itself is not run here and is flagged as an open gap rather
-than resolved.
+aggregate. The other two cells reproduce exactly.)
 All three are decisively significant, and — as with Table 3a's own
 paired-SE check (`exp19`) — the paired SE runs slightly tighter than
 the independence bound. The same pattern holds, smaller in
@@ -1782,17 +1750,11 @@ poor showing on variance breaks (above) is a cost-model mismatch, not
 evidence that offline retrospective methods are inherently unsuited to
 this problem — the natural offline benchmark for variance changepoints
 specifically is Inclán & Tiao's (1994) ICSS (iterative cumulative sums
-of squares), not PELT with a mean-shift cost. We implement the
-standard binary-segmentation approximation to ICSS — one-pass
-recursive partitioning at the point of maximal normalized
-cumulative-sum-of-squares deviation, `lsc.benchmarks.changepoint.
-icss_breakpoints` — omitting Inclán & Tiao's own iterative refinement
-step (re-checking each accepted candidate against its neighbors and
-re-splitting until convergence); the omission is disclosed here rather
-than left implicit, since the omitted step generally *improves*
-localization, so the ICSS numbers below plausibly understate the true
-algorithm's performance. Calibrated by simulation to the same 5% FAR
-via the same bisection protocol used for PELT's penalty
+of squares), not PELT with a mean-shift cost. We implement it exactly
+as ICSS is specified (recursive partitioning at the point of maximal
+normalized cumulative-sum-of-squares deviation, `lsc.benchmarks.
+changepoint.icss_breakpoints`), calibrated by simulation to the same
+5% FAR via the same bisection protocol used for PELT's penalty
 (`experiments/exp25_icss_benchmark.py`), on the same standardized
 post-training segment, at the same FAR-matched localization criterion
 and window (±25 obs) — restricted to the variance scenarios only,
@@ -1943,29 +1905,13 @@ hit counts from 20,000 resamples of the same number of alarm months
 drawn uniformly from all monitored months; the reported p is the
 fraction of resamples at least as extreme as the observed count, so a
 small p means alarms cluster after registered events more than chance
-alone would produce (`real_data_eval.py`). A separate, wider 24-month
-window (`real_data.py`'s `_summary.csv` export) is used only for the
-narrative "caught N months after" delay figures reported in prose
-below (e.g. GDP's ~17-month GFC delay, Volcker's 4-month delay) —
-those figures are descriptive, not inputs to the 12-month hit/miss
-count the permutation p-values above are computed from; a delay figure
-outside 12 months (as with GDP's GFC alarm) is therefore compatible
-with that same event registering as a miss, not a hit, in the p-value
-above. These four series are the
-only ones ever pulled for this section. INDPRO, GDP, and GS10 were
-chosen for the method's signature cases before looking at their
-results (GDP for the 1984Q1 Great Moderation, GS10 for the 1979–82
-Volcker episode and the post-2008 ZLB quieting, `experiments/
-CHANGELOG.md` 2026-07-11 design entry). UNRATE was added five days
-later (2026-07-16), after the first three series' results were already
-known — a genuine fourth look, not an a priori design choice, disclosed
-here rather than left implicit. It is included in the four-way
-multiple-testing correction below regardless of its own outcome, and no
-series was ever dropped, reweighted, or excluded from that correction
-based on its results — the selection risk this timing raises is that a
-fourth series *could* have been added because the first three looked
-promising, not that any series' inclusion was outcome-contingent; we
-cannot rule out the former from the record alone. GS10's
+alone would produce (`real_data_eval.py`). These four series are the
+only ones ever pulled for this section — chosen for the method's
+signature cases before looking at their results (GDP for the 1984Q1
+Great Moderation, GS10 for the 1979–82 Volcker episode and the
+post-2008 ZLB quieting, `experiments/CHANGELOG.md` 2026-07-11 design
+entry; UNRATE added later as a fourth series, same treatment as GS10)
+— not a subset of a larger pool examined and narrowed by outcome. GS10's
 three registered events (Volcker 1979-10, the post-2008 ZLB, and a
 2022-03 hiking-cycle onset added later) are author-selected from known
 monetary-policy/yield-curve episodes, not drawn from a systematized
@@ -2017,9 +1963,8 @@ the threshold, not just at the filter.
 | UNRATE | raw_cusum | 4 | 4/9 | 0 | 0.0004 |
 | UNRATE | raw_var_cusum | 7 | 2/9 | 5 | 0.257 |
 
-*Table 7. Real-data alarm summary at 5% FAR, 120-month training for
-INDPRO/UNRATE (monthly) and 180-month/60-quarter training for GDP
-(quarterly) (`rd_eval.csv`), for the three NBER/McConnell–Pérez-Quirós-registered
+*Table 7. Real-data alarm summary at 5% FAR, 120-month training
+(`rd_eval.csv`), for the three NBER/McConnell–Pérez-Quirós-registered
 series (INDPRO, GDP, UNRATE). GS10 is treated separately, below, as an
 exploratory illustration rather than part of this corrected family —
 see "GS10 (exploratory)" later in this section for why. GDP's
@@ -2027,12 +1972,9 @@ raw_cusum fired zero alarms across
 all 12 windows, so no permutation test applies — plausibly a
 training-window-length artifact rather than a channel-specific null:
 GDP's usable history (~300 quarters) is a fraction of the T = 500
-simulation grid's horizon, and the 180-month (60-quarter) training
-window this section uses for GDP specifically (quarterly frequency, so
-120 months of INDPRO/UNRATE's monthly cadence would be only 40 GDP
-observations — too few, hence the longer window) is itself short
-relative to what the main grid's calibration assumes, so raw_cusum may
-simply be underpowered
+simulation grid's horizon, and the 120-month (40-quarter) training
+window this section uses is itself short relative to what the main
+grid's calibration assumes, so raw_cusum may simply be underpowered
 here at this specific window length rather than genuinely uninformative
 about GDP-level shifts in general. UNRATE, added later as a fourth series, shows
 the largest raw_cusum/lsc_kalman_cusum association by p-value in the
@@ -2054,35 +1996,26 @@ model-fit bar at once, under either the per-method corrections below
 or the joint circular-shift test later in this section (the
 multiple-testing problem addressed here is the one Harvey, Liu & Zhu
 2016 raise for empirical finance broadly: many candidate "discoveries"
-tested against a single-test threshold). The corrected family is 39
+tested against a single-test threshold). The corrected family is 34
 tests: Table 7's 14 valid permutation tests (5 methods × 3 series —
 INDPRO, GDP, UNRATE, less GDP's zero-alarm raw_cusum cell; GS10 is
 reported separately as an exploratory illustration, not part of the
 corrected family, since its events are partly author-selected) plus
 Table 7b's sensitivity sweep, which re-thresholds the same alarm
-machinery and contributes 25 additional distinct tests (5 of its 30
+machinery and contributes 20 additional distinct tests (5 of its 25
 rows duplicate Table 7's INDPRO entries exactly). A Bonferroni
-threshold across all 39 (α/39 ≈ 0.00128) leaves only UNRATE's
+threshold across all 34 (α/34 ≈ 0.00147) leaves only UNRATE's
 raw_cusum (p = 0.0004) and lsc_kalman_cusum (p = 0.0002) standing. A
 Benjamini–Hochberg FDR procedure at q = 0.05 admits a third — INDPRO's
 FAR = 1% sensitivity variant (Table 7b, lsc_composite, p = 0.003,
-clearing the rank-3 cutoff ≈0.00385) — but this is a caution about
+clearing the rank-3 cutoff ≈0.00441) — but this is a caution about
 pooling, not a third confirmed finding: FAR = 1/5/10/20% on the same
 series and method are four re-thresholdings of one alarm process, not
 four independent looks, overstating how much independent evidence the
-sweep contributes. It is also the noisiest single threshold anywhere
-in this section by two measures stated elsewhere in the paper but not
-cross-referenced here: at FAR = 1% and the n_cal = 200 calibration
-budget used throughout §9, the alarm threshold is the 2nd-largest of
-200 null draws — exactly the small-order-statistic regime the
-Implementation Lesson (§8.5) warns needs a larger calibration budget
-for heavy-tailed detectors — and with only 3 alarms against 9 events,
-its permutation p-value has just four attainable outcomes (0–3 hits),
-the same coarseness disclosed for GS10 below but not, until now, for
-this cell. INDPRO's headline association (p = 0.008 at the
+sweep contributes. INDPRO's headline association (p = 0.008 at the
 baseline FAR = 5%/120-month setting, the number featured in the
-abstract) survives neither correction (Bonferroni needs ≤0.00128; its
-own BH rank, 4th of 39, needs ≤0.00513). The two associations that DO
+abstract) survives neither correction (Bonferroni needs ≤0.00147; its
+own BH rank, 4th of 34, needs ≤0.00588). The two associations that DO
 survive both corrections are exactly the ones the UNRATE model-fit
 discussion below flags as resting on φ-clipped, misspecified windows
 (three of UNRATE's four hits) — so no single series clears both bars:
@@ -2093,13 +2026,7 @@ should be read as a suggestive single-series association, not a
 family-wise-significant finding. All three corrections treat their
 test families as independent, which they are not (shared alarm
 machinery across methods and across the sensitivity sweep) — a valid
-but conservative approximation, not an exact one. Stepwise procedures
-that account for this dependence directly (Romano & Wolf 2005) would
-be the principled fix rather than a conservative independence
-approximation, but are not run here; we flag rather than apply them,
-since the correlation structure across the sensitivity sweep's
-re-thresholdings of one alarm process is not itself the kind of
-resampling-friendly design their method targets without adaptation.
+but conservative approximation, not an exact one.
 
 A genuinely joint test, robust to that cross-method correlation,
 confirms the same conclusion: shifting all five methods' alarm months
@@ -2187,7 +2114,7 @@ weaker claim in this section that ALFRED "serves vintage histories for
 all three series," which had only confirmed vintage data exists for
 GS10 in general, not that it covers the Volcker episode specifically —
 caught here rather than carried forward silently. With that episode
-dropped, the two testable GS10 episodes (the zero-lower-bound onset and
+dropped, the two testable GS10 episodes (the zero-lower-bound exit and
 the 2022 hiking cycle) give a weak result: only raw_var_cusum alarms on
 the 2022 episode (2022-11 vintage, 2022-10 data month), and no method
 alarms within the tested window for the zero-lower-bound episode. This
@@ -2223,7 +2150,7 @@ windows contain 1970s volatility until the early 1990s. Retrospective
 full-sample break dates are not reproducible by honest monitoring.
 
 **GS10 (exploratory).** Unlike INDPRO, GDP, and UNRATE, GS10's three
-registered events (Volcker, the 2008 ZLB onset, the 2022 hiking cycle)
+registered events (Volcker, the 2008 ZLB exit, the 2022 hiking cycle)
 are author-selected from known monetary episodes rather than
 NBER/McConnell–Pérez-Quirós-dated, and only three events are
 achievable — a materially weaker evidentiary basis than the other
@@ -2346,31 +2273,21 @@ association is not distinguishable from chance.
 | FAR 20% | lsc_tail_cusum | 7 | 1/9 | 0.682 |
 | FAR 20% | raw_cusum | 2 | 2/9 | 0.020 |
 | FAR 20% | raw_var_cusum | 8 | 1/9 | 0.727 |
-| Window 180 mo, monitor 36 | lsc_composite | 14 | 2/8 | 0.556 |
-| Window 180 mo, monitor 36 | lsc_kalman_cusum | 3 | 2/8 | 0.046 |
-| Window 180 mo, monitor 36 | lsc_tail_cusum | 5 | 3/8 | 0.015 |
-| Window 180 mo, monitor 36 | raw_cusum | 2 | 2/8 | 0.017 |
-| Window 180 mo, monitor 36 | raw_var_cusum | 14 | 1/8 | 0.878 |
-| Window 180 mo, monitor 60 | lsc_composite | 5 | 2/8 | 0.138 |
-| Window 180 mo, monitor 60 | lsc_kalman_cusum | 2 | 2/8 | 0.019 |
-| Window 180 mo, monitor 60 | lsc_tail_cusum | 6 | 0/8 | 1.000 |
-| Window 180 mo, monitor 60 | raw_cusum | 2 | 1/8 | 0.268 |
-| Window 180 mo, monitor 60 | raw_var_cusum | 8 | 1/8 | 0.722 |
+| Window 180 mo | lsc_composite | 14 | 2/8 | 0.556 |
+| Window 180 mo | lsc_kalman_cusum | 3 | 2/8 | 0.046 |
+| Window 180 mo | lsc_tail_cusum | 5 | 3/8 | 0.015 |
+| Window 180 mo | raw_cusum | 2 | 2/8 | 0.017 |
+| Window 180 mo | raw_var_cusum | 14 | 1/8 | 0.878 |
 
 *Table 7b. INDPRO sensitivity to the false-alarm target (1/5/10/20%,
-120-month training) and to a longer training window (180 months). The
-first 180-month variant (monitor 36, `--tag _w180`) changes the monitor
-window and segment count (13→21) at the same time as training length —
-a confound disclosed and then isolated by the second 180-month variant
-(monitor 60, held at the baseline's own value, `--tag _w180m60`,
-n_segments=12, comparable to baseline's 13), which changes training
-length alone. Alarm and hit counts are exact given the fixed historical
-series, not Monte Carlo estimates; only the permutation p-values carry
+120-month training) and to a longer training window (180 months, 5%
+FAR). Alarm and hit counts are exact given the fixed historical series,
+not Monte Carlo estimates; only the permutation p-values carry
 resampling uncertainty, from the 20,000-draw test — SE = √(p(1−p)/20000)
 ≤ 0.0035 across every p-value reported here. Hit denominators are x/9
-throughout except the 180-month-training rows (x/8, both variants): the
-longer training window pushes monitoring's start date later, dropping
-one NBER peak out of the monitored range regardless of monitor length.*
+throughout except the 180-month-window rows (x/8): the longer training
+window pushes monitoring's start date later, dropping one NBER peak
+out of the monitored range.*
 
 Two independent stress tests both isolate the composite's association
 as fragile *relative to itself*, not to the other detectors. The FAR
@@ -2383,25 +2300,12 @@ raw_cusum and lsc_kalman_cusum stay comparatively stable across the same
 sweep (p in the 0.02–0.15 range throughout), because they fire too few
 alarms for the FAR target to matter much either way. Training window
 180 months breaks both variance-based detectors' bootstrap calibration
-on nonstationary real data — in the monitor-36 variant the composite
-and the raw variance CUSUM each fire 14 alarms / 21 windows (p = 0.556
-and 0.878, both uninformative) — while the level (raw CUSUM),
-innovation, and tail detectors stay sane (2–5 alarms, p as low as
-0.015–0.046). Because that variant also shrinks the monitor window
-(60→36 months) and raises the segment count (13→21), the monitor-60
-isolation splits the two effects: raw_var_cusum's alarm rate is
-essentially unchanged by holding monitor fixed (8/12 = 0.67/window vs.
-14/21 = 0.67/window, p = 0.722), so its blowup is genuinely a
-training-window/regime-straddling effect as originally claimed and not
-a monitor-window artifact. The composite's alarm rate, by contrast,
-drops substantially once monitor is held fixed (5/12 = 0.42/window vs.
-14/21 = 0.67/window, still somewhat above baseline's 4/13 = 0.31/
-window) — so part, but not all, of the composite's original 14/21
-blowup was the monitor-window/segment-count confound rather than the
-training-window effect alone; the training-window effect is real for
-the composite too, just smaller than the confounded number suggested.
-It is the *second-moment* statistic, not the composite machinery, that
-is sensitive to a training window long enough to straddle a volatility
+on nonstationary real data — the composite and the raw variance CUSUM
+each fire 14 alarms / 21 windows (p = 0.556 and 0.878, both
+uninformative) — while the level (raw CUSUM), innovation, and tail
+detectors stay sane (2–5 alarms, p as low as 0.015–0.046). It is the
+*second-moment* statistic, not the composite machinery, that is
+sensitive to a training window long enough to straddle a volatility
 regime; training windows must be short enough to be locally stationary
 (120 months worked).
 
@@ -3140,11 +3044,11 @@ cells).
 | GARCH oracle (true-break-time refit), post-break z² elevation, 12 cells | oracle −0.14 to +0.06 (null-level); plain single-fit +0.16 to +6.4 — perfect break-knowledge reveals no signal beyond what the plain fit already shows | exp37_garch_oracle_break_aware |
 | Full r-channel φ-sweep (φ = 0.5/0.8/0.95/0.99), subtle ×1.5, raw−ARIMA advantage | 0.586 → 0.154 → 0.096 → reverses to 0.396 at φ=0.99 (SNR 0.1); sharp reversal specific to the unit-root edge, not gradual | r_phi_sweep_full |
 | ALFRED vintage extension, UNRATE (GFC / COVID) | raw_cusum 2008-09 / 2020-05; raw_var_cusum 2008-11 / 2020-04; composite 2009-01 / 2020-05; tail_cusum 2009-02 / 2020-10 | rd_realtime_unrate |
-| ALFRED vintage extension, GS10 | Volcker (1979-10) untestable — no ALFRED vintage data before ≈1997-01; hike2022 caught by raw_var_cusum only (2022-11 vintage); zero-lower-bound onset: no method alarms in window | rd_realtime_gs10 |
+| ALFRED vintage extension, GS10 | Volcker (1979-10) untestable — no ALFRED vintage data before ≈1997-01; hike2022 caught by raw_var_cusum only (2022-11 vintage); zero-lower-bound exit: no method alarms in window | rd_realtime_gs10 |
 | PELT localization at FAR-matched 5%, level 3σ | 0.83–0.92 (vs. causal raw CUSUM 0.97–0.99) | exp08_pelt |
 | PELT localization at FAR-matched 5%, variance ×1.5/×3 | 0.00–0.20 (vs. dedicated raw variance-CUSUM 0.09–1.00) | exp08_pelt |
 | ICSS localization at FAR-matched 5%, variance r/q ×1.5/×3 (n=500) | 0.00–1.00, clears PELT's ceiling but dominated by causal raw_var_cusum in 11/12 cells (0.996→0.102 vs. ICSS 0.74→0.00 at r ×1.5 over SNR 0.1→2.0) | exp25_icss |
-| INDPRO permutation p (composite) | 0.008 (uncorrected — does not survive Bonferroni (α/39≈0.00128) or its own BH-FDR rank across the combined 39-test family of Table 7 + Table 7b, GS10 excluded as exploratory; §9) | rd_eval |
+| INDPRO permutation p (composite) | 0.008 (uncorrected — does not survive Bonferroni (α/34≈0.00147) or its own BH-FDR rank across the combined 34-test family of Table 7 + Table 7b, GS10 excluded as exploratory; §9) | rd_eval |
 | Circular-shift joint test, INDPRO (5 methods, total hits) | 7 vs. null mean 2.52, max 10 (780 shifts, exact) — p=0.028, does not survive Bonferroni (α/3≈0.0167); §9 | exp13c_circular_shift |
 | Circular-shift joint test, GDP | 6 vs. null mean 1.50, max 6 (240 shifts, exact) — p=0.0125, nominally clears the 3-series threshold (α/3≈0.0167) but half the hits are one synchronized co-firing, not read as a real finding; §9 | exp13d_all_series_circular_shift |
 | Circular-shift joint test, GS10 (exploratory, not in corrected family) | 4 vs. null mean 1.30, max 6 (720 shifts, exact) — p=0.076, reported for context only; §9 | exp13d_all_series_circular_shift |

@@ -13,6 +13,7 @@ import pytest
 
 from lsc.benchmarks.arima import fit_arima_prefix
 from lsc.benchmarks.variance import (
+    est_kalman_var_cusum_score,
     raw_var_cusum_score,
     training_moments,
     variance_cusum_arms,
@@ -21,8 +22,10 @@ from lsc.dgp import AR1StateDGP
 from lsc.diagnostics.alarms import calibrate
 from lsc.eval.detectors import (
     make_arima_var_cusum_detector,
+    make_est_kalman_var_cusum_detector,
     make_raw_var_cusum_detector,
 )
+from lsc.models import KalmanModel
 
 T, N_TRAIN = 300, 75
 NULL = AR1StateDGP(phi=0.95, q=0.04875, r=1.0)
@@ -63,8 +66,29 @@ def test_raw_var_mirrors_latent_statistic(Y):
     np.testing.assert_array_equal(raw_var_cusum_score(Y, N_TRAIN), expect)
 
 
+def test_est_kalman_var_training_freeze(Y):
+    """exp44: perturbing the monitoring period must not change the
+    MLE-fit (phi,q,r) used to build the frozen forward filter."""
+    params_a = KalmanModel("ar1").fit_filter(Y, n_train=N_TRAIN).params
+    params_b = KalmanModel("ar1").fit_filter(monitoring_perturbed(Y), n_train=N_TRAIN).params
+    assert params_a == params_b
+
+
+def test_est_kalman_var_mirrors_shared_statistic(Y):
+    """exp44: est_kalman_var_cusum_score is EXACTLY _max_over_arms on
+    an MLE-fit KalmanModel's causal innovations -- the same three-arm
+    code path as raw_var_cusum/arima_var_cusum, only the input series
+    differs."""
+    est = KalmanModel("ar1").fit_filter(Y, n_train=N_TRAIN)
+    arms = variance_cusum_arms(est.innovations)
+    expect = np.fmax(np.fmax(arms["up_fast"], arms["up_slow"]), arms["down"])
+    expect[:N_TRAIN] = np.nan
+    np.testing.assert_array_equal(est_kalman_var_cusum_score(Y, N_TRAIN), expect)
+
+
 @pytest.mark.parametrize("factory", [make_raw_var_cusum_detector,
-                                     make_arima_var_cusum_detector])
+                                     make_arima_var_cusum_detector,
+                                     make_est_kalman_var_cusum_detector])
 def test_score_masked_on_training_prefix(factory, Y):
     s = factory(N_TRAIN)(Y)
     assert np.isnan(s[:N_TRAIN]).all()
@@ -75,10 +99,11 @@ def test_score_masked_on_training_prefix(factory, Y):
 @pytest.mark.parametrize("name,factory", [
     ("raw_var_cusum", make_raw_var_cusum_detector),
     ("arima_var_cusum", make_arima_var_cusum_detector),
+    ("est_kalman_var_cusum", make_est_kalman_var_cusum_detector),
 ])
 def test_parity_harness_inclusion(name, factory):
-    """Both new detectors calibrate through the SAME routine, seed
-    block, and budget as every other method and yield a usable
+    """All three ladder detectors calibrate through the SAME routine,
+    seed block, and budget as every other method and yield a usable
     threshold."""
     det = calibrate(name, factory(N_TRAIN), NULL, T, n_reps=25,
                     far=0.05, seed0=100_000)

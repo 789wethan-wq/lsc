@@ -80,6 +80,9 @@ def build_detector(method: str, arena_cfg: dict, null_dgp, T: int,
     if method == "arima_var_cusum":
         from lsc.eval.detectors import make_arima_var_cusum_detector
         return make_arima_var_cusum_detector(n_train)
+    if method == "est_kalman_var_cusum":
+        from lsc.eval.detectors import make_est_kalman_var_cusum_detector
+        return make_est_kalman_var_cusum_detector(n_train, spec=spec)
     if method == "plain_hmm":
         return make_plain_hmm_detector(n_train)
     raise ValueError(f"unknown method {method}")

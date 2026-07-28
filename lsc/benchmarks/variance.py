@@ -120,6 +120,22 @@ def known_kalman_var_cusum_score(Y: np.ndarray, phi: float, q: float,
     return _max_over_arms(e, n_train)
 
 
+def est_kalman_var_cusum_score(Y: np.ndarray, n_train: int,
+                               spec: str = "ar1") -> np.ndarray:
+    """Estimated-parameter counterpart of known_kalman_var_cusum_score
+    (SPEC_R8_missing_experiments.md exp44): the identical three-arm
+    variance CUSUM statistic on the standardized one-step innovations
+    of an MLE-fit KalmanModel (fit on the training prefix, then
+    forward-filtered with frozen parameters), in place of
+    steady_state_innovations under the TRUE parameters. Only the
+    innovation source differs from known_kalman_var_cusum_score --
+    same _max_over_arms call as every other rung."""
+    from lsc.models import KalmanModel
+
+    est = KalmanModel(spec).fit_filter(np.asarray(Y, dtype=float), n_train=n_train)
+    return _max_over_arms(est.innovations, n_train)
+
+
 def windowed_raw_var_score(Y: np.ndarray, n_train: int,
                            window: int = 60) -> np.ndarray:
     """Bounded-memory, MOSUM-style variance-changepoint statistic --

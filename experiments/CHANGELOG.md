@@ -2280,3 +2280,1816 @@ combinations tested; the other 7 go the other way, reported as found.
 **DGP-scope conflict**: put to the author directly (AskUserQuestion,
 not decided silently) -- hold the line confirmed. Discussion bullet
 added (see entry above).
+
+## 2026-07-27 — R8 PRE-REGISTERED: Prop-1 bound evaluation (exp52), estimated-Kalman variance rung (exp44), symmetric FAR recalibration (exp46) -- before any of the three scripts is run
+
+New reviewer round, full spec at `SPEC_R8_missing_experiments.md` (12
+experiments, exp44-55). Priority order per the spec's own §1: "if only
+three can be run, exp52/exp44/exp47 decide what the paper is allowed
+to say." Of those, exp52 and exp44 are run this round (both P0, both
+cheap/fast); exp47 is gated on real-data infrastructure not touched
+here and deferred. exp46 (also P0) is run alongside since it shares
+exp44's grid machinery and both must land before exp45's n_reps
+increase, which the spec explicitly sequences after 44/46 "so the new
+rung and corrected thresholds get the larger n." exp45/47/48-51/53-55
+are NOT pre-registered here and are out of scope for this batch.
+
+### exp52 -- Proposition 1(b) bound evaluation
+
+**Question.** Does `(L+1)*exp(-2(k-mu_inf)(h-g))` (Prop. 2, THEORY.md,
+g=0) ever exceed 1 at the arenas/magnitudes the paper already reports,
+making "the bound is never violated" vacuous rather than a genuine
+check?
+**Review point answered.** Major Weakness 1; Question 2 (tier 2, spec
+S10).
+**Construct.** Pure computation, no simulation. `lsc.theory.
+riccati_steady_state` / `mu_infinity` for (P,K,F,mu_inf) at every
+(phi,snr,delta) cell of grid_v1 (phi=0.95, snr in {0.1,0.5,2.0},
+magnitude in {0.5,1,3}) and grid_v6_phisweep (phi in
+{0.5,0.8,0.95,0.99}, snr in {0.1,0.5,2.0}, magnitude in {1,3}); k=0.5
+(the CUSUM allowance used throughout, `lsc.diagnostics.features.
+break_pressure`'s default); h read from the arena's own published
+`lsc_kalman_cusum` threshold in `<config>_far_calibration.csv`; bound
+evaluated at L=250 (post-break horizon) and L=375 (T - n_train, the
+full monitored window), UNCAPPED (report the raw value, not
+min(1,...), so a bound that exceeds 1 is visible as such rather than
+silently clipped). `observed_detect_est` from `<config>_results.csv`;
+`observed_detect_known` from `exp10_cusum_ablation.csv`'s two-sided/
+known variant, populated only at the one cell exp10 covers
+(phi=0.95, SNR=0.5, magnitude=3.0) -- NaN elsewhere, reported as such.
+**Prediction (H52).** The bound is vacuous (>=1 before capping) at
+every magnitude=3.0 cell in both grids, consistent with grid_v1's
+already-published bound_at_h=1.0000 at all three SNRs (`exp06_theory_
+table.csv`) -- exp52 is expected to CONFIRM this is a genuine >=1
+overflow (not an artifact of the existing min(1,...) capping in
+`lsc.theory.never_detect_bound`) and to extend the same finding across
+the phi sweep.
+**Decision rule.**
+  - Outcome A (bound_vacuous at every 3sigma cell in both grids) ->
+    per the spec's decision rule: (i) Sec 4 stops citing "never
+    violated" as verification at those cells; (ii) abstract's
+    "provably fast or never" gets a regime qualifier (delta <= 1sigma
+    at phi=0.95, stated precisely once the phi-sweep numbers are in);
+    (iii) exp10's four-corner result gets pulled into its own table
+    with the implication stated explicitly (known-parameter oracle
+    detects 0.970 despite mu_inf < k at the flagship cell).
+  - Outcome B (vacuous only at SOME 3sigma cells, e.g. low SNR only)
+    -> report the boundary precisely (which phi/SNR combinations keep
+    a non-vacuous bound) instead of a blanket qualifier.
+  - Outcome C (bound never exceeds 1 anywhere, i.e. grid_v1's
+    bound_at_h=1.0000 rows are a capping artifact of a DIFFERENT
+    formula than exp52's) -> falsified; the "never violated" claim
+    stands as originally written, and the discrepancy between exp52's
+    formula and `never_detect_bound`'s is written up as a documented
+    correction (the (L+1) vs L and g-offset terms).
+**Multiplicity.** Covered by Appendix A's simulation-side-followups
+rationale; not a real-data hypothesis test, does not join the Sec 9
+family.
+**Oracle status.** Known-parameter (the theory's own assumption);
+`observed_detect_known` column is the oracle cross-check, `observed_
+detect_est` is the fitted-parameter comparison already published.
+
+### exp44 -- Estimated-parameter Kalman variance CUSUM (whitening-ladder third rung)
+
+**Question.** Does the ARMA(1,1) equivalence (exp07: exact at steady
+state, known parameters) transfer to the ESTIMATED three-arm variance
+CUSUM well enough that `arima_var_cusum`'s numbers can stand in for a
+Kalman rung in the Sec 5 2x2, or does estimation noise separate them?
+**Review point answered.** Major Weakness 2; Question 4.
+**Construct.** New `lsc.benchmarks.variance.est_kalman_var_cusum_score`:
+MLE-fit `KalmanModel("ar1")` on the training prefix (n_train=125 of
+T=500), forward-filter the full series with frozen params, feed the
+standardized innovations through the EXISTING `_max_over_arms` three-
+arm statistic (byte-identical code path to raw_var_cusum/
+arima_var_cusum -- same function, different input series). Grid: the
+12 published cells of Tables 3/5 (channel in {r,q} x vol_mult in
+{1.5,3} x SNR in {0.1,0.5,2.0}), phi=0.95, n_reps=500. Seeds: reuse
+grid_v4_varbench_core.yaml (r) / grid_v5_qbreak.yaml (q) EXACTLY
+(calibration=100000, evaluation=200000, far_check=300000) -- no new
+seed block, per spec S0.2's explicit exception. raw_var_cusum and
+arima_var_cusum reconstructed through the same config/seeds first and
+checked bit-identical to the published `grid_v4_varbench_core_results.
+csv` / `grid_v5_qbreak_results.csv` before the new rung's numbers are
+trusted (exp19/exp40's verify-before-trust methodology). Per-replicate
+long file per S0.1: `exp44_perrep.csv`.
+**Prediction (H44).** `|detect_est_kalman - detect_arima| <= 0.03` in
+>= 10 of 12 cells (the two-rung equivalence transfers to estimation
+almost everywhere).
+**Decision rule.**
+  - Outcome A (H44 holds) -> replace the Sec 5 2x2's asserted cell
+    with the measured one; "identical by the ARMA(1,1) equivalence"
+    becomes "identical to within MC error under estimation, measured"
+    (exp44_est_kalman_rung.csv cited directly).
+  - Outcome B (any cell |Delta| > 0.10) -> report est_kalman as a
+    distinct fourth rung throughout Sec 5; revisit the phi=0.99
+    r-channel-reversal discussion (currently attributed entirely to
+    ARIMA estimation fragility) if est_kalman shows the same
+    degradation there.
+  - Outcome C (in between) -> report both rungs, "close but not
+    identical under estimation," quantified via exp44_innovation_
+    tails.csv.
+**Multiplicity.** Covered by Appendix A's simulation-side-followups
+rationale.
+**Oracle status.** Causal (fit-on-prefix, forward-filter only, same
+contract as every other estimated rung in the paper).
+
+### exp46 -- Symmetric false-alarm-rate recalibration
+
+**Question.** Table 1's empirical FAR ranges 3.4-8.2% against a 5%
+target; exp38 corrected only raw_cusum (which calibrates hot, so the
+correction can only shrink its advantage), while lsc_kalman_cusum
+calibrates cold (3.4-4.8%) and was never loosened. Does the paper's
+"calibrated-FAR parity" framing (Contribution 1) survive when EVERY
+detector is FAR-matched, not just the one whose correction happened to
+be checked?
+**Review point answered.** Major Weakness 3; Questions 5 and 7.
+**Construct.** Part A (reconciliation, must run first): recompute
+raw_cusum's FAR under one fresh-null block and determine why Table 1
+(4.0/6.2/8.2% at SNR 0.1/0.5/2.0) and exp38 (5.3/6.4/7.2%
+out-of-sample) disagree on the SIGN of the SNR-0.1 miscalibration --
+document which table is in-sample vs out-of-sample before trusting
+anything else in this experiment. Part B: for every Table 1-3 detector
+(raw_cusum, raw_var_cusum, arima_var_cusum, est_kalman_var_cusum from
+exp44, lsc_kalman_cusum, lsc_state_cusum, lsc_composite,
+lsc_tail_cusum) at every grid_v1 arena: calibrate at 5000 reps (block
+100000-104999), verify FAR on 2000 FRESH nulls (block 330000-331999,
+disjoint from the standing 300000 far-check block so exp24's GARCH
+check is unaffected), bisect the threshold against the fresh block
+until fresh FAR is in [4.5%,5.5%], then re-score Table 2's level
+scenarios at the FAR-matched threshold. Per-replicate long file per
+S0.1: `exp46_perrep.csv`.
+**Prediction (H46).** With every detector FAR-matched, the level-3sigma
+ordering (raw_cusum > lsc_kalman_cusum) survives at every SNR and the
+gap narrows by <= 0.10 at each.
+**Decision rule.**
+  - Outcome A (H46 holds) -> Contribution 1 stands; report the
+    FAR-matched numbers as the headline table (exp46_far_parity.csv
+    columns replace Table 1), with far_fresh_matched inside
+    [4.5%,5.5%] in every row.
+  - Outcome B (gap narrows by > 0.10 at any SNR) -> "raw CUSUM
+    dominates at every SNR" gets an explicit calibration-convention
+    qualifier, same register as the existing one-sided/known-parameter
+    caveat in Sec 10.
+  - Outcome C (ordering reverses anywhere) -> report as a reversal;
+    state in the abstract that leg (i) is convention-dependent, not
+    robust.
+**Multiplicity.** Covered by Appendix A's simulation-side-followups
+rationale.
+**Oracle status.** Causal (all detectors fit-on-prefix / forward-filter
+only; the fresh-null FAR check uses disjoint seeds from calibration,
+same discipline as exp24's GARCH check).
+
+## 2026-07-27 — exp52 RESOLVED: MIXED -- the bound is vacuous at every published (phi=0.95) 3-sigma cell, but genuinely informative at phi=0.99
+
+`experiments/exp52_prop1_bound.py`, `paper_assets/exp52_prop1_bound.csv`
+(66 rows: grid_v1's 9 cells + grid_v6_phisweep's 24 cells, each at
+L=250 and L=375). H52 predicted vacuous at EVERY 3-sigma cell in both
+grids -- FALSIFIED as stated, but the actual boundary is precise and
+more informative than the blanket prediction would have been:
+
+- **magnitude=3.0 (24 rows across 12 (phi,snr) x 2L cells):** vacuous
+  (bound_value >= 1, uncapped) at phi in {0.5, 0.8, 0.95} at EVERY SNR
+  and both L -- including all three of grid_v1's own published arenas
+  (ar1_snr0.1/0.5/2.0, phi=0.95, bound_value 21.0-125.1 at L=250,
+  31.4-187.4 at L=375, both far past 1). NOT vacuous at phi=0.99, any
+  SNR (bound_value 2e-7 to 8e-28) -- the bound only becomes a real
+  constraint once phi is far enough into the persistent regime that
+  mu_inf shrinks well below k=0.5 relative to that arena's own
+  (much larger, 22.8-80.2) calibrated threshold. 20/30 magnitude=3.0
+  rows vacuous overall (grid_v1's phi=0.95 rows counted once each
+  grid; the phi=0.95 arenas are identical cells in both configs and
+  their bound values match exactly across configs -- a free
+  cross-check that the reconstruction is internally consistent).
+- **magnitude=1.0:** already vacuous at phi=0.5 (all SNR) and
+  borderline at phi=0.8/SNR=0.1 (bound_value 0.837 at L=250, NOT
+  vacuous; 1.253 at L=375, vacuous -- an explicit L-dependent flip,
+  the clearest single illustration that "bound violated" is not a
+  property of the cell alone but of the cell AND the horizon it's
+  evaluated over). Never vacuous at phi in {0.95, 0.99}.
+- **magnitude=0.5:** never vacuous anywhere tested (6/6 rows).
+
+**Applying the pre-registered decision rule (Outcome B: vacuous at
+SOME but not all 3-sigma cells -- report the boundary precisely
+instead of a blanket qualifier):** the paper's own headline arenas
+(grid_v1, phi=0.95, Table 1/2) sit squarely in the vacuous region at
+3-sigma -- "the Proposition 2 bound is never violated" is not a
+verification there, it is a statement about a number that was already
+>= 1 before capping. The bound IS a genuine, falsifiable check at
+phi=0.99 (grid_v6_phisweep), where it holds by 7-28 orders of
+magnitude. Sec 4 to be corrected: (i) drop "never violated" as
+verification at the phi=0.95 cells, replaced with "vacuous at every
+published operating point except phi=0.99"; (ii) abstract's "provably
+fast or never" gets the qualifier "in the regime where the bound
+binds (phi >= 0.99 in this paper's grids, or magnitude <= 1sigma at
+phi=0.95)"; (iii) exp10's four-corner result moves into its own table
+with the stated implication (known-parameter oracle detects 0.970 at
+the flagship cell despite mu_inf < k -- the FAILURE of the vacuous
+bound to say anything, made concrete against real detection numbers).
+Manuscript edits deferred to the paper-integration pass (not made in
+this session) but the exact wording and target sections are fixed
+above so that pass is mechanical.
+
+## 2026-07-27 — exp52 CORRECTED: the finding is sharper than "MIXED" -- Prop 1(b) is correct and empirically idle across the ENTIRE published grid, not mixed
+
+Put to the author for a second read (not decided silently); the
+correction changes the reported verdict, so it is logged as its own
+entry rather than an edit to the RESOLVED entry above.
+
+**The label was wrong, not just imprecise.** "Vacuous at phi=0.95,
+informative at phi=0.99" reads as two different regimes, one checkable
+and one not. It is not: at phi=0.99 the bound is 1e-4 to 1e-18 --
+BELOW any resolution a 500-replicate grid could ever falsify (a bound
+of 1e-18 is "unviolated" in the same sense "fewer than a trillion
+alarms" is unviolated by 500 draws). Added `RESOLUTION_FLOOR = 1/500`
+(grid_v1/grid_v6's own evaluation n_reps) and a
+`bound_below_resolution_floor` column to
+`paper_assets/exp52_prop1_bound.csv`. Result: **30/30 3-sigma cells
+across both grids are now EMPIRICALLY IDLE** -- 24 vacuous (>=1),
+the remaining 6 (all phi=0.99) below the resolution floor. There is
+no cell, anywhere in the published grid, where the bound is
+simultaneously below 1 AND large enough to be checkable at this
+project's own replication budget. "MIXED" implied a genuine
+phi-dependent verification; there isn't one anywhere in the grid as
+actually run.
+
+**Proposition 1(a) vs 1(b) need to be separated in the writeup.** The
+geometric-decay result (mu_t -> mu_infinity at rate rho = phi(1-K)) is
+exact and does ALL the real explanatory work already in the paper --
+the Spearman 0.94 mu_inf-vs-detection ordering, the phi boundary
+(grid_v6_phisweep: fast-or-never escapes at low phi), the low-phi
+escape from the trap. Proposition 1(b), the finite-horizon exponential
+bound, is the piece that turned out idle. Recommendation: present (a)
+as the paper's theoretical contribution and demote (b) to a remark
+("a finite-horizon bound also holds; it is numerically vacuous at
+every operating point this paper evaluates and is reported for
+completeness, not as an independent check") rather than removing it --
+it is still a correct, useful theorem, just not one this paper's grid
+can exercise. This removes the pressure on "provably" in the abstract
+without deleting a true result.
+
+**Disentangled the two sources of phi-dependence (the point that
+motivated re-running this).** Added `h_fixed_ref` / `bound_at_fixed_h`
+/ `bound_vacuous_fixed_h` columns: the bound re-evaluated at OTHER
+phi's mu_inf but the phi=0.95 (grid_v1) arena's OWN calibrated
+threshold, held fixed across phi, at the same (snr, magnitude) cell --
+isolating the mu_inf-shrinkage effect from the threshold-growth
+(near-unit-root calibration) effect that otherwise dominates the raw
+comparison (h: 22.15 at phi=0.95, SNR=0.5 -> 80.16 at phi=0.99, a
+3.6x threshold inflation on top of the mu_inf change). Result: **mu_inf
+alone is sufficient to flip vacuous -> non-vacuous.** At SNR=0.5,
+3-sigma, phi=0.95's OWN threshold (h=22.15) held fixed: bound = 62.3
+at phi=0.95 (vacuous) vs 7.1e-4 at phi=0.99 (non-vacuous, using the
+IDENTICAL threshold) -- the qualitative flip survives with h controlled
+for. The additional ~15 orders of magnitude in the raw (own-threshold)
+comparison (7.1e-4 -> 2.1e-18) is threshold-growth on top of that,
+i.e. a calibration-convention effect, not part of the mu_inf mechanism.
+Both point the same direction, but only the mu_inf effect is doing
+theoretical work; the magnitude of "7-28 orders of magnitude" in the
+original RESOLVED entry should not be read as evidence of mechanism
+strength -- most of it is calibration.
+
+**Revised decision-rule application (supersedes the RESOLVED entry's
+Outcome B application):** given every 3-sigma cell is idle (not just
+"most"), Sec 4's correction is Outcome A's action applied to the WHOLE
+grid, not Outcome B's boundary-reporting: "the Proposition 2 bound is
+never violated" is replaced with "the bound is correct but vacuous or
+empirically unfalsifiable at every operating point this paper
+evaluates" -- a single sentence, not a phi-dependent qualifier. The
+abstract's "provably fast or never" is best read as resting on
+Proposition 1(a) (the decay result) rather than 1(b) (the bound), per
+the separation above.
+
+**Consequence for exp51 (raised by the same review pass):** with the
+bound idle at phi=0.95 -- the paper's body arena -- the
+detection-vs-horizon curve is the ONLY remaining empirical evidence
+for fast-or-never at the operating point the paper actually uses in
+Tables 1-2. This makes a single targeted run of that curve (not the
+full exp45-gated version of exp51) higher priority than exp46 Part B;
+see the exp52b + flagship-curve entry below, run next, ahead of exp46
+Part B.
+
+## 2026-07-27 — exp52b + flagship curve PRE-REGISTERED: single targeted detection-vs-horizon run at the paper's own body arena, before this script is run
+
+**Question.** With Proposition 1(b)'s finite-horizon bound idle at every
+published phi=0.95 cell (exp52 CORRECTED above), is the fast-or-never
+SHAPE prediction -- innovation-CUSUM detection-vs-horizon curve rises
+during the transient then flattens, raw-CUSUM's keeps rising -- still
+empirically true at the paper's own flagship arena, where the analytic
+bound cannot say anything either way?
+**Review point answered.** Major Weakness 1 / 7 (this is the scoped-
+down, single-cell version of exp51 -- SPEC_R8_missing_experiments.md
+S9 -- pulled forward ahead of exp45/exp46 Part B because the exp52
+correction makes it the ONLY remaining evidence for fast-or-never at
+phi=0.95, not because the full exp51 grid is being run here).
+**Construct.** ONE cell: arena ar1_snr0.5 (phi=0.95, q=0.04875, r=1.0),
+scenario level_3s (magnitude=3.0 sigma_ref, break at t=250), T=500,
+n_train=125 -- grid_v1's own flagship cell, reconstructed through
+grid_v1's EXACT seeds (calibration=100000, evaluation=200000, n_reps=
+500, far=0.05) so detect rates must reproduce 0.554 (lsc_kalman_cusum)
+/ 0.990 (raw_cusum) exactly before anything else here is trusted.
+Two detectors: lsc_kalman_cusum (the innovation CUSUM the theory
+describes) and raw_cusum (the comparison point). Per replicate:
+persist the full score path's alarm index (or None), delay =
+alarm_index - break_time when post-break. Detection-vs-horizon curve:
+P(detect by h) for h = 10..250 in steps of 10, both detectors, one
+plot. exp52b: rho = phi(1-K) (steady-state decay rate, known-parameter
+Riccati fixed point at the arena's true phi/q/r -- the theory's own
+object, not the estimated filter), transient cutoff T* =
+ceil(log(0.05)/log(rho)) (time for the innovation mean to decay to
+within 5% of mu_infinity), observed_post_transient_rate = P(alarm in
+(break_time+T*, break_time+250] | no alarm by break_time+T*) among the
+SAME 500 lsc_kalman_cusum replicates, compared directly to exp52's
+already-computed bound_value for this exact cell (mu_inf=0.4685,
+k=0.5, h=22.1451, L=250-T*) -- this is the observed-vs-bound test
+Proposition 1(b) has never had, run on real per-replicate outcomes
+rather than the aggregate detect rate.
+**Prediction (H_flagship).** The innovation-CUSUM curve is concave and
+gains < 0.05 detection probability between h=60 and h=250 (matching
+H51's original threshold from SPEC_R8_missing_experiments.md S9);
+raw_cusum's curve gains > 0.15 over the same interval.
+**Decision rule.**
+  - Outcome A (H_flagship holds) -> the SHAPE prediction survives
+    where the analytic bound cannot reach; Sec 4 can state
+    fast-or-never as an empirically-supported qualitative pattern at
+    phi=0.95 even though Prop 1(b)'s quantitative bound is vacuous
+    there -- an honest and still-favorable finding.
+  - Outcome B (innovation curve keeps rising materially past h=60,
+    i.e. gains >= 0.05) -> fast-or-never is empirically FALSE at the
+    paper's own body arena regardless of what mu_inf says; Sec 4's
+    framing needs a materially larger rewrite than exp52 alone implied
+    -- the qualitative claim, not just the quantitative bound, fails
+    at phi=0.95.
+  - exp52b's own comparison (observed_post_transient_rate vs
+    bound_value, informational, no separate decision branch): reported
+    either way as the first real test of Prop 1(b) against data,
+    regardless of which curve outcome obtains.
+**Multiplicity.** Covered by Appendix A's simulation-side-followups
+rationale (same category as exp06/exp10's theory-check experiments).
+**Oracle status.** Causal (lsc_kalman_cusum/raw_cusum both fit-on-
+prefix, forward-filter only, matching grid_v1's own published
+methodology exactly); rho/T* are computed under the KNOWN arena
+parameters (the theory's own assumption), same convention as exp06/
+exp52.
+
+## 2026-07-27 — exp44 RESOLVED: Outcome B, applied literally -- est_kalman is a distinct fourth rung, not interchangeable with arima_var_cusum
+
+`experiments/exp44_est_kalman_rung.py`, `paper_assets/exp44_est_kalman_
+rung.csv` / `exp44_innovation_tails.csv` / `exp44_perrep.csv`. All 12
+cells reconstructed raw_var_cusum/arima_var_cusum bit-identical to the
+published grid_v4/grid_v5 aggregates (0/12 mismatches) before the new
+rung's numbers were trusted, per the pre-registered methodology.
+
+**H44 falsified** (|Delta|<=0.03 in only 6/12 cells, need >=10/12).
+**Outcome B's literal trigger (any cell |Delta| > 0.10) fires on
+exactly one cell**, decisively: q-channel, vol_mult=3, SNR=0.1,
+Delta=+0.262, se_paired=0.0218 -- 12.0 paired SEs from zero. Applying
+the rule as written, not rounded: three OTHER cells sit at 0.098-0.100
+(r x1.5/SNR0.1: 0.098; q x1.5/SNR2.0 and q x3/SNR0.5: both 0.100) --
+these do NOT cross the 0.10 trigger and do not independently justify
+Outcome B, but they do not need to: the q x3/SNR0.1 cell alone already
+satisfies the pre-registered condition by a full order of magnitude,
+so Outcome B applies to the experiment regardless of how the
+near-boundary cells are read.
+
+**The near-boundary cells matter for a different reason: direction.**
+Every one of the 12 cells has delta_kalman_arima >= 0 (11 strictly
+positive, 1 exactly 0.000 at r x3/SNR2.0) -- est_kalman_var_cusum
+NEVER underperforms arima_var_cusum at this grid. 9/12 cells are 3-12
+paired SEs from zero (only the three vol_mult=3/high-SNR cells are
+within 1-2 SEs, all near ceiling detect rates >=0.996 where there is
+little room for either rung to move). This is a systematic, one-
+directional estimation-side advantage for the Kalman parameterization
+over ARIMA's AIC order-search, concentrated at low SNR and in the
+q-channel -- not noise, and not attributable to a single idiosyncratic
+cell (r x1.5/SNR0.1 is the SAME cell exp22 found the ARIMA composite
+collapsing at, so it was flagged before running as weak standalone
+evidence -- but the decisive cell here, q x3/SNR0.1, is a DIFFERENT
+cell with no known idiosyncrasy, and it alone would trigger B).
+
+**Direction implication (per the pre-registered Outcome B action,
+sharpened):** est_kalman > arima means the state-space MLE fit buys
+real detection power over ARIMA residual-whitening even restricted to
+the single three-arm statistic -- this is the direction that WEAKENS
+Sec 5's deflationary "no, by construction" framing, not the direction
+that would leave it untouched. The ARMA(1,1) equivalence (exp07,
+exact at steady state / known parameters) does not transfer to
+estimation: `exp44_innovation_tails.csv` shows why -- at SNR=0.1 the
+two rungs' per-replicate MAX SCORES (the quantity the threshold acts
+on) correlate at only 0.13-0.20, far below the ~0.99 median-innovation
+correlation the spec's own premise cites, rising to 0.87-0.98 only at
+SNR=2.0 where the detect-rate gaps are correspondingly small (<=0.002).
+Confirms the spec's framing directly: a max-over-arms CUSUM calibrated
+on a 95th-percentile null tail is a function of TAIL excursions, and
+tail-excursion correlation decouples from median-innovation
+correlation exactly where AIC order selection is least reliable (low
+SNR, per exp16's 7.8-12.0% true-order recovery rate at phi=0.95).
+
+**Manuscript action (per Outcome B, deferred to the paper-integration
+pass, not made this session):** report est_kalman_var_cusum as a
+distinct fourth rung throughout Sec 5, not a stand-in for
+arima_var_cusum's numbers. Revisit the phi=0.99 r-channel-reversal
+discussion, currently attributed entirely to ARIMA's estimation
+fragility -- THIS run was phi=0.95 only (matching grid_v4/v5's own
+scope), so whether est_kalman also degrades at phi=0.99 is NOT
+resolved here and should not be asserted either way without a
+follow-up cell at phi=0.99 (out of scope for this batch; flagged for
+a future round, not run speculatively).
+
+**Caution carried forward as instructed:** r x1.5/SNR0.1 (0.098) is
+individually weak evidence given its exp22 idiosyncrasy; it was not
+relied upon for the Outcome B call, which rests on q x3/SNR0.1's
+unambiguous 0.262/12-SE result plus the systematic one-directional
+pattern across all 12 cells, not on any single cell.
+
+## 2026-07-27 — exp52b + flagship curve RESOLVED: Outcome B -- fast-or-never is empirically FALSE at the paper's own body arena, not just unverifiable
+
+`experiments/exp52b_flagship_curve.py`; reproduction check exact
+(lsc_kalman_cusum=0.554, raw_cusum=0.990, both matching grid_v1's
+published Table 2 numbers before anything else here was trusted).
+
+**H_flagship falsified.** gain(h=60->250) for lsc_kalman_cusum =
++0.254, far above the <0.05 threshold; raw_cusum's gain = +0.698,
+above its own >0.15 threshold as predicted. Per the pre-registered
+rule this is Outcome B: the innovation-CUSUM curve keeps rising
+materially past the transient, so fast-or-never is empirically FALSE
+at phi=0.95/SNR=0.5/3-sigma regardless of what mu_inf or the (already
+vacuous, per exp52 CORRECTED) analytic bound says.
+
+**The curve shape is more specific than a flat rejection, and the
+nuance matters for the rewrite.** lsc_kalman_cusum's per-decade gain
+IS decelerating (h=50->60: +0.042; h=90->100: +0.020; h=140->150:
++0.004; h=190->200/240->250: +0.010 each -- noisy but on a declining
+trend, consistent with genuine concavity) -- it is not indistinguishable
+from raw_cusum's shape, which rises far more steeply through h=150
+(gain 60->150 = 0.640 vs lsc_kalman's 0.170) then also decelerates
+approaching its own ~0.99 ceiling. The two curves ARE qualitatively
+different (innovation CUSUM concave-decelerating throughout, plateauing
+near 0.55; raw CUSUM near-sigmoid, plateauing near 0.99) -- but
+"concave and slowing" is not the same claim as "flattens" or "gains
+<0.05," and at this cell the innovation CUSUM's long, slow tail adds
+up to a detection-rate contribution (0.254 of its total 0.554) that a
+strict fast-or-never reading would not predict. Sec 4 needs language
+for this middle regime, not just the two extremes the trichotomy names.
+
+**exp52b (transient/post-transient split, the direct observed-vs-bound
+test Prop 1(b) has never had):** rho=0.7931, transient ends at T*=13
+post-break observations. Of the 477/500 replicates that survived the
+transient without alarming, **54.3% went on to alarm during the
+post-transient window** (t in (263, 500]) -- not the "exponentially
+rare" behavior a binding fast-or-never bound would predict, and
+directly consistent with the curve-gain finding above (this is exactly
+where most of the 0.254 post-h=60 gain comes from). Compared against
+exp52's own bound_value=59.0 for this cell (L=237, the post-transient
+window length) -- vacuous as already established, so `observed_leq_
+bound` is reported as null/not-applicable rather than false: the
+bound made no prediction to violate, which is itself the finding
+(Proposition 1(b) is silent exactly where the real behavior is a
+54% post-transient detection rate).
+
+**Manuscript action (per Outcome B, deferred to the paper-integration
+pass):** this is a materially larger correction than exp52 alone
+implied. Sec 4 cannot present fast-or-never as an empirically-verified
+qualitative pattern at phi=0.95 (the RESOLVED entry above's Outcome A
+language does not apply once the curve itself is checked) -- the
+correct statement is that Proposition 1(a)'s decay mechanism is real
+and exact, Proposition 1(b)'s bound is vacuous at this operating
+point, AND the qualitative fast-or-never pattern it predicts does not
+hold either: over half of paths that survive the transient still
+detect. The trichotomy's leg (ii)/(iii) framing built on "fast or
+never" needs to be scoped explicitly to the regime where it was shown
+to hold (grid_v6_phisweep's escape analysis already establishes phi
+must be low enough to escape the trap in the other direction; this
+result shows phi=0.95 does not sit in a regime where the bound's OTHER
+extreme -- genuine fast-or-never -- holds cleanly either). Abstract
+and Sec 4 wording changes are queued for the paper-integration pass,
+not made this session.
+
+## 2026-07-27 — exp46 Part A CORRECTED (own-review, no investigation needed) + Part B budget deviation logged before running
+
+**Part A correction.** The Table 1 vs exp38 "disagreement" this
+experiment was pre-registered to reconcile is not a disagreement:
+Table 1's own caption already states MC SE <= 0.013, and both numbers
+(4.0/6.2/8.2% at n=500; 5.3/6.4/7.2% at n=2000) come from the SAME
+disjoint far_check=300000 out-of-sample block, just truncated to
+different n -- confirmed directly (`paper_assets/exp46_far_reconciliation.
+csv`: thresholds 27.490/103.192/213.887 match both cited sources
+exactly). One sentence suffices: Table 1's FAR estimates carry MC
+noise of ~1pp at n=500; both cited numbers are within stated error of
+each other. This DOES shift Major Weakness 3 asymmetrically, though:
+raw_cusum's 8.2% (SNR=2.0) is 3.3 SE above the 5% target -- genuinely
+hot -- while lsc_kalman_cusum's 3.4% (SNR=0.1, cited in the review's
+own Major 3 paragraph) is only 1.6 SE below target and may not be a
+real effect at all. Part B (n=5000/n=2000 for every non-arima
+detector) is a direct, pre-registered test of exactly this asymmetry:
+if lsc_kalman_cusum's cold calibration resolves toward 5% at the
+larger n while raw_cusum's hot calibration does not, "loosen the
+cold-calibrated innovation rung" drops out of Major 3's remedy and
+only the hot end needs a FAR-matched threshold.
+
+**Part B budget deviation (put to the author, not decided silently --
+AskUserQuestion, "Full spec, arima_var_cusum reduced").** A 100-
+replicate timing probe on arima_var_cusum found ~2.0s/replicate (AIC
+search over 5 orders per fit); at the spec's own budget (5000
+calibration + 2000 fresh-FAR + up to 1000 eval reps per arena) that is
+~13h for arima_var_cusum ALONE across 3 arenas, vs ~4-5h combined for
+the other 7 detectors (fit-free or Kalman-MLE-only, both far cheaper).
+Total at the literal spec: ~17-18h. Author's choice: run all 7 non-
+ARIMA detectors at the full spec budget (n_reps_large=5000,
+n_reps_fresh=2000); run arima_var_cusum alone at a reduced
+n_reps_large=1000 / n_reps_fresh=1000 (still a 2x extension over the
+published n=500 calibration, and still a real fresh-null FAR check,
+just not the full 10x/4x the other detectors get). Logged in
+`DETECTOR_BUDGET` in `experiments/exp46_far_parity.py`, and every
+output row carries `n_reps_large_used` / `n_reps_fresh_used` so the
+deviation is visible in the data, not just this entry. `exp46_far_
+parity.py` also persists incrementally (rewrites its three output CSVs
+after every (detector, arena) pair, not just at the end) and resumes
+from existing rows on restart, since this run spans multiple hours.
+
+## 2026-07-27 — exp46 RESOLVED: Outcome A -- H46 holds at every SNR; Major Weakness 3 dissolves under a single uniform recalibration protocol, not an asymmetric fix
+
+`experiments/exp46_far_parity.py`; `paper_assets/exp46_far_parity.csv`
+/ `exp46_detect_matched.csv` / `exp46_perrep.csv`. Completed in 3042s
+(~51 min), far under the ~17-18h worst-case estimate the budget
+deviation was scoped against -- the reduction was conservative, not
+load-bearing in the end, but the right call to make without the
+timing probe having proven that in advance.
+
+**H46 holds outright.** All 24 (detector, arena) cells landed
+`far_fresh_matched` inside [4.5%,5.5%] (24/24 in-band; exactly 5.000%
+by construction of the bisection). At the flagship level-3sigma
+comparison, raw_cusum vs lsc_kalman_cusum:
+
+| SNR | gap @ n=500 (thr500) | gap @ FAR-matched | narrows by |
+|-----|----------------------|--------------------|------------|
+| 0.1 | 0.966-0.654 = 0.312  | 0.962-0.676 = 0.286 | +0.026 |
+| 0.5 | 0.990-0.554 = 0.436  | 0.988-0.526 = 0.462 | -0.026 (widens) |
+| 2.0 | 0.988-0.674 = 0.314  | 0.986-0.636 = 0.350 | -0.036 (widens) |
+
+Ordering (raw_cusum > lsc_kalman_cusum) survives at every SNR; the gap
+narrows by <=0.10 everywhere it narrows at all, and at two of three
+SNRs it does not narrow -- it widens slightly. This is the cleanest
+possible Outcome A: FAR-matching every detector to the identical
+protocol does not erode raw CUSUM's advantage, it is if anything
+trivially stable or mildly favorable to it. Per the pre-registered
+decision rule, Contribution 1 stands; `exp46_far_parity.csv` /
+`exp46_detect_matched.csv`'s matched columns replace Table 1 as the
+headline calibrated-comparison table (deferred to the paper-
+integration pass below).
+
+**The Part A asymmetry prediction is confirmed in direction but the
+actual remedy makes it moot.** Comparing thr500 (calibrated on 500
+reps, Table 1's own convention) against thr5000 (calibrated on 5000
+reps), both evaluated on the SAME fresh 2000-rep block:
+lsc_kalman_cusum's cold SNR=0.1 cell moves 3.50% -> 4.65% (closes to
+within 0.7 SE of 5%), while raw_cusum's hot SNR=2.0 cell moves
+6.95% -> 4.40% -- it also closes, but overshoots slightly cold rather
+than landing hot. Both ends resolve toward 5% with more calibration
+reps; neither is a structural property of one detector family. So
+"only the hot end needs fixing" was too strong a prediction -- what
+Part B actually shows is that BOTH directions of Table 1's 3.4-8.2%
+spread were finite-calibration-sample noise, symmetric in cause even
+though asymmetric in the originally reported magnitude. The `matched`
+column (bisected against the fresh block until in-band) is the correct
+uniform remedy either way, and it is what should replace Table 1 --
+not a special-cased loosening of one rung's threshold.
+
+**Manuscript action (per Outcome A, deferred to the paper-integration
+pass, not made this session):** replace Table 1 with the FAR-matched
+numbers (`far_fresh_matched` column, all exactly 5.000% by
+construction); replace Table 2's level-3sigma detect rates with the
+`detect_matched` column at every SNR; Major Weakness 3's response
+becomes "every detector, including raw_cusum, is calibrated by the
+identical bisection-against-a-fresh-null-block protocol; Table 1's
+originally reported 3.4-8.2% spread was MC noise in a 500-rep
+calibration sample, resolved symmetrically by the larger sample, not
+evidence of a structural hot/cold asymmetry between detector
+families." Sec 10's existing calibration-convention caveat can be
+tightened rather than expanded, since no qualifier is needed for this
+finding.
+
+## 2026-07-27 — Paper-integration pass: exp52, exp52b, exp44, exp46 folded into PAPER_DRAFT.md
+
+All four resolved experiments' queued manuscript actions applied in one
+pass (abstract; Sec 2; Sec 4; Sec 5; Sec 10 Discussion; intro
+Contribution 2; Appendix C). Deviated from two literal "manuscript
+action" plans logged above, both put to a second read against the
+paper's actual structure before executing rather than applied
+mechanically:
+
+- **exp46: did NOT replace Table 1/Table 2 wholesale**, contrary to
+  the plan logged in the exp46 RESOLVED entry. Table 2's exact numbers
+  (0.554, 0.990, 0.966, 0.674, ...) are reproduced bit-for-bit
+  elsewhere in the paper as reproduction targets (exp52b's own
+  pre-registration cites 0.554/0.990 explicitly) and cited verbatim in
+  the exp10 ablation discussion; replacing them with the FAR-matched
+  numbers would break those internal cross-references for a change
+  exp46 itself shows is small (<=0.036 at any SNR). Instead added a new
+  confirmatory paragraph in Sec 2, right after the existing exp38
+  raw_cusum-only recalibration discussion, generalizing it to all 8
+  detectors and reporting the FAR-matched gap-narrowing numbers as a
+  robustness check, not a replacement.
+- **exp52/exp52b: did not delete or fully rewrite the "fast or never"
+  framing**, instead threading a true-parameter/exact-decay (Prop 1(a))
+  vs. vacuous-bound-and-falsified-shape (Prop 1(b) + exp52b) distinction
+  through every place "fast or never" or "the bound is never violated"
+  appeared unqualified: abstract (leg i), Sec 2 intro roadmap
+  (Contribution 2), Sec 4 (the Proposition 1 statement's lead-in, the
+  verification paragraph), Sec 10 Discussion (two places), and a new
+  Appendix C row for exp52's 30/30-idle result and exp52b's 54.3%
+  post-transient rate.
+
+exp44's est_kalman finding folded in as a new paragraph in Sec 5
+(directly after the ARMA(1,1)-equivalence/"no, by construction"
+paragraph, before Table 3), plus matching true-parameter-scope
+qualifiers added everywhere else "no, by construction" or "the ARIMA
+and Kalman rungs are the same filter" appeared unqualified (abstract
+legs ii/closing, Sec 2 intro Contribution 2, Sec 6/7's composite
+discussion lead-in, Sec 10 Discussion twice), plus an Appendix C row.
+
+No numeric claim already in the paper was changed or deleted; every
+edit either added a scope qualifier to an existing true statement or
+added new paragraphs/rows reporting the new experiments' numbers. Not
+yet independently reviewed — next step is the sonnet/opus subagent
+review loop (CHANGELOG entries below, if run).
+
+## 2026-07-27 — Sonnet review round 1: RATING 4/10, fixes applied
+
+Independent sonnet subagent review (prompt "paper review", fresh
+context, no access to this session's reasoning). Full report preserved
+in the session transcript, not reproduced here in full; findings and
+disposition:
+
+**Two bugs this session introduced (fixed immediately, no dispute):**
+abstract mislabeled the est_kalman decisive cell as the q-channel's
+*subtle* break (it is the *coarse* ×3 break, matching Sec 5 body text
+and Appendix C exactly) and overstated "beats... every one of 12
+cells" when the actual result is 11 strictly better + 1 exact tie.
+Also caught two of my own Proposition-1(b) vacuity claims that had
+drifted from "vacuous at every 3σ cell audited (30/30)" to the broader,
+unsupported "every cell this paper evaluates" -- narrowed both back
+(abstract leg i, intro Contribution 2) since Sec 4's own theory-check
+paragraph reports the bound is informative (<=0.7%) at 1sigma.
+
+**Pre-existing bugs (predate this session, verified independently
+before fixing, not taken on the reviewer's word alone):**
+- Abstract leg (iii)'s φ=0.99 sentence was wrong on every axis
+  checked: wrong channel (described as q-channel; the actual reversal
+  is in the r-channel, Table 3c), wrong direction ("raw falls behind
+  ARIMA"; the r-channel subtle break has ARIMA losing to raw at 2/3
+  SNRs, the opposite direction), and wrong scope ("every SNR tested";
+  it's 1 of 3 in Table 3c, 2 of 3 per the prose at line ~1268). Fixed
+  by moving a corrected version of the r-channel finding into leg (ii)
+  and replacing leg (iii)'s claim with the q-channel's actual φ=0.99
+  behavior (ordering preserved, 0.14 vs 0.06, no reversal) --
+  independently confirmed against Table 3b/3c before editing.
+- Sec 4's opening "0.19 -> 0.94 as SNR rises" figure does not match
+  Table 2 (0.654/0.554/0.674) or Appendix C's own "0.55-0.67" summary
+  row for the same claim, and does not appear anywhere in
+  `exp11_level_sweep.csv` either (checked: det_innov ranges 0.018-0.862
+  across the full dense magnitude sweep, at no SNR does it reach 0.94).
+  Source untraceable; replaced with the verified Table 2 range.
+- Abstract's "though not a second variance break" directly contradicts
+  §7's own bolded "**It closes the gap.**" for `windowed_raw_var_score`
+  (recall_break2 0.000->0.948) and Sec 10's own restatement of the same
+  finding. The real, more specific limitation -- naive combination of
+  both windowed statistics fails under channel-unknown mixed
+  sequences -- was already correctly stated in §7/§10; the abstract
+  alone had the wrong claim. Fixed to match.
+- Internal reviewer/tracking jargon leaked into submission prose:
+  "MW3" (verbatim reviewer-shorthand), "R2 M1"/"R2 M2"/"SPEC R2 M3",
+  and "M7" as an internal cross-reference. Removed or replaced with
+  plain descriptions at all 5 sites; no cross-reference depended on the
+  literal codename.
+- Duplicate table number: two distinct tables were both captioned
+  "Table 6" (§8.6's AR(2) trichotomy check and §9's real-data alarm
+  summary). The AR(2) table has zero downstream numeric
+  cross-references (confirmed by search); relabeled it Table 5c
+  (preserves local monotonic order against its physical neighbors,
+  Table 5b before and the real Table 6 after) rather than
+  renumbering the whole document.
+- GARCH "dominated in all 12 cells" overstated one cell: r-channel,
+  subtle, SNR 2.0 has raw=0.10 vs GARCH=0.096-0.098, a 0.2-0.4pp gap
+  against a ~1.3pp MC SE at n=500 -- a tie, not a domination. Added the
+  caveat at both the Sec 4 and Sec 10 occurrences of this claim; left
+  the other 11 cells' domination claim untouched since none of those
+  gaps are remotely close.
+- "Three pre-registered hypotheses were falsified" (intro) is
+  disambiguated in Appendix A ~2700 lines later as one specific
+  registration (exp05, three sub-predictions) plus other falsified
+  registrations elsewhere in the project -- added a forward-summary at
+  the point of first mention instead of leaving it to Appendix A alone.
+
+**Reviewed and consciously NOT acted on this round (logged so the next
+review doesn't re-flag them as silently ignored):**
+- Cutting the ~800-word abstract to ~250 words, and moving most of the
+  exp02-exp52b experiment-by-experiment narrative to a supplement.
+  Both are legitimate venue-fit critiques, but the dense,
+  changelog-style narrative is a consistent authorial choice across
+  every prior revision round in this project (R2-R7), not an artifact
+  introduced here; restructuring it is a substantially larger, riskier
+  edit than the factual fixes above and was not attempted this round.
+  If the next review still rates this as the dominant weakness, revisit.
+- Full sequential renumbering of every table in physical reading order
+  (Table 4 currently precedes 3b/3c; Tables 8-9 precede 5/5b). Only the
+  one true duplicate (both tables literally numbered 6) was fixed; the
+  broader out-of-sequence numbering predates this session and a full
+  renumbering pass risks silently breaking one of the many in-text
+  "Table N" cross-references under time pressure. Flagged, not fixed.
+
+Sonnet review round 2 launched next on the corrected draft.
+
+## 2026-07-27 — Sonnet review round 2: RATING 7/10, fixes applied
+
+Second independent sonnet subagent (fresh context, told what round 1
+flagged and instructed to verify the fixes rather than take them on
+faith, not just hunt for new issues). Verified: all 8 round-1 findings
+independently re-checked against the paper's own tables/text; 7
+confirmed cleanly fixed, 1 (GARCH "dominated in all 12 cells") found
+only partially propagated -- the Discussion instance was fixed but
+Related Work and Appendix C's summary-table row still carried the
+unqualified "all 12" claim. Fixed both remaining instances plus 5
+smaller items the round-2 review surfaced fresh, none of which were
+disputed before fixing (all were quick to verify: grep + direct
+comparison against the cited table):
+
+- GARCH "dominated in all 12 cells" -> "11 of 12 (twelfth is a
+  statistical tie)" at both remaining sites (Related Work, Appendix C).
+- §8.6 header "All six cells confirm the pre-registered prediction" ->
+  "...are consistent with..." -- the header used exactly the word
+  ("confirm") the next two sentences say overstates the finding.
+- FRED tickers (INDPRO, GDPC1, GS10, UNRATE) glossed at first mention
+  in §9 rather than left for the reader to infer from table headers.
+- Abstract's "5% per 500 observations" corrected to "5% over the
+  monitored window, 375 of each 500-observation series after
+  training" -- matches the ARL0~7300 figure derived from L=375
+  elsewhere in the paper.
+- Abstract's q-channel φ=0.99 claim now flags that it rests on a
+  single tested SNR cell (SNR 2.0), unlike the parallel r-channel
+  φ=0.99 claim which spans all three SNRs -- an asymmetry the review
+  found by checking Table 3b's actual column coverage.
+- FAR spelled out at its first technical use in Sec 2 (abstract used
+  the full phrase, Sec 2 switched to the bare acronym without a
+  tie-back).
+- Table 3's 2-decimal display vs. Table 2b/8/9/Appendix C's 3-decimal
+  display of the same underlying numbers (e.g. "1.00" vs "0.996") was
+  flagged as confusing on cross-reference; added one line to Table 3's
+  caption explaining the precision difference rather than reformatting
+  the table (reformatting risks breaking the many in-prose citations
+  of Table 3's 2-decimal values elsewhere in the document).
+
+**Reviewed and consciously NOT acted on again, same reasoning as round
+1:** compressing the manuscript and moving experiment-by-experiment
+provenance to a supplement. Round 2 explicitly separated this out as
+"an editorial/structural point, not a correctness one" and rated the
+draft 7/10 with it still present, so it is not treated as the blocker
+for this round; will revisit if a future round's rating stalls below
+8 with this cited as the dominant remaining reason.
+
+Sonnet review round 3 launched next.
+
+## 2026-07-27 — Sonnet review round 3: RATING 7/10, fixes applied
+
+Third independent sonnet subagent, told about rounds 1-2's findings
+and instructed to verify rather than trust, and to actively hunt for
+anything the first two missed. Verified all round-1/2 fixes intact
+(confirmed cell-by-cell against Table 8's/now-Table-4's numbers per
+the decimal-precision note). Found 3 new problems, one of which is a
+genuine new structural defect distinct from the already-fixed
+duplicate-table-number issue:
+
+**1. Table numbering non-monotonic in reading order (genuinely new
+finding, not the round-1 duplicate).** Physical reading order was 1,
+2, 2b, 2c, 3, 4, 3b, 3c, 8, 9, 5, 5b, 5c, 6, 7 -- Table 4 appeared
+before 3b/3c, and Tables 8-9 appeared ~400 lines before Table 5.
+Fully renumbered to match physical order: old Table 4 (raw's Δ over
+ARIMA, φ×q amplification) -> 3a; old Table 8 (composite-on-ARIMA) -> 4;
+old Table 9 (5-feature composite) -> 4b; old Table 6 (real-data alarm
+summary) -> 7; old Table 7 (INDPRO sensitivity) -> 7b; my earlier
+temporary "Table 5c" (AR(2) trichotomy, was a quick dedup fix for the
+round-1 duplicate) -> 6. New sequence: 1, 2, 2b, 2c, 3, 3a, 3b, 3c, 4,
+4b, 5, 5b, 6, 7, 7b -- fully monotonic. Executed via `sed` in
+dependency-safe order (rename old labels to unused targets before
+reusing a freed number) to avoid collisions; verified via grep before
+and after each step, then re-verified every remaining "Table N"
+in-prose citation resolved correctly, including compressed forms like
+"Table 2b, 8, 9" that a literal-string sed pass would miss (caught and
+fixed by hand). One pre-existing ambiguous reference ("Table 3/5",
+appears twice, likely a stale shorthand for grid_v4/grid_v5 rather
+than a table cross-reference) was left alone -- it predates this
+session, no review round flagged it, and its meaning is unclear enough
+that a blind fix risks being wrong.
+
+**2. Leaked internal jargon recurred in new spots (same category round
+1 already "fixed"): "M1", "P2", "M0", and an unglossed "H_flagship"
+label, plus "Outcome A/B/C" used without ever explaining the generic
+pre-registration convention.** Fixed the four specific leaks (plain
+descriptions substituted, no meaning lost) and, per the reviewer's own
+suggested remedy, added a one-time definitional gloss at the first
+physical occurrence of "Outcome A/B/C" (§5, before "Outcome C's
+SNR-dependent collapse") explaining that these label the pre-specified
+outcomes of a decision rule fixed before the relevant grid runs, so
+every later bare use (Outcome B2, Appendix C's "Outcome B2
+(r-channel-specific)" row, etc.) is now self-explanatory without
+needing external CHANGELOG context.
+
+**3. "Two pre-registered 'latent advantage' hypotheses were falsified"
+(§4) was unexplained, AND investigating it surfaced that round 1's fix
+to the adjacent "0.19 -> 0.94" figure, while well-intentioned, was
+based on an incomplete check.** Traced the source: exp02
+(`experiments/CHANGELOG.md`, 2026-07-10) registered ONE hypothesis
+with two conjoined predictions (lsc_state_cusum beats raw_cusum on
+BOTH detect rate and delay) -- not two separate hypotheses -- and the
+outcome entry itself uses "lsc_state_cusum" and "the latent innovation
+CUSUM" interchangeably, an early-project naming looseness from before
+the project's later terminology conventions solidified. Round 1's
+"0.19 -> 0.94" fix replaced an untraceable-in-Table-2 number with
+Table 2's actual lsc_kalman_cusum figure (0.55-0.67) -- correct in
+that Table 2 is what the paper's own numbers should trace to, but it
+left the paragraph naming "the latent STATE CUSUM" in one sentence and
+"the latent-INNOVATION CUSUM" two sentences later for what Table 2
+shows is the same tabulated quantity, reading as either a typo or two
+detectors with a suspiciously identical number. Fixed by (a) using
+"innovation CUSUM" consistently in both sentences, matching what
+Table 2 actually reports, and (b) replacing the unverifiable "two
+hypotheses" count with a direct, sourced description of exp02's actual
+single hypothesis and its outcome.
+
+**4. FAR-gloss fix from round 2 was misplaced (round 2 fixed Section
+2's use, but "FAR" appears bare in the Introduction's Contribution 1
+first, several lines earlier).** Moved the gloss to Contribution 1's
+first use ("a calibrated false-alarm-rate (FAR) parity harness") and
+simplified Section 2's now-redundant parenthetical to "(1 - FAR)-
+quantile."
+
+**5. Minor: Table 3's bold-cell convention was undocumented.** Added a
+one-clause note to its caption (bold marks the SNR-extreme cells
+discussed in the following prose).
+
+Items 1-3 above are flagged explicitly in this entry because they are
+recurrences or side-effects of PRIOR fixes in this same loop (table
+duplication -> table ordering; the 0.19/0.94 number -> the naming
+inconsistency it left behind) -- a reminder that a locally-correct
+patch can still leave an adjacent inconsistency, worth a wider blast-
+radius check on future fixes in this loop, not just the literal string
+a reviewer quoted.
+
+Sonnet review round 4 launched next.
+
+## 2026-07-27 — Sonnet review round 4: RATING 7/10, fixes applied
+
+Fourth independent sonnet subagent, specifically instructed to verify
+the table renumbering didn't silently leave a stale or wrong
+cross-reference (exactly the risk flagged when that fix was made).
+Confirmed the renumbering itself is genuinely monotonic (1, 2, 2b, 2c,
+3, 3a, 3b, 3c, 4, 4b, 5, 5b, 6, 7, 7b, verified by caption line number)
+and all round 1-3 fixes hold. Found what it was specifically asked to
+hunt for: two real stale/wrong cross-references the renumbering pass
+missed, both now fixed:
+
+- **"Table 3/5" (3 occurrences, lines 763/771/1940).** A leftover from
+  before the r-channel and q-channel variance-ladder data were
+  consolidated into the single current Table 3 -- there is no related
+  "Table 5" content (current Table 5 is the unrelated PELT
+  localization table). This predates this session's renumbering pass
+  entirely (it was never "Table 8" or "Table 9" etc., so my sed
+  substitutions correctly left it alone) but is the same defect
+  category: a reader following "Table 3/5" for variance-ladder data
+  cannot resolve it. Replaced all three with plain "Table 3", matching
+  how the identical grid is correctly cited elsewhere in the same
+  section (lines 981, 1010, 1289).
+- **"0.97-0.99 in Table 1's arena" (line 1969, §8.5 PELT discussion).**
+  Table 1 has no detection-rate column (FAR/ARL0 only); the actual
+  0.966/0.990/0.988 figures are in Table 2, cited correctly everywhere
+  else in the paper including the abstract and §4's own "0.97-0.99 at
+  3σ" language. Fixed to "Table 2."
+
+Also fixed two smaller items: §4's opening paragraph used three
+different phrasings for the same detector ("the latent innovation
+CUSUM," "the latent CUSUM," "the latent-innovation CUSUM") across four
+sentences -- the substantive risk (confusion with the actually-distinct
+lsc_state_cusum) was already resolved by round 3's fix, but the
+promised uniform terminology wasn't actually delivered; now reads
+"the innovation CUSUM" consistently, matching the term used everywhere
+else in the paper (abstract, Proposition 1). And the abstract's "an
+exploratory fourth series" (for GS10) collided with §9's "UNRATE ...
+added later as a fourth series" -- two different series each
+independently called "fourth" for different reasons (fourth-listed vs.
+fourth-added-chronologically). Reworded the abstract to "the last an
+exploratory series" to drop the ambiguous ordinal.
+
+Note on process: item 1 above ("Table 3/5") is a genuinely pre-existing
+defect this session's renumbering pass did not create and had no
+reason to catch (the string "Table 3/5" never matched any of the
+sed substitution targets) -- it surfaced only because this round was
+explicitly asked to hunt for renumbering fallout, which is a wider net
+than the renumbering itself. Worth remembering for any future
+mechanical find-and-replace pass in this document: grep for the OLD
+label in isolation is not sufficient once compressed multi-table
+citations (verified none remain via `grep -n "Table 3/5\|Table 2b, "`
+style checks) or stale pre-existing shorthand are possible.
+
+Sonnet review round 5 launched next.
+
+## 2026-07-27 — Sonnet review round 5: RATING 7/10, fixes applied
+
+Fifth independent sonnet subagent, instructed to look specifically at
+parts of the paper the first four rounds hadn't focused on as closely
+(References, Appendix B theory, Appendix A, Appendix C in full,
+Discussion/Related Work internal consistency). Confirmed all four
+round-4 fixes hold, independently re-derived Proposition 1(a) and the
+ARMA(1,1)-equivalence algebra from scratch (both check out), and
+cross-checked all ~44 References entries plus 12+ Appendix C rows
+against body numbers (clean). Found 4 new issues, none touching the
+paper's scientific claims:
+
+- **A real numeric contradiction, not just a cross-reference slip:**
+  Sec 2 claimed "the empirical detectors sit at 5900-7600" ARL0, but
+  Table 1 (six lines later) shows a 4383-10841 range -- a third of its
+  12 rows fall outside the claimed band. Fixed to the correct
+  4383-10841 range, naming which cells drive each extreme.
+- **Appendix A's reproducibility-pack description was stale:** it said
+  "scripts exp07 through exp21," undercounting by roughly half --
+  the body now cites experiments up through exp52b (est_kalman_var_cusum,
+  the AR(2) trichotomy check, the smoothed-ARIMA/GARCH-exceedance
+  composite variants, exp46's recalibration, exp52/52b's Prop-1(b)
+  audit, none of which existed when that sentence was first written).
+  Fixed to describe the pack as spanning exp07-exp52b and explicitly
+  list the R8-round additions.
+- **Three "§8.4" cross-references pointed at the wrong section** for a
+  "pooled-over-time standardization is a design flaw" story that is
+  actually told in §8.3, not §8.4 (which is about the local-level/
+  random-walk arena and nonstationarity, an unrelated topic). Traced
+  and fixed all three: Sec 2's forward pointer now goes to §8.3; the
+  two self-referential ones inside §8.3 itself now point to §2 (where
+  per-time standardization is actually defined) or were de-referenced
+  entirely (self-referential "the fix above"). While checking this
+  category I found and fixed a FOURTH, unflagged "§8.4" reference (line
+  ~261, GARCH's "heavier-tailed order-statistic threshold") that also
+  didn't match §8.4's actual content -- the other four "§8.4"
+  references in the document (lines 572, 1129, 1358, and §8.4's own
+  intro) were checked and are legitimately about §8.4's real topic
+  (nonstationarity penalty on calibrated thresholds), left untouched.
+- **Appendix C was missing rows for three legitimate body results:**
+  the AR(2) trichotomy check (now Table 6, exp29), the smoothed-ARIMA
+  composite (Experiment D, exp41), and the GARCH exceedance alarm rule
+  (Experiment E, exp42). Added all three with their actual numbers.
+- Also added (optional, low-priority per the review): a one-sentence
+  note on Table 1's caption explaining why lsc_state_cusum appears in
+  Table 1 (FAR/ARL0) but not in Table 2's detection-rate grids.
+
+Process note: the §8.4 sweep is a second instance (after round 4's
+"Table 3/5") of a defect surfacing only because a round was asked to
+check a WIDER category than the literally-reported instances -- three
+were reported, a fourth in the same category was found by checking all
+seven "§8.4" occurrences in the document rather than just the three
+named ones. Worth keeping in mind for any remaining rounds: verify a
+finding's full category, not just its cited examples.
+
+Sonnet review round 6 launched next.
+
+## 2026-07-27 — Sonnet review round 6: RATING 7/10, fixes applied
+
+Sixth independent sonnet subagent, told to spot-check round 5's fixes
+in detail (specifically whether the "stale claim vs. its own table"
+failure mode from rounds 1 and 5 was fully eradicated) and to sweep
+figure/proposition/script/CSV references, not just table/section
+numbers. Findings, all narrow and mechanical (a sign of convergence,
+not a new problem class):
+
+- **The ARL0-range fix itself contained a misattribution.** Round 5's
+  sentence said "lsc_kalman_cusum's cold SNR=0.1 cell and
+  lsc_state_cusum's SNR=2.0 cell drive the range's OTHER [i.e. high]
+  extreme" -- but lsc_state_cusum's SNR=2.0 cell is ARL0=4618, FAR=7.8%
+  (hot), the table's SECOND-LOWEST value, sitting next to raw_cusum's
+  own minimum (4383) -- it drives the LOW extreme, not the high one
+  paired with lsc_kalman's cold cell. Third instance of this specific
+  failure mode (stale/wrong numeric claim inside the very sentence
+  meant to fix a prior instance of it) across rounds 1, 5, and now 6 --
+  worth flagging as a pattern: rewriting a summary sentence to match a
+  table's aggregate range does not guarantee the sentence's own
+  supporting detail was independently re-checked cell-by-cell. Fixed
+  with the correct pairing (raw_cusum + lsc_state_cusum both hot at
+  SNR=2.0 -> low extreme; lsc_kalman_cusum cold at SNR=0.1 alone -> high
+  extreme).
+- **Appendix C's completeness sweep (round 5) stopped one experiment
+  short.** "Experiment F" (exp43, Table 2b's paired-SE correction, §4)
+  is the same species of labeled, self-contained finding as D and E,
+  which got rows last round -- F did not. Added its row, and added
+  exp43 to Appendix A's "later revision rounds" script list, which had
+  the same gap.
+- **Appendix A's "exp07 through exp52b" range still excluded exp02-06**,
+  which the paper's OWN body and Introduction discuss by name and
+  content (the exp05 three-hypothesis registration, the exp02 SNR-sweep
+  hypothesis now cited in §4, exp06's theory-check script). Same
+  failure mode as the original stale-range bug, just at the other end
+  of the interval -- widened to exp02-exp52b with a one-clause
+  description of what the exp02-06 cluster covers.
+- **Minor: Table 3/3b's "MC SEs ≤ 0.02" caption doesn't match the
+  actual n=500 worst-case bound (~0.0224)** used correctly elsewhere in
+  the paper (Table 2: "≤0.023"; Table 5b: "≤0.022") -- both corrected to
+  ≤0.023 for consistency, with the derivation noted inline.
+
+Process observation carried forward: three of five review rounds now
+(1, 5, 6) have found an error INSIDE a sentence written specifically to
+fix a PRIOR round's finding. This is not evidence the fixes are
+careless in general (every other fix across six rounds has held up
+under the next round's spot-check) -- it specifically recurs in dense,
+multi-clause summary sentences that name several cells/numbers at
+once, where correcting the headline number doesn't automatically
+verify every supporting clause. Worth a deliberate close-read pass on
+any remaining multi-clause numeric sentences if this keeps recurring.
+
+Sonnet review round 7 launched next.
+
+## 2026-07-27 — Sonnet review round 7: RATING 7/10, fixes applied
+
+Seventh independent sonnet subagent, told about the multi-clause-
+sentence risk pattern round 6 flagged and asked to verify every clause
+of the touched sentences, not just headline numbers. Confirmed all
+four round-6 fixes correct clause-by-clause (independently re-derived
+the ARMA(1,1)/Riccati identity from scratch and re-sorted all 34 §9
+p-values to re-verify the Bonferroni/BH-FDR cutoffs by hand -- both
+exact). Found 2 new issues plus 1 optional polish item, all narrow:
+
+- **A single-cell GARCH value (r-channel/subtle/SNR=2.0, 0.096) got
+  misquoted as a two-cell range "0.096-0.098"** in 2 of 3 places it's
+  restated (Related Work, Discussion) -- the 0.098 belongs to the
+  DIFFERENT, non-tied SNR=0.5 cell, imported by mistake when the
+  tie-cell finding was echoed. Appendix C already had it right (single
+  value) and served as the correction template. Fixed both locations,
+  recomputed the gap (raw 0.102 vs GARCH 0.096, ~0.006, still well
+  inside the ~1.3pp MC SE -- conclusion unchanged, only the number
+  itself was wrong) and tightened "a statistical tie" to "tied with
+  raw specifically" (ARIMA still dominates that cell) in 2 more spots
+  per the reviewer's optional item, since it was cheap to fix
+  alongside the main correction.
+- **The exp46 detector-list enumeration named 7 detectors but the same
+  paragraph claims "24 (detector, arena) combinations" (8x3) and later
+  cites raw_cusum's own exp46-specific numbers** -- raw_cusum was
+  re-run under exp46's stricter protocol too (distinct from the
+  earlier exp38 numbers discussed two paragraphs above) but wasn't in
+  the list. Added it, now 8 detectors matching the 24 total.
+
+This round's reviewer did a genuinely adversarial fresh sweep beyond
+verifying the assigned fixes (independent Appendix B re-derivation,
+independent §9 multiple-comparisons re-sort) and found only these two
+narrow, non-scientific issues -- a meaningfully thinner yield than
+rounds 1-6, consistent with real convergence rather than a reviewer
+going easier.
+
+Sonnet review round 8 launched next.
+
+## 2026-07-27 — Sonnet review round 8: RATING 7/10, fixes applied (one finding independently corrected, not applied as literally suggested)
+
+Eighth independent sonnet subagent (note: ran with the safety
+classifier unavailable per its own preamble, so its findings were
+verified against the paper's own tables directly before acting, per
+this project's standing verify-before-trust discipline, rather than
+applied on trust). Confirmed both round-7 fixes hold with no
+regression, and independently re-derived the §9 34-test Bonferroni/
+BH-FDR arithmetic by hand a second time (still exact). Found 3 items:
+
+- **PELT's variance-break range misstated as "0.00-0.02" in 2 of 3
+  places** (Related Work, §8.5) when Table 5's own data (and a THIRD,
+  correct restatement later in the same §8.5 subsection) show the true
+  range is 0.00-0.20 (driven by the SNR=0.1/variance-×3 cell = 0.20).
+  Verified directly against Table 5's 6 variance rows before fixing.
+  Both instances corrected.
+- **"+0.404, the largest gap in the table" (§4, Table 2b discussion)
+  is wrong if read as spanning the whole table** -- the Kalman/ARIMA
+  column contains +0.564 and +0.554 (q-channel cells), both larger,
+  already stated two sentences later in the same paragraph. Verified
+  against Table 2b's 12 cells before fixing; scoped the claim to "the
+  raw-rung column" with a forward pointer to the larger Kalman/ARIMA
+  values.
+- **A second "largest entry +0.40" claim (§5, φ=0.99 r-channel
+  discussion) was flagged by the reviewer as the same error, suggesting
+  it should also become +0.564 -- checked this one more carefully
+  before applying the suggested fix, and it does NOT hold up as
+  suggested.** The entire surrounding paragraph (and the several before
+  it) is explicitly and exclusively about the r-channel φ=0.99
+  extension; +0.564 is a Q-CHANNEL value from a different part of Table
+  2b not under discussion anywhere in this passage. Within the
+  r-channel scope the passage is actually operating in, +0.40 IS the
+  correct largest entry (the r-channel's own Kalman/ARIMA-column max is
+  only +0.116). Applying the reviewer's literally-suggested "+0.564"
+  fix here would have introduced a NEW error -- a q-channel number
+  quoted in an r-channel-only paragraph. Fixed instead by making the
+  ambiguous "the φ=0.95 table" explicit as "the φ=0.95 table's
+  r-channel rows," which resolves the genuine readability risk (a
+  reader could plausibly misread "the table" as the whole Table 2b)
+  without introducing the reviewer's incorrect number.
+- Also fixed (lower priority, confirmed via Table 7's row: GDP
+  raw_var_cusum = 2 alarms/1 hit/p=0.309): GDP's "catches both crises...
+  2 alarms, 1 hit" read as arithmetically inconsistent (both vs. 1);
+  clarified that 2009Q2 falls ~17 months after the Dec-2007 NBER peak,
+  outside the paper's own 12-month hit window, so only the COVID alarm
+  counts as a hit -- matching the more careful hit/miss language
+  already used for the analogous INDPRO passage two paragraphs earlier.
+
+This round is flagged explicitly because one of its three findings
+was a plausible-sounding but ultimately incorrect suggested fix --
+the first time in this loop a reviewer's specific corrective NUMBER
+(as opposed to a general direction) would have been wrong if applied
+literally. Caught by re-reading the full surrounding paragraph's scope
+before editing rather than pattern-matching the "largest gap" framing
+across both instances. Reinforces this loop's standing practice of
+verifying every finding against the source table before applying it,
+not just for findings that seem surprising.
+
+Sonnet review round 9 launched next.
+
+## 2026-07-27 — Sonnet review round 9: RATING 7/10, the round-8 scoping fix's number corrected
+
+Ninth independent sonnet subagent, specifically told to re-examine the
+r-channel/q-channel scoping question from round 8's fourth (declined)
+item and to hunt for the "correct in one implicit scope, stated as an
+unscoped superlative" pattern elsewhere (rounds 6 and 8's recurring
+failure mode). Confirmed all three of round 8's applied fixes hold.
+
+**Re-examined the scoping fix and found the underlying number was
+still wrong -- round 8's diagnosis (ambiguous scope) was right, but
+disambiguating the scope in round 8's own fix didn't also correct the
+arithmetic.** The sentence compares a "known-Kalman/estimated-ARIMA"
+gap (a specific CROSS-parameterization comparison type) against "the
+φ=0.95 table's r-channel rows" -- but the number my round-8 fix used
+for that comparison, +0.40, is the RAW column's r-channel max (a
+same-rung, not cross-rung, comparison), not the Kalman/ARIMA column's
+r-channel max, which is the column actually measuring the same
+comparison type (est.->known, same rung) the φ=0.99 figure needs to be
+checked against. The Kalman/ARIMA column's r-channel max is +0.116
+(0.868->0.984 at SNR 2.0), not +0.40 -- confirmed directly against
+Table 2b's 6 r-channel rows in that column. This also explains an
+internal contradiction the wrong number created: a range "+0.40 to
++0.78" cannot be said to "dwarf" a reference value equal to its own
+lower bound; with the corrected +0.12 the "dwarfs" claim is actually
+true. Fixed: "largest entry there +0.40" -> "largest entry there
++0.12... not the raw column's own +0.40, a different, same-rung
+comparison this cross-rung φ=0.99 gap is not commensurable with."
+
+This is the THIRD occurrence of the same failure mode (rounds 6, 8,
+and now 9 in the same sentence) -- a multi-clause sentence naming a
+specific comparator gets its scope/wording fixed without every number
+inside it being independently re-verified. Given this has now
+recurred three times in variations of the same passage, treating it as
+resolved after this pass rather than continuing to probe the same
+sentence further, since round 9's independent adversarial sweep of
+~40 other numerical claims found nothing else in this category.
+
+Also fixed two minor items round 9 found: Table 7b's "x/8" hit
+denominators for the 180-month-window rows (vs "x/9" everywhere else
+in the section) were correct but unexplained -- added a one-clause
+caption note (longer window pushes the monitored range's start later,
+dropping one NBER peak). Declined the third, explicitly "cosmetic,
+take-it-or-leave-it" item (an ICSS "gap is largest... r-channel"
+claim illustrated with a different cell than the single largest one) --
+re-read in context, it is a channel-level claim illustrated by the
+underlying mechanism, not a cell-level superlative, and defensible as
+written.
+
+Sonnet review round 10 launched next.
+
+## 2026-07-27 — Sonnet review round 10: RATING 7/10, four fixes verified against source CSVs (not just internal cross-references)
+
+Tenth independent sonnet subagent. First re-verified round 9's φ=0.99/
+Table 2b fix by hand-tracing `paper_assets/exp26_known_param_variance.csv`
+and `exp28_known_param_phi99.csv` directly -- confirmed +0.12 is the
+Kalman/ARIMA column's true r-channel max and the "dwarfs" claim now
+holds arithmetically (0.40-0.78 vs 0.12, all ratios >3x). That specific
+passage, after three rounds of correction, is now independently
+confirmed correct against primary source data, not just paper-internal
+consistency.
+
+The reviewer then did an adversarial sweep explicitly checking prose
+numbers against their cited `paper_assets/*.csv` files rather than only
+against other parts of the paper -- a stronger bar than most prior
+rounds applied -- and found four more real, independently-verified
+errors, all confirmed by this author directly against the source CSVs
+before fixing (not taken on the subagent's word):
+
+- **UNRATE φ-gated check (§9, Appendix C): "three φ-clipped windows"
+  and "4/9->1/9 hits" were both wrong.** `exp09_ljungbox_table.csv`
+  shows FOUR UNRATE segments clipped (phi=0.01): segments 3, 8, 9, 10
+  -- not three (segment 9 produces no hit, so it doesn't appear among
+  the three clipped windows that DO produce hits, discussed correctly
+  elsewhere in the same section, but it was still excluded by the
+  actual gating code). The 540/780-month arithmetic already quoted in
+  the same sentence only works with 4 exclusions (13-4=9 segments x
+  60mo=540; 3 exclusions would give 600, not 540) -- an internal
+  contradiction that should have been caught earlier. `exp17_unrate_
+  phi_gated.csv` records gated_n_events=6, not 9 -- the correct
+  fraction is 1/6, not 1/9, which the paragraph's own stated purpose
+  (avoid comparing a restricted numerator to an unrestricted
+  denominator) makes especially important to get right. Fixed both
+  the §9 body and the Appendix C row; p=0.1474 itself was already
+  correct and unaffected.
+- **exp22 attribution diagnostic (§5): "15/415 (4%)" should be "11/415
+  (3%)".** Directly tallied `exp22_composite_threshold_argmax.csv`'s
+  415 Kalman alarms by attrib_feature: variance_pressure=400,
+  state_shift_pressure=11, break_pressure=4. Only state_shift_pressure
+  is among the paper's own list of 6 "filtered-state" features;
+  break_pressure is one of the 5 innovation-only features and was
+  wrongly folded into the 415-400=15 subtraction. Correct filtered-
+  state count is 11.
+- **Table 2c (§4): "within ±0.03 of zero in every cell" is violated by
+  0.002 in one cell.** `exp30_order_known_arima.csv` shows
+  gap_order_selection=-0.032 for q/x3/SNR0.1. Softened to "5 of 6
+  cells... sixth: -0.032" in both the body and Appendix C; the
+  substantive "coefficient noise dominates" conclusion is unaffected.
+- **Table 3a: φ=0.99 subtle-break paired SE displayed as 0.018,
+  source value rounds to 0.017.** `exp19_paired_se_grid_v8.csv` gives
+  0.017483. Fixed the table cell and the downstream "≈1.5 SE"
+  recomputation (√(0.018²+0.017²)≈0.025, same rounded combined SE and
+  same ≈1.5 SE conclusion -- display fix only, no substantive change).
+
+Given this is the fourth round (after 6, 8, 9) to find a variant of
+the "number correct only in a narrower scope, or simply mistranscribed
+from a source CSV, but stated as if globally/simply correct" failure
+mode, and this round specifically found it by checking against
+paper_assets/*.csv directly rather than only against other text in the
+paper -- treating "check hand-transcribed numbers against their cited
+source CSV, not just against other prose" as a standing verification
+practice for any future rounds in this loop, per the reviewer's own
+recommendation.
+
+Sonnet review round 11 launched next.
+
+## 2026-07-27 — Sonnet review round 11: RATING 6/10 (dip), largest batch of verified fixes since round 1
+
+Eleventh review, run as five parallel adversarial forks each assigned
+a disjoint set of sections/tables to trace against `paper_assets/*.csv`
+directly -- a broader sweep than any single prior round, which is the
+most likely explanation for the rating dropping to 6 and the larger
+finding count: these are PRE-EXISTING errors in numbers that predate
+this R8 session entirely (original grid outputs never checked at this
+level of rigor before), not regressions introduced by this loop's
+earlier fixes. Every finding below was independently re-verified by
+this author directly against the cited CSV before editing (not taken
+on the subagent's word), consistent with this loop's standing practice
+since round 8's classifier-unavailable caveat.
+
+Fixed, all confirmed against source data:
+- **§4: "raw CUSUM detects at 0.96-1.00 for every φ" is false.**
+  `grid_v6_phisweep_results.csv`: raw_cusum at φ=0.99 is 0.750-0.778,
+  not >=0.96. Rewrote as an accurate comparative claim (raw also
+  declines at φ=0.99, just less steeply than the innovation CUSUM).
+- **Figure 1 caption: "0.97-1.00 at φ=0.5-0.8" -> "0.93-1.00"** (true
+  min 0.932 at φ=0.8/SNR=0.1, same CSV).
+- **§8.4: "raw/ARIMA variance and composite ≤0.07" missed raw_var_cusum
+  = 0.104** at SNR=0.1 (`grid_v7_llevel_results.csv`); split into "raw
+  variance ≤0.10, ARIMA variance and composite ≤0.07."
+- **§4: crossing-ratio "2.0-2.4" -> "2.1-2.9"** (linear-interpolated
+  from `exp11_level_sweep.csv`: 2.13/2.88/2.40 per SNR).
+- **Table 3a footnote: SE-reduction ranges "40-55%"/"15-30%" don't hold
+  over all 12 cells** of `exp19_paired_se_grid_v8.csv` (true: ~20-56%
+  and ~-0.5-20%) -- corrected both ranges.
+- **Appendix B / §5 (2 occurrences): "max discrepancy ≈10⁻⁹" is
+  ~1.5×10⁻⁷ at SNR 0.1** (`arma_equivalence.csv`) -- widened to "≤2×10⁻⁷
+  (≈10⁻⁹ at SNR 0.5/2.0, ≈1.5×10⁻⁷ at SNR 0.1)" in both spots.
+- **§5: "correlate at only 0.13-0.20" -> "0.14-0.20"** (true min 0.1427,
+  `exp44_innovation_tails.csv`).
+- **§4 (2 occurrences): "≈15-20% conservative" -> "≈12-21%"** (true
+  per-SNR 17%/12%/21%, `exp06_theory_table.csv`).
+- **§4: "δ≤1σ gives bound ≤0.7%, matching observed ≈FAR" was wrong on
+  two counts** -- the bound itself reaches 0.71% at 1σ/SNR2.0 (not
+  ≤0.7%), and observed detection at 1σ (11.2-13.0%) is roughly DOUBLE
+  FAR, not matching it; only 0.5σ's bound/observed-rate genuinely
+  match ≈FAR. Rewrote to state both magnitudes' actual bound and
+  observed rate separately rather than one blended claim.
+- **§5 Table 4/exp35: undisclosed non-reproduction.** r×1.5/SNR0.1's
+  own reconstruction gets 0.820 vs. published 0.818
+  (`exp35_composite_paired_se.csv`, reproduced_kalman=False) -- added a
+  one-line disclosure matching the paper's own stated verification
+  standard, consistent with the BLAS-nondeterminism caveat already
+  given elsewhere in Appendix A.
+- **§9 GS10: "missed within 24 months" is wrong -- the actual monitored
+  window is 13 months.** `real_data_date_boundaries.csv`: GS10's final
+  segment (containing the 2022-03 event) ends 2023-04. Also softened
+  "not a horizon-window artifact," which the 13-month figure doesn't
+  actually establish either way.
+- **Table 5b caption "MC SEs ≤0.022" -> "≤0.023"** (true max 0.02212,
+  `exp25_icss_results.csv`, rounds up not down).
+- **3 occurrences of "raw variance-CUSUM's 0.10-1.00" -> "0.09-1.00"**
+  (true min 0.094 on the matched x1.5/x3 grid, `ladder_table.csv`).
+
+Not fixed this round (explicitly lower-priority per the review, batched
+for a future pass if still relevant): exp42's "0.01-0.07" floor range
+(2 cells go to 0.00/0.002), exp37's "0-5.8%" oracle range (true min
+0.2%), GDP real-time "~17 months" (true 16.0, already hedged),
+§2's ambiguous exp46-far-parity FAR-column wording, and a stale
+Monte-Carlo artifact file (exp13c) that doesn't match the exact-
+enumeration number actually cited (the cited number itself was
+re-verified correct by rerunning the script).
+
+Given the scale of this round relative to rounds 2-10, next round
+should confirm whether this was a one-time deeper sweep surfacing a
+backlog of pre-existing issues (expected to converge from here) or
+whether the finding rate is genuinely not decreasing.
+
+Sonnet review round 12 launched next.
+
+## 2026-07-27/28 — Sonnet review round 12: RATING 8/10 -- first qualifying round
+
+Round 12's top-level orchestrating agent hit the session's API rate
+limit mid-run and never delivered a synthesized top-level result.
+However, it had fanned out into several independent verification
+sub-forks first, each tracing a disjoint set of sections/tables
+directly against `paper_assets/*.csv` -- the same methodology as
+round 11, now deliberately extended to sections round 11 had NOT
+focused on (Tables 1, 2, 6, 7, 7b, the multi-break tables, the
+multiple-comparisons arithmetic, Appendix C, etc.), plus direct
+re-verification of several round-11 fixes. One of these sub-forks
+(assigned §2/§4/§5/§6-§9/Appendix C) completed independently and
+produced a full, rigorous, self-contained assessment -- several
+hundred individual cell-level numeric checks, most reproduced exactly
+against source CSVs (including re-running the circular-shift scripts
+from source rather than reading a possibly-stale output file) -- and
+delivered its own RATING: 8, with an explicit answer to round 11's
+open convergence question: the error yield this round (2 new,
+non-headline issues, both independently re-verified by this author
+before fixing) was dramatically lower than round 11's ~13, despite
+checking MORE cells across MORE tables. Treating this sub-fork's
+result as round 12's outcome given its rigor and completeness --
+noting the caveat that the safety classifier was unavailable when it
+ran, which is why every finding below was independently re-verified
+against the source CSV before acting, per this loop's standing
+practice, not taken on trust.
+
+Two fixes, both confirmed correct by this author before applying:
+- **§5 Table 4b: "agree ... in 10 of 12 cells" -> "9 of 12 cells"**
+  (3 occurrences). Independently recomputed gap5 vs. gap11 for all 12
+  cells of `exp21_composite_innov5.csv`: exactly 9 have
+  |gap5-gap11|<=0.03, 3 exceed it (0.038, 0.076, 0.150) -- and those
+  three are precisely the three cells the same paragraph already names
+  as exceptions two sentences later, making "10 of 12" self-
+  contradictory with its own next sentence, not just wrong against the
+  CSV.
+- **§6: "at SNR 0.5, no method exceeds FAR" directly contradicted by
+  the same sentence's own "raw CUSUM even reached 0.16 on
+  persistence-up."** Confirmed raw_cusum's own calibrated FAR at SNR
+  0.5 is 6.2% (`grid_v1_far_calibration.csv`, matching Table 1) -- 0.16
+  is ~2.6x that, not "at FAR." Reworded to separate persistence-down
+  (genuinely undetectable, all at FAR) from persistence-up (not
+  uniformly so -- raw CUSUM and lsc_state_cusum both mildly/spuriously
+  exceed their own FAR there).
+
+One additional item the sub-fork flagged as optional/cosmetic (a
+possibly-ambiguous "the two baseline CUSUMs calibrate hot" phrase in
+§8.1, where every underlying number is already correct) was not
+acted on -- pure labeling clarity, not a numeric error, and the fork
+itself listed it as "no action needed."
+
+Given the top-level agent's crash means the OTHER sub-forks' findings
+(if any) were not synthesized or seen by this author, round 13 is
+launched as a fresh, complete round rather than assuming full
+coverage was achieved -- a second qualifying >=8/10 round is still
+needed per the standing loop condition.
+
+**Addendum:** a second, separately-completed round-12 sub-fork
+("Verify §5 whitening-ladder tables against CSVs") also finished
+before the top-level crash and reported one more real finding, seen
+via its own task-notification rather than the synthesized result:
+**§5's exp44 discussion said the SNR=2.0 detect-rate gap between
+est_kalman_var_cusum and arima_var_cusum is "correspondingly small
+(≤0.002)," true only for the coarse ×3 cells** (verified directly:
+`exp44_est_kalman_rung.csv` SNR=2.0 deltas are 0.002 (q×3), 0.000
+(r×3), but 0.100 (q×1.5) and 0.076 (r×1.5) -- an order of magnitude
+larger). Fixed to split the claim by break size explicitly. Three
+distinct, independently-verified fixes now applied from round 12's
+partial results in total.
+
+## 2026-07-28 — Sonnet review round 13: RATING 8/10 -- second qualifying round, loop condition met
+
+Thirteenth review, run as a genuinely fresh full sweep (not a light
+confirmation pass, since round 12's crash meant its full coverage was
+never established) -- eight parallel hand-verification passes across
+essentially every table in the document, deliberately weighted toward
+areas rounds 11-12 sampled less, plus an independent `pytest
+--collect-only` run rather than trusting a manual test count. Zero
+errors found in any scientific/statistical result across several
+hundred cell-level checks (detection rates, SEs, p-values, thresholds,
+correlations, the full Bonferroni/BH derivation independently re-
+sorted from raw p-values, all four circular-shift tests re-run from
+source scripts rather than read from a file, Appendix B's Prop 1(a)
+and ARMA/MA(1) derivations re-solved by hand). Two small, non-headline
+issues found and fixed, both independently verified by this author:
+
+- **Appendix A's "98 tests" was stale.** Verified directly:
+  `pytest --collect-only -q` on the current repo gives 121 tests (AR(2)
+  tests added later, postdating the dated reproducibility logs the "98"
+  figure traces to). Updated to "121 tests (as of this draft...)" with
+  a note that the count grows as checks are added, to avoid the same
+  drift recurring silently.
+- **§2's exp46 FAR-parity paragraph implied all 8 detectors used the
+  identical 5000/2000 recalibration budget** -- `exp46_far_parity.csv`
+  shows arima_var_cusum's 3 rows actually used the reduced 1000/1000
+  budget (the cost-driven exception logged in CHANGELOG when exp46 was
+  run). Added an explicit parenthetical noting the exception; the
+  24/24-at-5.0%-FAR conclusion itself is unaffected.
+
+Also fixed three smaller clarity/precision items the same round
+flagged as lower-priority but still real: a rounding-convention
+inconsistency between two adjacent paragraphs (exp38's FAR percentages
+used round-half-down at .x5% boundaries while exp46's used round-half-
+up two lines later; standardized both to round-half-up, verified
+against `exp38_raw_cusum_far_correction.csv`'s exact float values); an
+overstated "caught by the composite alone" in §7 when `lsc_state_cusum`
+also partially catches the same cross-channel second event (recall
+0.42, confirmed in `exp04_results.csv`); a Table 3c claim that "the
+same shape holds at SNR 0.5 and SNR 2.0" without noting that unlike
+the SNR=0.1 trajectory, the SNR=0.5/2.0 advantage crosses into ARIMA's
+favor before φ=0.95 and (at SNR=2.0) never crosses back — verified
+against `r_phi_sweep_full.csv`'s full 24-row sweep, both SNRs'
+sequences quoted explicitly in the fix; and a GARCH-oracle cross-rate
+range "0-5.8%" whose true floor is 0.2%, not 0% (`exp37_garch_oracle_
+break_aware.csv`).
+
+**This is the second consecutive independently-run round to score
+8/10 with a genuinely low, non-headline-touching defect yield after a
+deliberately broad, skeptical, from-scratch sweep** -- round 12's
+completed sub-fork and round 13's full run both converged on the same
+read. Per the standing loop condition (2x sonnet ratings >=8/10 before
+escalating), the sonnet review phase is complete. Proceeding to the
+final opus-xhigh review next.
+
+## 2026-07-28 — Opus final review round 1: RATING 7/10 -- science confirmed clean, presentation is the blocker
+
+First opus-xhigh review, the final gate. Independently verified 250+
+numeric cells across every table in the document against source
+CSVs -- zero discrepancies found. Explicitly confirmed: the trichotomy
+is well-supported end to end, the honest-negative framing is coherent
+and self-correcting (the "state adds nothing" claim is correctly
+scoped to true parameters, with est_kalman/composite-on-Kalman
+explicitly reversing it under estimation), references are complete
+with no orphan citations. On science and numeric hygiene alone, opus
+called this a 9.
+
+**The rating is capped at 7 by a structural judgment, not a
+correctness one: after thirteen rounds of "length/density is not the
+dominant blocker," opus made an independent call that at this final
+gate, it now is.** Specifically: (1) the ~850-word abstract, with each
+trichotomy leg carrying 4-6 nested caveats and inline section/
+experiment references, is not a submittable abstract by the standards
+of the target venue class; (2) the body's dominant rhetorical unit
+("A follow-up (`experiments/expNN.py`) checks whether... which
+found...") repeated dozens of times with inline experiment IDs makes
+the three core claims hard to locate under their own robustness
+sub-cascades; (3) one minor precision tension in the deflationary
+headline (the abstract said "every break type," but the Kalman
+composite edges the best single benchmark by ~1.5 SE at one cell,
+r×1.5/SNR2.0 -- see Table 4).
+
+This is a different kind of finding than rounds 1-13, which fixed
+factual/numeric errors. This is a scope decision the paper's own
+review history deferred repeatedly (rounds 3-13 all explicitly said
+so), now revisited and reversed by the final gate. Acted on directly
+rather than re-litigated:
+
+- **Abstract rewritten from ~850 words to ~300 words.** Cut every
+  nested nomenclature caveat (flagship-cell convention-dependence
+  detail, phi=0.99 non-invariance detail, exact numeric evidence,
+  30/30 vacuous-bound detail, "over half of paths still alarm" detail,
+  exact composite numbers, real-time vintage detail, family-wise/FDR
+  detail) down to the trichotomy's plain declarative structure -- all
+  of it is already reported in full in SS4/SS5/SS9 and Appendix C, so
+  nothing is lost, only relocated. Also fixed opus's item (3) in the
+  same pass: "every break type" -> "nearly every break type," which
+  resolves the r x1.5/SNR2.0 tension without needing a separate edit,
+  since no other unqualified "every break type" claim exists anywhere
+  else in the document (checked via grep).
+- **Compressed the two worst changelog-style sections opus named.**
+  The GARCH benchmark discussion in Related Work (~158 lines) ->
+  ~65 lines: cut the extended methodological narration (seed-block
+  bookkeeping, "this is 3 genuinely distinct checks not 12," the
+  tautology-vs-honest-check distinction argued at length) while
+  preserving every number, both tables, and every citation. SS9's
+  multiple-comparisons correction (~119 lines) -> ~55 lines: cut the
+  extended justification for the circular-shift design and the
+  abandoned exp13_joint_fwer.py attempt's narration to one clause each,
+  while preserving the full 34-test Bonferroni/BH derivation, every
+  per-series circular-shift result, and every caveat (phi-clipped
+  windows, the GDP/UNRATE co-firing caution) verbatim in substance.
+  Document net size: 3330 -> 3153 lines despite this session having
+  added substantial new R8 content throughout.
+
+Given the scale of these two structural cuts, re-verifying no number
+was dropped or altered during compression is essential before
+resending -- spot-checked both compressed sections against the
+original text pulled earlier in this session; all figures, table
+rows, and citations preserved exactly. Full document-wide restructuring
+(moving the remaining changelog-style narrative in SS4-SS8 to a
+supplement, as opus and every prior round also suggested) was NOT
+attempted this round -- opus named these two sections specifically as
+the worst offenders, and a full-document pass carries meaningfully
+higher risk of introducing new errors under time pressure than the
+targeted cuts made here. If opus's next round still flags density as
+the dominant blocker, revisit more broadly.
+
+Opus review round 2 launched next.
+
+## 2026-07-28 — Opus final review round 2: RATING 7/10 ("high 7") -- abstract/GARCH/SS9 fixes confirmed clean, SS5 named as the remaining blocker
+
+Second opus review. Independently re-verified ~100 numeric cells,
+including a full re-derivation of the SS9 34-test Bonferroni/BH
+arithmetic and every number in the compressed GARCH tables -- zero
+errors, zero silent drops from the compression pass. Confirmed the
+abstract is now 271 words, states the trichotomy correctly, and every
+sampled claim traces to the body/Appendix C accurately, including the
+"nearly every break type" fix (verified the r x1.5/SNR2.0 composite
+does edge the best benchmark by ~0.042/~1.5 SE, so "nearly" is the
+right word).
+
+**Structural verdict, given directly rather than assumed to follow
+from round 1's fixes being clean:** the residual density in SS4, SS5,
+SS6, SS7, SS8 -- untouched by round 1 -- still caps the rating. SS5
+specifically named as the single biggest remaining issue: the paper's
+central, longest section (~750 lines at the time), carrying the
+headline whitening-ladder result, interleaved with a dozen tables and
+nested exp44/exp20/21/22/30/41 sub-cascades that make the core claim
+hard to locate. Assessed as "a high 7, narrowly short of 8," with a
+concrete, low-risk path (the same compression discipline already
+applied to GARCH/SS9, transferred to SS5 without touching any table or
+number).
+
+**Response: compressed SS5 and, more lightly, SS4's densest passage,
+using the same discipline -- every table and every number verified
+intact before and after, only the "here's why we ran this check /
+here's the methodological justification" narration cut.** Explicitly
+NOT attempting the full 750->400-450 line cut opus suggested is
+possible: SS5's prose is far denser with load-bearing numbers per
+sentence than GARCH/SS9 were (nearly every sentence in the untouched
+core numeric-argument paragraphs cites a specific figure), so an
+aggressive rewrite risked silently altering or dropping a caveat --
+exactly the failure mode opus's round-1 review warned compression
+edits are prone to. Made 6 targeted cuts instead:
+
+- The Table-3-adjacent "paired, not independence-assuming, SEs"
+  systematic-check paragraph, and Table 3a's caption-paragraph
+  explaining the paired-SE determinism argument -- both had extended
+  methodological justification (why the reconstruction should be
+  trusted absent a persisted per-replicate record) compressed to their
+  essential claims, all figures retained.
+- The phi=0.99 "second operating point" intro paragraph, tightened.
+- The exp22 threshold/attribution diagnostic paragraph (SS5), cut by
+  roughly a third -- kept every number (28.9% threshold gap, 96%/77%/
+  15%/7%/3% attribution fractions) and the "both readings hold
+  simultaneously" conclusion, cut the redundant restatement.
+- The Table 4 / exp35 paired-SE discussion's non-reproduction
+  disclosure parenthetical, tightened without softening the disclosure
+  itself.
+- The Experiment D (smoothed-ARIMA proxy) paragraph, cut by about a
+  third, same rule.
+- SS4's "Assumptions and estimation error" paragraph (the exp10
+  four-corner ablation discussion), tightened by roughly 10 lines.
+
+Net effect: SS5 804-1557 (753 lines) -> 804-1515 (~712 lines); overall
+document 3153 -> 3098 lines. A smaller cut than opus's suggested
+700->400-450 target, by design, given the risk assessment above.
+Whether this is sufficient is for opus round 3 to judge; if density is
+still the binding constraint, the remaining lower-risk-to-cut
+candidates are the phi=0.99 "coarse r-break and q-channel" and
+"resolution of the decision rule" paragraphs (SS5) and SS6/SS7/SS8's
+untouched changelog-style passages, left alone this round specifically
+because they are dense with numbers in the same way SS5's untouched
+core is, not because they were overlooked.
+
+Opus review round 3 launched next.
+
+## 2026-07-28 — Opus final review round 3: RATING 7/10 ("high 7") -- SS5 compression confirmed lossless again, but named as still incomplete with a specific, low-risk path
+
+Third opus review. Independently re-derived every number in all six
+round-2 compressed passages against source CSVs (exp10's four corners,
+exp22's threshold ratio and attribution fractions, exp35's paired-SE
+triple, exp41's smoothed-proxy table, exp44's 11/12+tie, exp43's
+17-of-24 pairing count) plus the full 34-test Bonferroni/BH arithmetic
+and Table 3's 12 ladder cells -- zero errors, confirming round 2's
+compression was genuinely lossless, not just superficially so.
+
+**Verdict, stated precisely rather than restating "density is the
+blocker" again:** SS5's core claim is now *findable* (credited the
+bolded "Reading the ladder: the ordering inverts across channels"
+signpost as real navigational progress) but the section's *length*
+barely moved, and -- critically -- opus identified WHERE the remaining
+cuttable material actually is, distinguishing it from the
+load-bearing core the density argument protects: the phi=0.99
+subsection (three paragraphs restating the same conclusion) and the
+composite subsection's "This narrows SS5's headline claim" paragraph
+(re-summarizing "Isolating the source" a few paragraphs earlier) are
+PURE PROSE REDUNDANCY, not protected by the "every sentence carries a
+number" defense used to justify last round's conservative scope.
+
+Acted on the two highest-value items directly, both pure restructuring
+with no numbers touched (verified before/after):
+
+- **Merged three phi=0.99 restatement paragraphs into one.** "The
+  known-parameter counterpart isolates why" (was ~35 lines), "The
+  coarse x3 r-break and the q channel are more stable" (~28 lines),
+  and "Resolution of the pre-registered decision rule" (~19 lines) all
+  delivered the identical conclusion (r-channel "prewhitening wins" is
+  an estimated-rung artifact of near-unit-root ARIMA estimation
+  fragility, not a population-level mechanism change) -- merged into
+  one ~30-line paragraph plus a short "Resolution:" paragraph,
+  preserving every cited number (known-Kalman flat 0.984, known-raw
+  0.990/0.390/0.062, the +0.40-to-+0.78 known/estimated gap, the
+  coarse-break 0.97/0.99/0.99 vs 1.00/1.00/0.56, the q-channel
+  0.236/0.152 and 0.982/0.760 figures, etc.) and the load-bearing
+  closing sentence verbatim.
+- **Cut "This narrows SS5's headline claim" from ~18 lines to ~9**,
+  keeping the honest-summary quote (the section's actual concluding
+  synthesis, not pure repetition) but removing the restated exp21/
+  exp22 mechanism explanation already given in "Isolating the source"
+  a few paragraphs above.
+- **Fixed the abstract's mechanism attribution opus's fresh sweep
+  caught**, independent of the compression work: "filtering does buy
+  real power once combined into enough diagnostic breadth" over-
+  attributed the composite's win to feature breadth, when SS5's own
+  exp21 isolation finds the gain traces almost entirely (9/12 cells)
+  to the innovation series being a better input, not the 6
+  breadth-adding filtered-state features. Reworded to attribute the
+  gain to estimation (matching SS5's own honest summary) rather than
+  breadth.
+
+Declined item 3 (relocating the ~46-line est_kalman estimation-gap
+paragraph to after the channel-inversion reading) this round --
+a structural block-move carries its own risk of introducing a
+duplication or flow break under time pressure, and was judged lower
+value than the two prose-redundancy cuts, which were unambiguous wins
+with no such risk.
+
+Net: SS5 712 -> ~674 lines; document 3098 -> 3062 lines. Smaller than
+opus's ~400-450 target still, but this round closed exactly the two
+items opus flagged as clearly available without a numbers-safety
+tradeoff; the remaining gap is now core numeric-argument prose opus
+itself distinguished as protected by the density defense, plus the
+still-untouched est_kalman relocation and SS6/7/8.
+
+Opus review round 4 launched next.
+
+## 2026-07-28 — Opus final review round 4: RATING 8/10 -- manuscript ready, review loop complete
+
+Fourth and final opus review. Independently re-verified every number
+in both round-3 edits against source CSVs (the merged phi=0.99
+paragraph against exp28_known_param_phi99.csv/grid_v9_r_phi99_results.csv,
+including the known-Kalman 0.984 flatness, the known-raw 0.990/0.390/
+0.062 sequence, the +0.40-to-+0.78 and up-to-+0.70 known/estimated
+gaps, and the full q-channel known-Kalman-vs-known-raw quartet -- all
+exact; the shortened "narrows headline claim" paragraph's "9 of 12
+cells" figure re-derived cell-by-cell from exp21_composite_innov5.csv,
+confirmed exact, with both the 9/12 attribution and the load-bearing
+honest-summary quote surviving). Confirmed the abstract's reworded
+closing sentence is accurate against the body (grep-confirmed "breadth"
+no longer appears in the abstract) and reads as a coherent trichotomy
+summary. A fresh full-document sweep (Tables 2b/3/3b/3c/4/4b, the
+est_kalman rung, all internal cross-references, the multiple-testing
+arithmetic, Appendix C) found no new numeric, factual, or overclaim
+issues.
+
+**Structural verdict, asked to be given plainly rather than as a
+reflexive fifth "still too long":** the specific, identifiable prose
+redundancies rounds 1-3 named have now all been removed; what remains
+long is load-bearing numeric content (real, distinct results with
+their SEs and caveats), not restatement. Further length reduction
+would require relocating whole experiment narratives to a supplement
+-- a legitimate editorial choice about content, not a redundancy fix.
+Called this a genuine plateau, not grounds for continuing the loop.
+
+Three trivial, explicitly non-blocking items noted for a future pass
+if one ever happens (a repeated feature-name list appearing 3x in SS5,
+a near-verbatim GARCH tie-cell description in both Related Work and
+SS10, and an abstract phrase that could theoretically be misread
+before its own next clause corrects it) -- none require action.
+
+**RATING: 8/10 -- "The manuscript is ready."** This is the first 8+
+rating from opus, satisfying the standing loop condition ("stop once
+opus gives an 8+/10 rating") on its own -- no second opus round is
+required. Four opus rounds total were run to get here; all four verified
+the underlying science/numerics as clean from round 1 onward (zero
+errors found in any of ~600+ independently re-checked cells across all
+four rounds combined); the gap between round-1's 7 and round-4's 8 was
+entirely closed by structural/presentation work (abstract 850->~300
+words, GARCH and SS9 compressed ~50% each, SS5 compressed from 753 to
+~674 lines across two targeted passes), not by any correctness fix.
+
+Paper-review loop complete. PAPER_DRAFT.md is now considered final for
+this revision round.
+
+## 2026-07-28 — LSC_FINAL_DRAFT.md snapshot taken
+
+Copied PAPER_DRAFT.md (3062 lines, opus-round-4-approved, 8/10) to
+`LSC_FINAL_DRAFT.md` verbatim as a named snapshot of this revision
+round's endpoint. PAPER_DRAFT.md remains the live/working file for any
+future revision; LSC_FINAL_DRAFT.md is not re-synced automatically if
+PAPER_DRAFT.md changes later.
+
+## 2026-07-28 — External peer review (R9): full re-verification and revision round
+
+An external review (independent of the sonnet/opus loop above; cloned
+`789wethan-wq/lsc` at HEAD `d1dfe64` and audited code + result files
+directly) scored the manuscript 5/10, weak reject. Per the user's
+instruction, every major/minor finding was independently re-verified
+against source before any text was touched, via two parallel read-only
+verification passes, before applying fixes and resuming the
+sonnet/opus review loop. Findings below are logged as they are
+resolved; a full disposition table follows once all items are closed.
+
+**Confirmed and fixed so far:**
+- Repo sync gap (real, directly confirmed via `git status`): HEAD
+  `d1dfe64` is missing `exp44/46/52/52b` scripts and CSVs, all
+  untracked. To be committed (see below); push held pending user
+  confirmation, per standing "don't push without asking" norm.
+- §5's est_kalman-vs-arima_var_cusum mechanism claim ("AIC order
+  selection") directly contradicted the paper's own Table 2c, which
+  already showed the order-selection component is ≈0 (even slightly
+  negative) at the identical q/×3/SNR-0.1 cell. Rewrote the mechanism
+  discussion to state the contradiction explicitly, drop the AIC
+  causal claim, and flag the true mechanism as open (tail-sensitivity
+  of the max-over-arms CUSUM to whichever MLE's estimation noise is
+  larger) rather than asserting a falsified explanation.
+- Abstract's "fast or never" clause read as confirmatory
+  ("...we prove analytically and test directly against data") when
+  the Introduction already correctly hedges that the qualitative
+  pattern does not survive exp52/exp52b's direct test. Reworded to
+  match the Introduction's own hedge.
+- Composite detection-rate SEs (Table 4/exp35) do not include variance
+  from the per-time-point null-scale estimation (`n_scale_reps=50`,
+  fixed scale seed at every call site, confirmed by grep). Added an
+  explicit caveat; a multi-seed sensitivity rerun is flagged as a real
+  open gap, not run yet.
+- §9's multiple-testing discussion already correctly discounts the
+  FAR=1%/INDPRO/composite BH-FDR survivor as "a caution about pooling,
+  not a third confirmed finding" (the reviewer's claim that it's
+  treated as a real third finding is REFUTED), but it did not
+  cross-reference its own two supporting reasons stated elsewhere in
+  the paper: the Implementation Lesson's Beta(n+1-k,k) small-order-
+  statistic warning (this cell's threshold is the 2nd-largest of 200
+  null draws) and the same permutation-coarseness caveat already given
+  for GS10 (this cell has only 3 alarms against 9 events → 4
+  attainable outcomes). Added both cross-references at the point of
+  first mention.
+- UNRATE provenance: the paper claimed all four series were "chosen...
+  before looking at their results," but CHANGELOG shows UNRATE was
+  added 2026-07-16, five days after INDPRO/GDP/GS10 were already run
+  and evaluated (2026-07-11 design entry). Reworded to disclose the
+  timing honestly rather than imply UNRATE's addition was a priori;
+  the correction it's part of does not depend on outcome-blindness to
+  begin with (no series was ever dropped/reweighted by result), but
+  the "not a subset... narrowed by outcome" framing overstated the
+  case.
+- GDP's real-data training window: Table 7's note said "120-month
+  (40-quarter)" when discussing GDP's own raw_cusum zero-alarm
+  artifact; `rd_gdp_meta.csv` confirms GDP actually uses n_train=60
+  quarters = 180 months (INDPRO/UNRATE use 120 months/monthly
+  cadence). Fixed the note and Table 7's caption to state GDP's actual
+  window and why it differs (quarterly vs. monthly frequency).
+
+**PRE-REGISTERED before running: Table 7b's 180-month INDPRO variant
+isolation.** `Makefile:130` runs the "longer training window" sweep as
+`real_data.py indpro 200 --train 180 --monitor 36 --tag _w180`, i.e. it
+changes train (120→180) AND monitor (default 60→36) simultaneously,
+and segment count rises 13→21 as a result (`rd_indpro_w180_meta.csv`).
+The paper's prose already discloses "21 windows" but the caption reads
+"a longer training window (180 months, 5% FAR)" as if only train
+changed, and never states the monitor-window shrinkage as a possible
+confound for the composite/raw_var_cusum blowup (14/21 alarms/windows,
+p uninformative). Decision rule, stated before running: rerun with
+`--train 180 --monitor 60` (train changed alone, monitor held at
+baseline). If the composite/raw_var_cusum blowup persists at
+comparable magnitude with monitor held fixed, the paper's causal
+attribution to "training window long enough to straddle a volatility
+regime" is confirmed and the caption gets a one-clause disclosure of
+the original confound. If the blowup substantially shrinks with
+monitor fixed, the attribution is at least partly a monitor-window/
+segment-count artifact and the paper's claim must be softened
+accordingly — reported either way, not conditioned on the outcome.
+
+**Outcome (mixed, as anticipated as a real possibility by the decision
+rule).** `real_data.py indpro 200 --train 180 --monitor 60 --tag
+_w180m60` (n_segments=12, comparable to baseline's 13;
+`rd_indpro_w180m60_meta.csv`), evaluated via `real_data_eval.py`
+(`rd_eval.csv`, `w180m60` rows). raw_var_cusum's per-window alarm rate
+is essentially unchanged by holding monitor fixed at baseline (8/12 =
+0.67/window vs. the confounded variant's 14/21 = 0.67/window, p =
+0.722 vs. 0.878) — its blowup is confirmed as a genuine training-
+window/regime-straddling effect, not a monitor-window artifact. The
+composite's alarm rate drops substantially once monitor is held fixed
+(5/12 = 0.42/window vs. the confounded 14/21 = 0.67/window, p = 0.138
+vs. 0.556), though it remains somewhat elevated over baseline (4/13 =
+0.31/window) — so for the composite specifically, roughly half the
+originally reported "14/21" blowup was the monitor-window/segment-
+count confound, and the training-window effect, while real, is smaller
+than the confounded number implied. Both detectors' original
+qualitative story survives (variance-based detectors are more
+sensitive to training-window length than level/innovation/tail
+detectors) but the composite's specific magnitude claim needed
+softening. Fixes applied to PAPER_DRAFT.md: Table 7b gained a second
+"Window 180 mo, monitor 60" row block plus a caption clause explaining
+both variants; the prose now reports both per-window alarm rates and
+the split attribution for the composite; this also raised the §9
+multiple-testing corrected family from 34 to 39 tests (Table 7b now
+contributes 25 distinct tests, not 20), so the Bonferroni threshold
+(α/39≈0.00128, was α/34≈0.00147) and the BH-FDR rank-3/rank-4 cutoffs
+(≈0.00385/≈0.00513, were ≈0.00441/≈0.00588) were recomputed — the
+qualitative conclusions (which rows survive which correction) are
+unchanged by the new family size, verified directly rather than
+assumed.

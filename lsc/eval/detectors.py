@@ -199,6 +199,20 @@ def make_arima_var_cusum_detector(n_train: int) -> ScoreFn:
     return score_fn
 
 
+def make_est_kalman_var_cusum_detector(n_train: int, spec: str = "ar1") -> ScoreFn:
+    """Whitening-ladder Kalman rung, estimated parameters (SPEC_R8_
+    missing_experiments.md exp44): the identical three-arm variance
+    CUSUM statistic as raw_var_cusum/arima_var_cusum, scored on an
+    MLE-fit KalmanModel's standardized innovations instead of raw Y or
+    ARIMA residuals."""
+    from lsc.benchmarks.variance import est_kalman_var_cusum_score
+
+    def score_fn(Y: np.ndarray) -> np.ndarray:
+        return est_kalman_var_cusum_score(Y, n_train=n_train, spec=spec)
+
+    return score_fn
+
+
 def make_combined_windowed_detector(n_train: int, window: int = 60) -> ScoreFn:
     """Combined windowed statistic (exp36, SPEC R4 M5): max of the
     mean-shift MOSUM (windowed_raw_cusum_score) and the variance-ratio

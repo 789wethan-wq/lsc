@@ -33,6 +33,11 @@ rd_indpro_w180,lsc_kalman_cusum,0.05,21,1.05,3,8,2,1,0.41,0.0462
 rd_indpro_w180,lsc_tail_cusum,0.05,21,1.05,5,8,3,2,0.66,0.0146
 rd_indpro_w180,raw_cusum,0.05,21,1.05,2,8,2,0,0.27,0.0165
 rd_indpro_w180,raw_var_cusum,0.05,21,1.05,14,8,1,13,1.73,0.8784
+rd_indpro_w180m60,lsc_composite,0.05,12,0.6,5,8,2,3,0.71,0.1381
+rd_indpro_w180m60,lsc_kalman_cusum,0.05,12,0.6,2,8,2,0,0.28,0.019
+rd_indpro_w180m60,lsc_tail_cusum,0.05,12,0.6,6,8,0,6,0.83,1.0
+rd_indpro_w180m60,raw_cusum,0.05,12,0.6,2,8,1,1,0.29,0.2681
+rd_indpro_w180m60,raw_var_cusum,0.05,12,0.6,8,8,1,7,1.1,0.7218
 rd_unrate,lsc_composite,0.05,13,0.65,3,9,2,1,0.45,0.0568
 rd_unrate,lsc_kalman_cusum,0.05,13,0.65,4,9,4,0,0.59,0.0002
 rd_unrate,lsc_tail_cusum,0.05,13,0.65,6,9,2,4,0.87,0.2046
