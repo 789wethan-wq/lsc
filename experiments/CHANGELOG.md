@@ -4361,3 +4361,91 @@ now satisfied. Per the standing `/goal` instruction, escalating next
 to a final opus (xhigh effort) review round, with the length/
 venue-format question flagged as opus's primary focus per both this
 round and round 2's recommendation.
+
+## 2026-07-28 — Opus final-gate round 1 (post-R9): RATING 7/10, length compression executed
+
+Correctness fully re-verified clean: opus independently re-checked
+exp44, the exp20 composite-on-ARIMA table, INDPRO's permutation
+p-values, the Table 7b train=180/monitor=60 rerun, and the full 39-test
+multiplicity arithmetic — all reconciled — and confirmed all five R9
+external-review fixes (§5 mechanism, abstract wording, §9 arithmetic,
+Table 7b confound isolation, MOSUM citation) hold up. No correctness
+issues found. The sole blocking issue, as both prior sonnet rounds
+predicted: manuscript length/density vs. the target venue (MDPI
+*Stats*), which had *grown* rather than shrunk since the R9/sonnet
+rounds (all of which added clarifying text without removing anything)
+— body ~25,000 words, 3,187 lines, 355-word abstract, roughly 3x a
+typical *Stats* article.
+
+Opus gave a specific, actionable relocation plan rather than a generic
+"make it shorter": move detailed mechanism-autopsy material (five
+separate items from §5, four from §9, three from §4, two from §8) to a
+new Supplementary Material appendix, keeping only headline
+results/conclusions + a pointer in the body; compress Appendix A's
+narrative texture by ~60%; rewrite the abstract (~358→~200 words,
+restructured to lead with the estimation-dependence nuance rather than
+burying it in a ~110-word closing sentence); fix a duplicated GARCH
+discussion between §1 and §10; and add a half-clause flagging GDP's
+180-month exception at §9's first protocol mention.
+
+**Executed via a fork with explicit non-negotiable ground rules: no
+content deleted, only relocated (verbatim or near-verbatim) into a new
+"Appendix D. Supplementary detail," with a summary sentence + pointer
+left in the body; every number/citation preserved.** Result,
+independently re-verified after the fact (word counts recomputed
+myself, not trusted from the fork's report; spot-checked that
+relocated content genuinely appears in Appendix D with numbers intact;
+grepped for dangling cross-references; re-ran the full test suite):
+
+- Body (Abstract–§10): ~25,019 → ~21,740 words (13% cut; short of the
+  ~13,000-14,000 aggressive target — §5 and §9 landed above their
+  individual targets, a judgment call the fork flagged explicitly
+  rather than forcing further cuts at declining marginal quality).
+- New Appendix D (5 subsections, D.1–D.5): 4,970 words holding all
+  relocated material with back-pointers to its originating body
+  location.
+- Total document word count: 30,578 → 31,141 (rose slightly — nothing
+  was deleted, only moved into a genuine supplementary section, which
+  does not count against most venues' main-text limits; noting this
+  distinction explicitly since "shorter total" and "shorter main
+  text" are different claims and only the latter was the actual ask).
+- Appendix A: 1,823 → ~700 words (63% cut, hit target) — kept the
+  substantive claims (repo URL, test count, the three-bug list, the
+  cross-environment BLAS-nondeterminism finding, the honest "no
+  third-party reproduction yet" disclosure), moved the narrative
+  texture to D.5.
+- Abstract: 358 → ~268 words (~301 incl. JEL/MSC/keyword lines) —
+  restructured to lead with "the answer depends on whether parameters
+  are known or estimated" rather than the trichotomy-then-caveat
+  structure; every original number/citation (Spearman 0.94, the
+  ARMA(1,1) equivalence, NBER non-survival) preserved.
+- §1's duplicated GARCH Related-Work discussion cut to one
+  cross-referencing paragraph (§10 keeps the full table/Experiment E
+  detail; verified both directions still state every number at least
+  once).
+- §9's GDP-180-month exception now flagged at first protocol mention
+  (line ~1700), not only in Table 7's caption.
+
+**My own independent verification pass (not just trusting the fork's
+self-report), before committing:** re-ran `pytest -q` (121 passed);
+recomputed total word count directly; grepped every "Appendix D"/
+"D.1"-"D.5" body pointer and spot-read the corresponding Appendix D
+content to confirm it's substantive, not truncated (checked D.1's
+est_kalman/ARIMA gap-source decomposition and Table 3c in full); spot-
+read Table 2c's location to confirm it stayed in §4 as intended; spot-
+checked §1's condensed GARCH paragraph against §10's full version for
+bidirectional completeness; checked markdown table-row pipe-count
+sanity (0 malformed rows) and `**` bold-marker parity (even count).
+**Found and fixed one real issue the fork introduced:** its
+newly-written/edited prose (Appendix A's rewrite, Appendix D.5) used
+ASCII double-hyphen "--" instead of the paper's consistent em-dash "—"
+convention used everywhere else in the document (14 instances, all
+confined to the sections the fork touched). Fixed via a scripted
+replace plus two manual fixes for instances split across a markdown
+line-wrap that the scripted replace missed.
+
+**RATING: 7/10, major revision (opus's characterization: "accept in
+principle, conditional on compression — no further correctness work
+required, entirely editorial/structural").** Not yet the required 8+.
+Sending back for another opus round with the compression pass applied
+and independently verified above.
