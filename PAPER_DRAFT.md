@@ -256,7 +256,7 @@ this benchmark's limitations, but none has been run against this
 paper's calibrated-FAR protocol.
 
 **Offline changepoint detection.** Offline changepoint methods (PELT,
-Killick et al. 2012) solve a retrospective segmentation problem; our
+Pruned Exact Linear Time, Killick et al. 2012) solve a retrospective segmentation problem; our
 monitoring is strictly causal and calibrated to a false-alarm rate, so
 the two are not comparable on delay (§8.5). We nonetheless calibrate
 PELT to the same false-alarm rate on null paths and ask whether it
@@ -1941,7 +1941,8 @@ paper does not take.
 
 ## 9. Real data (illustrative)
 
-Four FRED series — industrial production (INDPRO), GDP (GDPC1), and
+Four FRED (Federal Reserve Economic Data) series — industrial
+production (INDPRO), GDP (GDPC1), and
 10-year Treasury yields (GS10) (pinned snapshots, 2026-07-11) plus the
 unemployment rate (UNRATE)
 (pinned 2026-07-16) — rolling causal monitoring (train 120 months /
@@ -1949,7 +1950,8 @@ monitor 60), per-segment parametric bootstrap calibration at 5% FAR per
 window, alarms attributed to the feature that crossed. Throughout this
 section the detectors are distribution-free monitors calibrated to a
 false-alarm rate; no parametric conditional-variance model is estimated
-and no such claim is made. Association with NBER-registered events is
+and no such claim is made. Association with NBER (National Bureau of
+Economic Research)-registered events is
 tested by permutation: the observed count of registered events "hit"
 (an alarm within 12 months after) is compared to the distribution of
 hit counts from 20,000 resamples of the same number of alarm months
@@ -2057,7 +2059,7 @@ resampling uncertainty, from the 20,000-draw test — SE = √(p(1−p)/20000)
 ≤ 0.0035 across every p-value reported here. All alarms/hits/p-values
 in this table are computed on today's revised data; only INDPRO's GFC
 and COVID alarms have also been checked against real-time ALFRED
-vintages (below) — everything else here, including all of GDP
+(ArchivaL Federal Reserve Economic Data) vintages (below) — everything else here, including all of GDP
 and UNRATE, is a revised-data illustration, not a real-time-verified
 timing claim.*
 

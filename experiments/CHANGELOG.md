@@ -4320,3 +4320,44 @@ prep.
 required 2-consecutive-≥8 pair.** All six findings verified and fixed
 above; sending back for a third sonnet round to confirm a second
 consecutive ≥8 before escalating to opus.
+
+## 2026-07-28 — Sonnet review round 3 (post-R9): RATING 8/10, SECOND CONSECUTIVE — sub-loop complete
+
+Re-verified all five of round 2's fixes from primary sources — all
+confirmed correct and complete (LSC/SPC/GFC/ZLB expansions, the
+"flagship" disambiguation, exp39's citation and numbers re-derived
+exactly against `exp39_phi_peak_joint_test.csv`, §3's r≡1
+forward-reference, abstract's "(§1)" removal). Then ran a broad
+independent numeric spot-check (~10 claims not explicitly itemized in
+round 2's audit: exp41, exp37, exp08/Table 5, exp25/Table 5b, exp16,
+exp27, exp36, exp29/Table 6, exp12's Spearman correlation) plus a full
+bidirectional reference-list check (every reference cited, every
+citation resolves) — zero discrepancies, on top of round 2's much
+larger zero-discrepancy audit. One new (minor) finding: NBER, FRED,
+ALFRED, and PELT are never expanded at first use, inconsistent with
+the paper's now-demonstrated standard for domain acronyms (GFC, ZLB,
+ICSS are all done properly; ICSS's algorithm-name expansion makes
+PELT's omission a same-category inconsistency, not a new category of
+gap). Re-verified each location and fixed: FRED and NBER expanded at
+first use (§9 opening), ALFRED expanded at its first genuine use
+(§9's ALFRED-vintage discussion), PELT expanded at first use (§1
+Related Work, "Offline changepoint detection").
+
+The reviewer was explicitly asked to weigh the still-unresolved
+manuscript-length/venue-format concern (previously raised by opus,
+reconfirmed by round 2, ~30,500 words / 357-word abstract vs. MDPI
+*Stats* norms) against correctness in its numeric rating, given two
+consecutive rounds have now audited a large fraction of the paper's
+quantitative content with zero errors. Its reasoning: correctness and
+internal consistency are what a sonnet round is positioned to certify
+(and both are now solid across two rounds), while the length/format
+question is a structural decision better made at the opus escalation
+point with full context — so it did not treat length as blocking this
+round, but flagged it explicitly for the opus round to prioritize.
+
+**RATING: 8/10, minor revision — SECOND CONSECUTIVE ≥8 round.** The
+sonnet sub-loop's qualifying condition (2 consecutive ≥8 rounds) is
+now satisfied. Per the standing `/goal` instruction, escalating next
+to a final opus (xhigh effort) review round, with the length/
+venue-format question flagged as opus's primary focus per both this
+round and round 2's recommendation.
