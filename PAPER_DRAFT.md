@@ -601,14 +601,17 @@ or 1−φ directly) — isolating μ∞ from those would need an iso-μ∞
 contour design, not run here; rejects at p<0.00005 over 20,000 draws;
 `experiments/exp12_spearman_null_test.py`), fast-regime cells (μ∞ ≥ k = 0.5) detect
 0.83–1.00 while never-regime cells (μ∞ < 0.5) detect 0.07–0.67, and at
-3σ the detector escapes the trap at low persistence (0.98/0.97 at
-φ = 0.5/0.8) but is caught at high persistence (0.65/0.30 at
-φ = 0.95/0.99) — raw CUSUM's own detection also declines at φ = 0.99
+3σ the detector escapes the trap at low persistence (0.98–1.00 across
+SNRs at φ = 0.5, 0.93–0.97 at φ = 0.8) but is caught at high
+persistence (0.55–0.67 at φ = 0.95, 0.30–0.63 at φ = 0.99) — raw
+CUSUM's own detection also declines at φ = 0.99
 (to 0.75–0.78 across SNRs, `grid_v6_phisweep_results.csv` — plausibly
 the same near-unit-root threshold-inflation mechanism documented for
 the variance rung at §5), but far less steeply than the innovation
-CUSUM's drop to 0.30–0.36 over the same range: the φ-dependence is
-sharper for the filtered detector, not exclusive to it. The negative
+CUSUM's own φ=0.99 range (the high end, 0.63, being the SNR=0.1 cell
+discussed as an exception just below): the
+φ-dependence is sharper for the filtered detector, not exclusive to
+it. The negative
 first-moment result is therefore a boundary condition of *persistent*
 latent states — which is the empirically relevant case (trend output, a
 natural rate, a volatility level are near-unit-root), and the case the
@@ -2601,7 +2604,14 @@ The mechanics behind that verdict are summarized in four points.
   Experiment E now rules out "just use a different alarm rule on the
   same fit" as a fix for the floor cells specifically, without
   resolving whether a purpose-built regime-shift volatility model
-  would fare differently.
+  would fare differently. A separate open item: every comparison in
+  this paper is between heuristic CUSUM-family statistics on
+  differently-transformed series; a known-parameter GLR detector
+  (Willsky & Jones 1976, cited in Related Work but not implemented) at
+  matched FAR would give an optimality reference point the raw/ARIMA/
+  Kalman comparisons above do not — without it, "raw wins on levels"
+  identifies which suboptimal statistic is less suboptimal, not how
+  much power any of them leaves on the table. Left to future work.
 - Scope, held deliberately. The title and framing above are restricted
   to scalar linear-Gaussian AR(1)-plus-noise state-space models; a
   genuine multivariate or regime-switching DGP class through the full
@@ -2666,10 +2676,6 @@ Structural Change." *Econometrica* 64(5), 1045–1065.
 Frisén, M. (2003). "Statistical Surveillance: Optimality and Methods."
 *International Statistical Review* 71(2), 403–434.
 
-Leisch, F., K. Hornik, and C.-M. Kuan (2000). "Monitoring Structural
-Changes with the Generalized Fluctuation Test." *Econometric Theory*
-16(6), 835–854.
-
 Hamilton, J. D. (1989). "A New Approach to the Economic Analysis of
 Nonstationary Time Series and the Business Cycle." *Econometrica*
 57(2), 357–384.
@@ -2712,6 +2718,10 @@ ARCH Models." *Lithuanian Mathematical Journal* 39(2), 182–195.
 
 Kokoszka, P., and R. Leipus (2000). "Change-Point Estimation in ARCH
 Models." *Bernoulli* 6(3), 513–539.
+
+Leisch, F., K. Hornik, and C.-M. Kuan (2000). "Monitoring Structural
+Changes with the Generalized Fluctuation Test." *Econometric Theory*
+16(6), 835–854.
 
 Lorden, G. (1971). "Procedures for Reacting to a Change in
 Distribution." *Annals of Mathematical Statistics* 42(6), 1897–1908.

@@ -4199,4 +4199,59 @@ MW2, MW3, MW7, MW8, MW9, Minor 3(low-confidence flag only, see above),
 Minor 8, Minor 11, SC2, SC5, SC7 — reviewed, no action needed or
 flagged as a genuine open gap requiring new experiments not run this
 round. Repo sync (missing exp44/46/52/52b) — fixed and pushed to
-origin/main (commit da37f69).**
+origin/main (commits da37f69, a165995).**
+
+## 2026-07-28 — Sonnet review round 1 (post-R9): RATING 7/10, three fixes applied
+
+Resumed the standing sonnet/opus review loop on the post-R9-fix draft
+(per the user's "full re-loop" instruction). First sonnet round
+independently re-verified the four things just changed (§5 mechanism
+fix, abstract "fast or never" wording, §9's 39-test multiplicity
+arithmetic, MOSUM citations) — all confirmed clean, no issues found in
+any of them, including a full independent reconstruction of the
+39-test Bonferroni/BH-FDR family. It found three new issues, all
+independently re-verified against `paper_assets/grid_v6_phisweep_
+muinf.csv` before fixing:
+
+1. **Genuine numeric inconsistency, §4.** Text claimed the innovation
+   CUSUM's φ=0.99/level-3σ detection "drops to 0.30–0.36 over" the SNR
+   range; the CSV gives 0.626/0.302/0.358 at SNR 0.1/0.5/2.0 — true
+   range 0.30–0.63, not 0.30–0.36 (the SNR=0.1 outlier was silently
+   dropped, while the very next sentences in the same paragraph
+   discuss that exact 0.63 figure as an exception). Fixed: corrected
+   to 0.30–0.63 with an explicit forward-reference to the exception
+   discussed two sentences later, so the number isn't left looking
+   unexplained.
+2. Reference list alphabetization: "Leisch, F., K. Hornik, and C.-M.
+   Kuan (2000)" (added in the MOSUM citation fix above) was placed
+   between Frisén (2003) and Hamilton (1989) instead of between
+   Kokoszka & Leipus (2000) and Lorden (1971). Fixed.
+3. §10's limitations list discloses the GARCH/stochastic-volatility
+   and multi-break gaps inline but never mentioned the absent GLR
+   (Willsky & Jones 1976) optimality benchmark, unlike the two other
+   known gaps flagged inline in the body (ARIMA `fittedvalues` control,
+   composite scale-estimation variance). Added one clause to §10.
+
+Also fixed as a byproduct while correcting item 1: the same paragraph's
+"0.98/0.97 at φ=0.5/0.8" and "0.65/0.30 at φ=0.95/0.99" point summaries
+were flagged by the reviewer as not corresponding to any clearly
+defined statistic (not min/max/mean of the 3 SNR cells, and
+inconsistent about which SNR each number came from). Re-verified
+against the same CSV and replaced with proper min–max ranges across
+the three SNRs at each φ (0.98–1.00, 0.93–0.97, 0.55–0.67, 0.30–0.63),
+matching the min/max convention already used one sentence earlier in
+the same paragraph.
+
+Reviewer's assessment of numerical reliability elsewhere: independently
+re-derived ~12 non-trivial claims (ARL₀ formula, Spearman correlation,
+Table 2c/exp30, exp44, exp15/24 GARCH grid, exp52/exp52b, exp19 paired
+SE, exp14/exp18, full §9 multiplicity arithmetic) — all matched
+exactly except item 1 above. Manuscript length/density flagged again
+as likely incompatible with target-venue format, consistent with prior
+opus-round findings; not treated as a blocking correctness issue this
+round.
+
+**RATING: 7/10, minor revision — first sonnet round of this new
+sub-loop, not yet qualifying (need 2 consecutive ≥8 rounds before
+escalating to opus).** All three findings verified and fixed above;
+sending back for a second sonnet round.
